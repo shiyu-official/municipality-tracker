@@ -8,182 +8,145 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
   :root {
-    --bg: #f5f5f0;
-    --bg-panel: #ffffff;
-    --bg-panel-hover: #f0f2f5;
-    --border: #dde1e8;
-    --border-light: #e8ebf0;
-    --text: #2c2c2c;
-    --text-dim: #7a8494;
-    --text-bright: #1a1a1a;
-    --accent: #2563eb;
-    --accent-light: rgba(37, 99, 235, 0.08);
-    --unvisited-fill: #ebedf2;
-    --unvisited-stroke: #cdd1da;
-    --visit-1-fill: #bfdbfe;
-    --visit-1-stroke: #93c5fd;
-    --visit-2-fill: #60a5fa;
-    --visit-2-stroke: #3b82f6;
-    --visit-3-fill: #2563eb;
-    --visit-3-stroke: #1d4ed8;
+    --bg:#f5f5f0; --bg-panel:#ffffff; --bg-panel-hover:#f0f2f5;
+    --border:#dde1e8; --border-light:#e8ebf0;
+    --text:#2c2c2c; --text-dim:#7a8494; --text-bright:#1a1a1a;
+    --accent:#2563eb; --accent-light:rgba(37,99,235,0.08);
+    --unvisited-fill:#ebedf2; --unvisited-stroke:#cdd1da;
+    --visit-1-fill:#bfdbfe; --visit-1-stroke:#93c5fd;
+    --visit-2-fill:#60a5fa; --visit-2-stroke:#3b82f6;
+    --visit-3-fill:#2563eb; --visit-3-stroke:#1d4ed8;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Noto Sans JP',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
 
-  /* Header */
-  #header {
-    position:fixed; top:0; left:0; right:0; z-index:1000;
-    height:54px; background:var(--bg-panel);
-    border-bottom:1px solid var(--border);
-    display:flex; align-items:center; padding:0 16px; gap:12px;
+  #header{position:fixed;top:0;left:0;right:0;z-index:1000;height:54px;background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;}
+  #header h1{font-size:16px;font-weight:700;white-space:nowrap;color:var(--text-bright);flex-shrink:0;}
+  #header h1 span{color:var(--accent);}
+  .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
+  .stat-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;white-space:nowrap;font-family:'DM Mono',monospace;}
+  .stat-chip .label{color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;font-size:10px;}
+  .stat-chip .value{color:var(--text);font-weight:500;}
+  .stat-chip .value.large{font-size:14px;color:var(--accent);font-weight:700;}
+
+  #sidebar{position:fixed;top:54px;left:0;bottom:0;width:320px;background:var(--bg-panel);border-right:1px solid var(--border);z-index:999;display:flex;flex-direction:column;transition:transform 0.3s ease;}
+  #sidebar.collapsed{transform:translateX(-320px);}
+  #sidebar-toggle{position:fixed;top:64px;left:320px;z-index:1000;width:26px;height:44px;background:var(--bg-panel);border:1px solid var(--border);border-left:none;border-radius:0 6px 6px 0;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:left 0.3s ease;}
+  #sidebar-toggle:hover{background:var(--bg-panel-hover);}
+  #sidebar.collapsed + #sidebar-toggle{left:0;}
+
+  .sidebar-header{padding:12px 14px;border-bottom:1px solid var(--border-light);}
+  .sidebar-header h2{font-size:11px;font-weight:500;color:var(--text-dim);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.06em;}
+  #pref-search{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;}
+  #pref-search:focus{border-color:var(--accent);}
+  #pref-search::placeholder{color:var(--text-dim);}
+
+  .control-row{display:flex;gap:3px;margin-top:6px;}
+  .ctrl-btn{flex:1;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;}
+  .ctrl-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:500;}
+
+  /* Back button for city detail view */
+  .back-btn{display:flex;align-items:center;gap:4px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-bottom:8px;transition:background 0.15s;}
+  .back-btn:hover{background:var(--bg-panel-hover);}
+
+  #sidebar-content{flex:1;overflow-y:auto;padding:4px 6px;-webkit-overflow-scrolling:touch;}
+  #sidebar-content::-webkit-scrollbar{width:4px;}
+  #sidebar-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+  .pref-item{padding:8px 10px;border-radius:8px;cursor:pointer;transition:background 0.15s;display:flex;align-items:center;gap:8px;}
+  .pref-item:hover{background:var(--bg-panel-hover);}
+  .pref-rate-ring{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'DM Mono',monospace;flex-shrink:0;position:relative;color:var(--text-bright);}
+  .pref-rate-ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg);}
+  .pref-info{flex:1;min-width:0;}
+  .pref-name{font-size:13px;font-weight:500;color:var(--text-bright);}
+  .pref-rates{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:2px;display:flex;gap:8px;}
+  .pref-bar{display:flex;gap:2px;margin-top:3px;}
+  .pref-bar-seg{height:4px;border-radius:2px;}
+
+  /* City list items */
+  .city-item{padding:7px 10px;border-radius:6px;display:flex;align-items:center;gap:8px;transition:background 0.15s;cursor:default;}
+  .city-item:hover{background:var(--bg-panel-hover);}
+  .city-lv{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+  .city-info{flex:1;min-width:0;}
+  .city-name{font-size:12px;font-weight:500;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .city-meta{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:1px;}
+  .city-score{font-size:11px;font-weight:700;font-family:'DM Mono',monospace;flex-shrink:0;min-width:32px;text-align:right;}
+
+  /* Pref detail header */
+  .detail-header{padding:8px 10px;margin-bottom:4px;}
+  .detail-header .dh-name{font-size:16px;font-weight:700;color:var(--text-bright);}
+  .detail-header .dh-stats{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:4px;line-height:1.6;}
+
+  #map-container{position:fixed;top:54px;left:320px;right:0;bottom:0;transition:left 0.3s ease;}
+  #sidebar.collapsed ~ #map-container{left:0;}
+  #map{width:100%;height:100%;background:var(--bg);}
+  .leaflet-container{background:var(--bg) !important;}
+
+  /* Popup override */
+  .leaflet-popup-content-wrapper{background:var(--bg-panel)!important;border:1px solid var(--border)!important;border-radius:10px!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;padding:0!important;}
+  .leaflet-popup-content{margin:12px 16px!important;font-family:'Noto Sans JP',sans-serif!important;font-size:13px!important;color:var(--text)!important;min-width:170px;}
+  .leaflet-popup-tip{background:var(--bg-panel)!important;border:1px solid var(--border)!important;}
+  .leaflet-popup-close-button{color:var(--text-dim)!important;font-size:18px!important;padding:6px 8px!important;}
+  .pop-pref{font-size:11px;color:var(--text-dim);}
+  .pop-name{font-weight:700;font-size:15px;color:var(--text-bright);margin-top:1px;}
+  .pop-badge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500;}
+  .pop-badge.badge-0{background:var(--unvisited-fill);color:var(--text-dim);}
+  .pop-badge.badge-1{background:var(--visit-1-fill);color:#1e40af;}
+  .pop-badge.badge-2{background:var(--visit-2-fill);color:#1e3a5f;}
+  .pop-badge.badge-3{background:var(--visit-3-fill);color:#fff;}
+  .pop-detail{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-dim);margin-top:6px;line-height:1.6;}
+
+  #loading{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s ease;}
+  #loading.hidden{opacity:0;pointer-events:none;}
+  #loading h2{font-size:20px;font-weight:700;color:var(--text-bright);}
+  #loading h2 span{color:var(--accent);}
+  .loader{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #loading-status{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;}
+
+  .layer-toggles{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+  .toggle-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text);cursor:pointer;user-select:none;}
+  .toggle-item input{margin:0;accent-color:var(--accent);cursor:pointer;}
+  .toggle-line{display:inline-block;width:16px;height:3px;background:#ef4444;border-radius:2px;}
+  .toggle-fill{display:inline-block;width:14px;height:10px;background:var(--visit-2-fill);border:1px solid var(--visit-2-stroke);border-radius:2px;}
+
+  .legend{position:fixed;bottom:16px;right:16px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:0 2px 12px rgba(0,0,0,0.05);}
+  .legend-title{font-weight:700;color:var(--text-bright);margin-bottom:8px;font-size:11px;}
+  .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .legend-color{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid rgba(0,0,0,0.08);}
+  .legend-label{color:var(--text);font-size:11px;}
+
+  @media(max-width:768px){
+    #header{padding:0 10px;gap:8px;height:48px;}
+    #header h1{font-size:14px;}
+    .stat-chip{padding:3px 8px;font-size:10px;}
+    .stat-chip .value.large{font-size:12px;}
+    #sidebar{width:280px;top:48px;}
+    #sidebar-toggle{left:280px;top:58px;}
+    #sidebar.collapsed + #sidebar-toggle{left:0;}
+    #map-container{left:0;top:48px;}
+    #sidebar:not(.collapsed) ~ #map-container{left:280px;}
+    .legend{bottom:10px;right:10px;padding:10px 12px;}
   }
-  #header h1 { font-size:16px; font-weight:700; white-space:nowrap; color:var(--text-bright); flex-shrink:0; }
-  #header h1 span { color:var(--accent); }
-  .stat-chips { display:flex; gap:8px; align-items:center; overflow-x:auto; flex:1; }
-  .stat-chip { display:flex; align-items:center; gap:4px; background:var(--bg); border:1px solid var(--border); border-radius:20px; padding:4px 10px; font-size:11px; white-space:nowrap; font-family:'DM Mono',monospace; }
-  .stat-chip .label { color:var(--text-dim); font-family:'Noto Sans JP',sans-serif; font-size:10px; }
-  .stat-chip .value { color:var(--text); font-weight:500; }
-  .stat-chip .value.large { font-size:14px; color:var(--accent); font-weight:700; }
-
-  /* Sidebar */
-  #sidebar {
-    position:fixed; top:54px; left:0; bottom:0; width:320px;
-    background:var(--bg-panel); border-right:1px solid var(--border);
-    z-index:999; display:flex; flex-direction:column; transition:transform 0.3s ease;
-  }
-  #sidebar.collapsed { transform:translateX(-320px); }
-  #sidebar-toggle {
-    position:fixed; top:64px; left:320px; z-index:1000;
-    width:26px; height:44px; background:var(--bg-panel);
-    border:1px solid var(--border); border-left:none;
-    border-radius:0 6px 6px 0; color:var(--text-dim);
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    font-size:13px; transition:left 0.3s ease;
-  }
-  #sidebar-toggle:hover { background:var(--bg-panel-hover); }
-  #sidebar.collapsed + #sidebar-toggle { left:0; }
-
-  .sidebar-header { padding:12px 14px; border-bottom:1px solid var(--border-light); }
-  .sidebar-header h2 { font-size:11px; font-weight:500; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em; }
-  #pref-search { width:100%; padding:7px 10px; background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px; font-family:'Noto Sans JP',sans-serif; outline:none; }
-  #pref-search:focus { border-color:var(--accent); }
-  #pref-search::placeholder { color:var(--text-dim); }
-  .sort-controls { display:flex; gap:3px; margin-top:6px; }
-  .sort-btn { flex:1; padding:4px 6px; background:var(--bg); border:1px solid var(--border); border-radius:4px; color:var(--text-dim); font-size:10px; cursor:pointer; font-family:'Noto Sans JP',sans-serif; }
-  .sort-btn.active { background:var(--accent-light); border-color:var(--accent); color:var(--accent); font-weight:500; }
-
-  #pref-list { flex:1; overflow-y:auto; padding:4px 6px; -webkit-overflow-scrolling:touch; }
-  #pref-list::-webkit-scrollbar { width:4px; }
-  #pref-list::-webkit-scrollbar-thumb { background:var(--border); border-radius:2px; }
-
-  .pref-item { padding:8px 10px; border-radius:8px; cursor:pointer; transition:background 0.15s; display:flex; align-items:center; gap:8px; }
-  .pref-item:hover { background:var(--bg-panel-hover); }
-  .pref-rate-ring { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; font-family:'DM Mono',monospace; flex-shrink:0; position:relative; color:var(--text-bright); }
-  .pref-rate-ring svg { position:absolute; top:0; left:0; transform:rotate(-90deg); }
-  .pref-info { flex:1; min-width:0; }
-  .pref-name { font-size:13px; font-weight:500; color:var(--text-bright); }
-  .pref-rates { font-size:10px; color:var(--text-dim); font-family:'DM Mono',monospace; margin-top:2px; display:flex; gap:8px; }
-  .pref-bar { display:flex; gap:2px; margin-top:3px; }
-  .pref-bar-seg { height:4px; border-radius:2px; }
-
-  /* Map */
-  #map-container { position:fixed; top:54px; left:320px; right:0; bottom:0; transition:left 0.3s ease; }
-  #sidebar.collapsed ~ #map-container { left:0; }
-  #map { width:100%; height:100%; background:var(--bg); }
-  .leaflet-container { background:var(--bg) !important; }
-
-  /* Tooltip - hidden during drag */
-  .map-dragging .leaflet-tooltip { display:none !important; }
-  .city-tooltip { background:var(--bg-panel) !important; border:1px solid var(--border) !important; border-radius:10px !important; padding:12px 16px !important; color:var(--text) !important; font-family:'Noto Sans JP',sans-serif !important; font-size:13px !important; box-shadow:0 4px 20px rgba(0,0,0,0.08) !important; min-width:180px; max-width:260px; }
-  .city-tooltip .tip-pref { font-size:11px; color:var(--text-dim); }
-  .city-tooltip .tip-name { font-weight:700; font-size:15px; color:var(--text-bright); margin-top:1px; }
-  .city-tooltip .tip-badge { display:inline-block; margin-top:6px; padding:2px 10px; border-radius:10px; font-size:11px; font-weight:500; }
-  .tip-badge.badge-0 { background:var(--unvisited-fill); color:var(--text-dim); }
-  .tip-badge.badge-1 { background:var(--visit-1-fill); color:#1e40af; }
-  .tip-badge.badge-2 { background:var(--visit-2-fill); color:#1e3a5f; }
-  .tip-badge.badge-3 { background:var(--visit-3-fill); color:#fff; }
-  .city-tooltip .tip-detail { font-size:11px; font-family:'DM Mono',monospace; color:var(--text-dim); margin-top:6px; line-height:1.6; }
-  .leaflet-tooltip-top:before { border-top-color:var(--bg-panel) !important; }
-  .leaflet-tooltip-bottom:before { border-bottom-color:var(--bg-panel) !important; }
-
-  /* Loading */
-  #loading { position:fixed; inset:0; background:var(--bg); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; transition:opacity 0.5s ease; }
-  #loading.hidden { opacity:0; pointer-events:none; }
-  #loading h2 { font-size:20px; font-weight:700; color:var(--text-bright); }
-  #loading h2 span { color:var(--accent); }
-  .loader { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin 0.7s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  #loading-status { font-size:12px; color:var(--text-dim); font-family:'DM Mono',monospace; }
-
-  /* Layer Toggles */
-  .layer-toggles { background:var(--bg-panel); border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin-top:8px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-  .toggle-item { display:flex; align-items:center; gap:6px; padding:3px 0; font-size:12px; color:var(--text); cursor:pointer; user-select:none; }
-  .toggle-item input { margin:0; accent-color:var(--accent); cursor:pointer; }
-  .toggle-line { display:inline-block; width:16px; height:3px; background:#ef4444; border-radius:2px; }
-  .toggle-fill { display:inline-block; width:14px; height:10px; background:var(--visit-2-fill); border:1px solid var(--visit-2-stroke); border-radius:2px; }
-
-  /* Legend */
-  .legend { position:fixed; bottom:16px; right:16px; background:var(--bg-panel); border:1px solid var(--border); border-radius:10px; padding:12px 16px; z-index:999; box-shadow:0 2px 12px rgba(0,0,0,0.05); }
-  .legend-title { font-weight:700; color:var(--text-bright); margin-bottom:8px; font-size:11px; }
-  .legend-item { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-  .legend-color { width:18px; height:12px; border-radius:3px; flex-shrink:0; border:1px solid rgba(0,0,0,0.08); }
-  .legend-label { color:var(--text); font-size:11px; }
-
-  /* Mobile */
-  @media (max-width:768px) {
-    #header { padding:0 10px; gap:8px; height:48px; }
-    #header h1 { font-size:14px; }
-    .stat-chips { gap:6px; }
-    .stat-chip { padding:3px 8px; font-size:10px; }
-    .stat-chip .value.large { font-size:12px; }
-    #sidebar { width:280px; top:48px; }
-    #sidebar-toggle { left:280px; top:58px; }
-    #sidebar.collapsed + #sidebar-toggle { left:0; }
-    #map-container { left:0; top:48px; }
-    #sidebar:not(.collapsed) ~ #map-container { left:280px; }
-    .legend { bottom:10px; right:10px; padding:10px 12px; }
-    .legend-title { font-size:10px; }
-    .legend-label { font-size:10px; }
-  }
-  @media (max-width:480px) {
-    #sidebar { width:260px; }
-    #sidebar-toggle { left:260px; }
-    #sidebar.collapsed + #sidebar-toggle { left:0; }
-    .stat-chip .label { display:none; }
-    .stat-chip { padding:3px 6px; }
-    .legend { bottom:8px; right:8px; }
+  @media(max-width:480px){
+    #sidebar{width:260px;}
+    #sidebar-toggle{left:260px;}
+    #sidebar.collapsed + #sidebar-toggle{left:0;}
+    .stat-chip .label{display:none;}
   }
 </style>
 </head>
 <body>
 
-<div id="loading">
-  <div class="loader"></div>
-  <h2>踏破<span>マップ</span></h2>
-  <div id="loading-status">データを読み込み中...</div>
-</div>
+<div id="loading"><div class="loader"></div><h2>踏破<span>マップ</span></h2><div id="loading-status">データを読み込み中...</div></div>
 
 <div id="header">
   <h1>踏破<span>マップ</span></h1>
   <div class="stat-chips">
-    <div class="stat-chip">
-      <span class="label">訪問</span>
-      <span class="value large" id="stat-visited">-</span>
-      <span class="label">/</span>
-      <span class="value" id="stat-total">-</span>
-    </div>
-    <div class="stat-chip">
-      <span class="label">踏破率</span>
-      <span class="value large" id="stat-rate">-</span>
-    </div>
-    <div class="stat-chip">
-      <span class="label">制覇率</span>
-      <span class="value large" id="stat-complete">-</span>
-    </div>
-    <div class="stat-chip">
-      <span class="label">期間</span>
-      <span class="value" id="stat-range">-</span>
-    </div>
+    <div class="stat-chip"><span class="label">訪問</span><span class="value large" id="stat-visited">-</span><span class="label">/</span><span class="value" id="stat-total">-</span></div>
+    <div class="stat-chip"><span class="label">踏破率</span><span class="value large" id="stat-rate">-</span></div>
+    <div class="stat-chip"><span class="label">制覇率</span><span class="value large" id="stat-complete">-</span></div>
+    <div class="stat-chip"><span class="label">期間</span><span class="value" id="stat-range">-</span></div>
   </div>
 </div>
 
@@ -191,13 +154,17 @@
   <div class="sidebar-header">
     <h2>都道府県別</h2>
     <input type="text" id="pref-search" placeholder="都道府県を検索...">
-    <div class="sort-controls">
-      <button class="sort-btn active" data-sort="rate-desc">踏破率↓</button>
-      <button class="sort-btn" data-sort="rate-asc">踏破率↑</button>
-      <button class="sort-btn" data-sort="code">コード順</button>
+    <div class="control-row">
+      <button class="ctrl-btn active" data-sort="rate-desc">踏破率↓</button>
+      <button class="ctrl-btn" data-sort="rate-asc">踏破率↑</button>
+      <button class="ctrl-btn" data-sort="code">コード順</button>
+    </div>
+    <div class="control-row" style="margin-top:4px;">
+      <button class="ctrl-btn active" data-mode="visit" id="mode-visit">踏破モード</button>
+      <button class="ctrl-btn" data-mode="complete" id="mode-complete">制覇モード</button>
     </div>
   </div>
-  <div id="pref-list"></div>
+  <div id="sidebar-content"></div>
 </div>
 <button id="sidebar-toggle">◀</button>
 
@@ -214,240 +181,282 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
 <script>
-(async function() {
-  const $ = id => document.getElementById(id);
-  const loadingStatus = $('loading-status');
-  const loading = $('loading');
+(async function(){
+  const $=id=>document.getElementById(id);
+  const FILL=['#ebedf2','#bfdbfe','#60a5fa','#2563eb'];
+  const STROKE=['#cdd1da','#93c5fd','#3b82f6','#1d4ed8'];
 
-  // 政令指定都市コード（市コード → 市名）
-  const SEIREI = {
-    '01100':'札幌市','04100':'仙台市','11100':'さいたま市','12100':'千葉市',
-    '13100':'特別区','14100':'横浜市','14130':'川崎市','14150':'相模原市',
-    '15100':'新潟市','22100':'静岡市','22130':'浜松市','23100':'名古屋市',
-    '26100':'京都市','27100':'大阪市','27140':'堺市','28100':'神戸市',
-    '33100':'岡山市','34100':'広島市','40100':'北九州市','40130':'福岡市','43100':'熊本市'
-  };
+  function getLevel(d){if(!d||d===0)return 0;if(d===1)return 1;if(d===2)return 2;return 3;}
+  function getLevelLabel(l){return['未訪問','1回','2回','3回以上'][l];}
 
-  // 市区町村コード→政令市コード（下2桁01-99なら政令市の区）
-  function getSeireiCode(code) {
-    const prefix = code.substring(0, 3);
-    const suffix = parseInt(code.substring(3));
-    if (suffix >= 1 && suffix <= 99) {
-      // 候補キーを作る
-      for (const sc of Object.keys(SEIREI)) {
-        if (sc.substring(0, 3) === prefix && code !== sc) return sc;
-      }
-    }
-    return null;
-  }
-
-  function getLevel(visitDays) {
-    if (!visitDays || visitDays === 0) return 0;
-    if (visitDays === 1) return 1;
-    if (visitDays === 2) return 2;
-    return 3;
-  }
-  function getLevelLabel(lv) { return ['未訪問','1回','2回','3回以上'][lv]; }
-
-  const FILL = ['#ebedf2','#bfdbfe','#60a5fa','#2563eb'];
-  const STROKE = ['#cdd1da','#93c5fd','#3b82f6','#1d4ed8'];
-
-  // ── Data load ──
-  loadingStatus.textContent = 'データを読み込み中...';
-  const [topoRes, visitedRes, tracksRes] = await Promise.all([
+  // ── Data ──
+  $('loading-status').textContent='データを読み込み中...';
+  const [topoRes,visitedRes,tracksRes]=await Promise.all([
     fetch('data/municipalities.topojson'),
     fetch('data/visited_cities.json'),
-    fetch('data/tracks.geojson').catch(() => null)
+    fetch('data/tracks.geojson').catch(()=>null)
   ]);
-  loadingStatus.textContent = 'データを解析中...';
-  const topoData = await topoRes.json();
-  const visitedData = await visitedRes.json();
-  let tracksData = null;
-  if (tracksRes && tracksRes.ok) {
-    tracksData = await tracksRes.json();
-  }
-  const objectName = Object.keys(topoData.objects)[0];
-  const geoData = topojson.feature(topoData, topoData.objects[objectName]);
+  $('loading-status').textContent='データを解析中...';
+  const topoData=await topoRes.json();
+  const visitedData=await visitedRes.json();
+  let tracksData=null;
+  if(tracksRes&&tracksRes.ok) tracksData=await tracksRes.json();
+  const objectName=Object.keys(topoData.objects)[0];
+  const geoData=topojson.feature(topoData,topoData.objects[objectName]);
 
-  // ── 制覇率計算（市町村制覇App基準: 各市区町村 max 3回、合計 / 総数*3） ──
-  const meta = visitedData.meta;
-  let totalScore = 0;
-  const maxScore = meta.totalMunicipalities * 3;
-  for (const c of Object.values(visitedData.cities)) {
-    totalScore += Math.min(c.visitDays, 3);
-  }
-  const completeRate = maxScore > 0 ? (totalScore / maxScore * 100).toFixed(2) : '0.00';
+  const meta=visitedData.meta;
+  let totalScore=0;
+  const maxScore=meta.totalMunicipalities*3;
+  for(const c of Object.values(visitedData.cities)) totalScore+=Math.min(c.visitDays,3);
+  const completeRate=maxScore>0?(totalScore/maxScore*100).toFixed(2):'0.00';
 
-  function getStyle(feature) {
-    const code = feature.properties.N03_007;
-    const city = visitedData.cities[code];
-    const lv = getLevel(city ? city.visitDays : 0);
-    return {
-      fillColor: FILL[lv], fillOpacity: lv === 0 ? 0.5 : 0.8,
-      color: STROKE[lv], weight: lv > 0 ? 1.2 : 0.5, opacity: lv > 0 ? 0.9 : 0.4,
+  // ── Build per-prefecture city index ──
+  // cityCode → feature properties (from GeoJSON)
+  const featureProps={};
+  for(const f of geoData.features){
+    const code=f.properties.N03_007;
+    if(code) featureProps[code]={
+      pref:f.properties.N03_001||'',
+      gun:f.properties.N03_003||'',
+      city:f.properties.N03_004||'',
     };
+  }
+  // All city codes grouped by pref
+  const prefCities={}; // prefCode → [{code,name,gun,visitDays,level,score}]
+  const allCodes=new Set();
+  for(const f of geoData.features){
+    const code=f.properties.N03_007;
+    if(!code)continue;
+    allCodes.add(code);
+  }
+  for(const code of allCodes){
+    const pc=code.substring(0,2);
+    if(!prefCities[pc]) prefCities[pc]=[];
+    const fp=featureProps[code]||{};
+    const vc=visitedData.cities[code];
+    const vd=vc?vc.visitDays:0;
+    const fullName=fp.gun&&fp.city&&fp.city.endsWith('区')?fp.gun+fp.city:fp.city;
+    prefCities[pc].push({
+      code, name:fullName||code, gun:fp.gun,
+      visitDays:vd, level:getLevel(vd), score:Math.min(vd,3),
+      firstVisit:vc?vc.firstVisit:null, lastVisit:vc?vc.lastVisit:null,
+    });
+  }
+  // Sort cities by code
+  for(const pc of Object.keys(prefCities)) prefCities[pc].sort((a,b)=>a.code.localeCompare(b.code));
+
+  // Prefecture stats
+  const prefs=visitedData.prefectures;
+  const prefStats={};
+  for(const[pc,p]of Object.entries(prefs)){
+    prefStats[pc]={lvCounts:[p.total-p.visited,0,0,0],score:0,maxScore:p.total*3};
+  }
+  for(const[code,c]of Object.entries(visitedData.cities)){
+    const pc=c.prefCode,lv=getLevel(c.visitDays);
+    if(prefStats[pc]&&lv>0){prefStats[pc].lvCounts[lv]++;prefStats[pc].score+=Math.min(c.visitDays,3);}
   }
 
   // ── Map ──
-  loadingStatus.textContent = '地図を描画中...';
-  const map = L.map('map', { center:[36.5,137.5], zoom:6, zoomControl:false, attributionControl:false });
-  L.control.zoom({ position:'topright' }).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom:18, opacity:0.5 }).addTo(map);
+  $('loading-status').textContent='地図を描画中...';
+  const map=L.map('map',{center:[36.5,137.5],zoom:6,zoomControl:false,attributionControl:false});
+  L.control.zoom({position:'topright'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:18,opacity:0.5}).addTo(map);
 
-  // Pane for tracks
   map.createPane('tracksPane');
-  map.getPane('tracksPane').style.zIndex = 450;
-  map.getPane('tracksPane').style.pointerEvents = 'none';
+  map.getPane('tracksPane').style.zIndex=450;
+  map.getPane('tracksPane').style.pointerEvents='none';
 
-  // ── Drag detection for tooltip suppression ──
-  const mapEl = map.getContainer();
-  map.on('movestart', () => mapEl.classList.add('map-dragging'));
-  map.on('moveend', () => mapEl.classList.remove('map-dragging'));
-
-  // ── GeoJSON layer ──
-  // 政令指定都市の区名を取得するヘルパー
-  function getCityLabel(feature) {
-    const code = feature.properties.N03_007;
-    const name = feature.properties.N03_004 || '';
-    const pref = feature.properties.N03_001 || '';
-    // N03_003 に郡名や政令市名が入っている場合がある
-    const gun = feature.properties.N03_003 || '';
-    // 政令市の区の場合、gun（=市名）+ name（=区名）
-    if (gun && name && name.endsWith('区')) {
-      return { pref, city: gun, ward: name, fullName: gun + name };
-    }
-    return { pref, city: name, ward: null, fullName: name };
+  function getStyle(feature){
+    const code=feature.properties.N03_007;
+    const city=visitedData.cities[code];
+    const lv=getLevel(city?city.visitDays:0);
+    return{fillColor:FILL[lv],fillOpacity:lv===0?0.5:0.8,color:STROKE[lv],weight:lv>0?1.2:0.5,opacity:lv>0?0.9:0.4};
   }
 
-  const geoLayer = L.geoJSON(geoData, {
-    style: getStyle,
-    onEachFeature: function(feature, layer) {
-      const code = feature.properties.N03_007;
-      const info = getCityLabel(feature);
-      const city = visitedData.cities[code];
-      const lv = getLevel(city ? city.visitDays : 0);
-      const score = city ? Math.min(city.visitDays, 3) : 0;
+  function popupHTML(feature){
+    const code=feature.properties.N03_007;
+    const fp=featureProps[code]||{};
+    const fullName=fp.gun&&fp.city&&fp.city.endsWith('区')?fp.gun+fp.city:fp.city||'不明';
+    const city=visitedData.cities[code];
+    const lv=getLevel(city?city.visitDays:0);
+    const score=city?Math.min(city.visitDays,3):0;
+    let h=`<div class="pop-pref">${fp.pref}</div><div class="pop-name">${fullName}</div>`;
+    h+=`<span class="pop-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
+    if(city){
+      h+=`<div class="pop-detail">初訪問: ${city.firstVisit}<br>最終: ${city.lastVisit}<br>訪問日数: ${city.visitDays}日<br>制覇スコア: ${score}/3</div>`;
+    }
+    return h;
+  }
 
-      let html = `<div class="tip-pref">${info.pref}</div>`;
-      html += `<div class="tip-name">${info.fullName}</div>`;
-      html += `<span class="tip-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
-      if (city) {
-        html += `<div class="tip-detail">`;
-        html += `初訪問: ${city.firstVisit}<br>`;
-        html += `最終: ${city.lastVisit}<br>`;
-        html += `訪問日数: ${city.visitDays}日<br>`;
-        html += `制覇スコア: ${score}/3`;
-        html += `</div>`;
-      }
-
-      layer.bindTooltip(html, { className:'city-tooltip', sticky:true, direction:'top', offset:[0,-10] });
-      layer.on('mouseover', function() {
-        if (!mapEl.classList.contains('map-dragging')) {
-          this.setStyle({ weight:2.5, color:'#2563eb', fillOpacity:0.95 });
-        }
+  const geoLayer=L.geoJSON(geoData,{
+    style:getStyle,
+    onEachFeature:function(feature,layer){
+      layer.on('click',function(e){
+        L.DomEvent.stopPropagation(e);
+        map.closePopup();
+        L.popup({className:'city-popup',closeButton:true,autoPan:true,autoPanPadding:[40,40]})
+          .setLatLng(e.latlng)
+          .setContent(popupHTML(feature))
+          .openOn(map);
       });
-      layer.on('mouseout', function() { geoLayer.resetStyle(this); });
+      layer.on('mouseover',function(){this.setStyle({weight:2.5,color:'#2563eb',fillOpacity:0.95});});
+      layer.on('mouseout',function(){geoLayer.resetStyle(this);});
     }
   }).addTo(map);
 
-  // ── Tracks layer ──
-  let tracksLayer = null;
-  if (tracksData) {
-    tracksLayer = L.geoJSON(tracksData, {
-      pane:'tracksPane',
-      style:{ color:'#ef4444', weight:1.8, opacity:0.55, lineCap:'round', lineJoin:'round' },
-      interactive:false,
-    }).addTo(map);
+  // Click map background to close popup
+  map.on('click',()=>map.closePopup());
+
+  // Tracks
+  let tracksLayer=null;
+  if(tracksData){
+    tracksLayer=L.geoJSON(tracksData,{pane:'tracksPane',style:{color:'#ef4444',weight:1.8,opacity:0.55,lineCap:'round',lineJoin:'round'},interactive:false}).addTo(map);
   }
 
-  // ── Layer toggles ──
-  const toggleDiv = L.DomUtil.create('div','layer-toggles');
-  toggleDiv.innerHTML = `
-    <label class="toggle-item"><input type="checkbox" id="toggle-tracks" ${tracksData?'checked':'disabled'}><span class="toggle-line"></span><span>軌跡</span></label>
-    <label class="toggle-item"><input type="checkbox" id="toggle-polygons" checked><span class="toggle-fill"></span><span>市区町村</span></label>
-  `;
-  const TC = L.Control.extend({ options:{position:'topright'}, onAdd(){ L.DomEvent.disableClickPropagation(toggleDiv); return toggleDiv; }});
+  // Layer toggles
+  const toggleDiv=L.DomUtil.create('div','layer-toggles');
+  toggleDiv.innerHTML=`<label class="toggle-item"><input type="checkbox" id="toggle-tracks" ${tracksData?'checked':'disabled'}><span class="toggle-line"></span><span>軌跡</span></label><label class="toggle-item"><input type="checkbox" id="toggle-polygons" checked><span class="toggle-fill"></span><span>市区町村</span></label>`;
+  const TC=L.Control.extend({options:{position:'topright'},onAdd(){L.DomEvent.disableClickPropagation(toggleDiv);return toggleDiv;}});
   map.addControl(new TC());
-  $('toggle-tracks').addEventListener('change', function(){ if(!tracksLayer)return; this.checked?map.addLayer(tracksLayer):map.removeLayer(tracksLayer); });
-  $('toggle-polygons').addEventListener('change', function(){ this.checked?map.addLayer(geoLayer):map.removeLayer(geoLayer); });
+  $('toggle-tracks').addEventListener('change',function(){if(!tracksLayer)return;this.checked?map.addLayer(tracksLayer):map.removeLayer(tracksLayer);});
+  $('toggle-polygons').addEventListener('change',function(){this.checked?map.addLayer(geoLayer):map.removeLayer(geoLayer);});
 
   // ── Header stats ──
-  $('stat-visited').textContent = meta.visitedCount;
-  $('stat-total').textContent = meta.totalMunicipalities;
-  $('stat-rate').textContent = meta.coverageRate + '%';
-  $('stat-complete').textContent = completeRate + '%';
-  $('stat-range').textContent = (meta.dateRange[0]||'') + ' ~ ' + (meta.dateRange[1]||'');
+  $('stat-visited').textContent=meta.visitedCount;
+  $('stat-total').textContent=meta.totalMunicipalities;
+  $('stat-rate').textContent=meta.coverageRate+'%';
+  $('stat-complete').textContent=completeRate+'%';
+  $('stat-range').textContent=(meta.dateRange[0]||'')+' ~ '+(meta.dateRange[1]||'');
 
   // ── Sidebar ──
-  const prefList = $('pref-list');
-  const prefs = visitedData.prefectures;
-  let currentSort = 'rate-desc';
+  const content=$('sidebar-content');
+  let currentSort='rate-desc';
+  let currentMode='visit'; // 'visit' or 'complete'
+  let currentView='prefList'; // 'prefList' or 'cityDetail'
+  let currentPrefCode=null;
 
-  // 都道府県別の段階カウント + 制覇スコア
-  const prefStats = {};
-  for (const [pc, p] of Object.entries(prefs)) {
-    prefStats[pc] = { lvCounts:[p.total - p.visited, 0, 0, 0], score:0, maxScore:p.total * 3 };
+  function ringSVG(rate,size=40){
+    const r=size/2-4,circ=2*Math.PI*r,off=circ*(1-rate/100);
+    const col=rate>=75?'#2563eb':rate>=25?'#60a5fa':'#cdd1da';
+    return`<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#ebedf2" stroke-width="3"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${circ}" stroke-dashoffset="${off}" stroke-linecap="round"/></svg>`;
   }
-  for (const [code, c] of Object.entries(visitedData.cities)) {
-    const pc = c.prefCode;
-    const lv = getLevel(c.visitDays);
-    if (prefStats[pc] && lv > 0) {
-      prefStats[pc].lvCounts[lv]++;
-      prefStats[pc].score += Math.min(c.visitDays, 3);
-    }
-  }
-
-  function ringSVG(rate) {
-    const r=16, circ=2*Math.PI*r, off=circ*(1-rate/100);
-    const col = rate>=75?'#2563eb':rate>=25?'#60a5fa':'#cdd1da';
-    return `<svg width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="${r}" fill="none" stroke="#ebedf2" stroke-width="3"/><circle cx="20" cy="20" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${circ}" stroke-dashoffset="${off}" stroke-linecap="round"/></svg>`;
-  }
-  function barHTML(pc) {
-    const c = prefStats[pc]?.lvCounts||[0,0,0,0]; const t=c.reduce((a,b)=>a+b,0);
+  function barHTML(pc){
+    const c=prefStats[pc]?.lvCounts||[0,0,0,0];const t=c.reduce((a,b)=>a+b,0);
     if(!t)return '';
     let h='<div class="pref-bar">';
     for(let i=0;i<4;i++){const p=c[i]/t*100;if(p>0)h+=`<div class="pref-bar-seg" style="width:${p}%;background:${FILL[i]};"></div>`;}
     return h+'</div>';
   }
 
-  function renderPrefList(filter='') {
-    let entries = Object.entries(prefs);
-    if (filter) entries = entries.filter(([_,p])=>p.name.includes(filter));
-    if (currentSort==='rate-desc') entries.sort((a,b)=>b[1].rate-a[1].rate||a[0].localeCompare(b[0]));
-    else if (currentSort==='rate-asc') entries.sort((a,b)=>a[1].rate-b[1].rate||a[0].localeCompare(b[0]));
-    else entries.sort((a,b)=>a[0].localeCompare(b[0]));
+  function renderPrefList(filter=''){
+    currentView='prefList'; currentPrefCode=null;
+    let entries=Object.entries(prefs);
+    if(filter) entries=entries.filter(([_,p])=>p.name.includes(filter));
 
-    prefList.innerHTML = entries.map(([code,p])=>{
-      const ps = prefStats[code]||{score:0,maxScore:p.total*3};
-      const cr = ps.maxScore>0?(ps.score/ps.maxScore*100).toFixed(1):'0.0';
-      return `<div class="pref-item" data-code="${code}">
-        <div class="pref-rate-ring">${ringSVG(p.rate)}<span>${Math.round(p.rate)}</span></div>
+    if(currentSort==='rate-desc'){
+      if(currentMode==='visit') entries.sort((a,b)=>b[1].rate-a[1].rate||a[0].localeCompare(b[0]));
+      else entries.sort((a,b)=>{
+        const sa=prefStats[a[0]]?.score||0,sb=prefStats[b[0]]?.score||0;
+        const ma=prefStats[a[0]]?.maxScore||1,mb=prefStats[b[0]]?.maxScore||1;
+        return(sb/mb)-(sa/ma)||a[0].localeCompare(b[0]);
+      });
+    }else if(currentSort==='rate-asc'){
+      if(currentMode==='visit') entries.sort((a,b)=>a[1].rate-b[1].rate||a[0].localeCompare(b[0]));
+      else entries.sort((a,b)=>{
+        const sa=prefStats[a[0]]?.score||0,sb=prefStats[b[0]]?.score||0;
+        const ma=prefStats[a[0]]?.maxScore||1,mb=prefStats[b[0]]?.maxScore||1;
+        return(sa/ma)-(sb/mb)||a[0].localeCompare(b[0]);
+      });
+    }else entries.sort((a,b)=>a[0].localeCompare(b[0]));
+
+    content.innerHTML=entries.map(([code,p])=>{
+      const ps=prefStats[code]||{score:0,maxScore:p.total*3};
+      const cr=ps.maxScore>0?(ps.score/ps.maxScore*100).toFixed(1):'0.0';
+      const ringRate=currentMode==='visit'?p.rate:parseFloat(cr);
+      const rateLabel=currentMode==='visit'?`踏破 ${p.visited}/${p.total}`:`制覇 ${cr}%`;
+      const subLabel=currentMode==='visit'?`制覇 ${cr}%`:`踏破 ${p.visited}/${p.total}`;
+      return`<div class="pref-item" data-code="${code}">
+        <div class="pref-rate-ring">${ringSVG(ringRate)}<span>${Math.round(ringRate)}</span></div>
         <div class="pref-info">
           <div class="pref-name">${p.name}</div>
-          <div class="pref-rates">
-            <span>踏破 ${p.visited}/${p.total}</span>
-            <span>制覇 ${cr}%</span>
-          </div>
+          <div class="pref-rates"><span>${rateLabel}</span><span>${subLabel}</span></div>
           ${barHTML(code)}
         </div>
       </div>`;
     }).join('');
 
-    prefList.querySelectorAll('.pref-item').forEach(item=>{
-      item.addEventListener('click',()=>{
-        const code=item.dataset.code; const layers=[];
-        geoLayer.eachLayer(l=>{const c=l.feature.properties.N03_007;if(c&&c.startsWith(code))layers.push(l);});
-        if(layers.length) map.fitBounds(L.featureGroup(layers).getBounds(),{padding:[30,30]});
-      });
+    content.querySelectorAll('.pref-item').forEach(item=>{
+      item.addEventListener('click',()=>showCityDetail(item.dataset.code));
     });
   }
+
+  function showCityDetail(prefCode){
+    currentView='cityDetail'; currentPrefCode=prefCode;
+    const p=prefs[prefCode];
+    const ps=prefStats[prefCode]||{score:0,maxScore:1,lvCounts:[0,0,0,0]};
+    const cr=ps.maxScore>0?(ps.score/ps.maxScore*100).toFixed(1):'0.0';
+    const cities=prefCities[prefCode]||[];
+
+    // Zoom to prefecture
+    const layers=[];
+    geoLayer.eachLayer(l=>{const c=l.feature.properties.N03_007;if(c&&c.startsWith(prefCode))layers.push(l);});
+    if(layers.length) map.fitBounds(L.featureGroup(layers).getBounds(),{padding:[30,30]});
+
+    let h=`<button class="back-btn" id="back-to-pref">← 都道府県一覧</button>`;
+    h+=`<div class="detail-header">`;
+    h+=`<div class="dh-name">${p.name}</div>`;
+    h+=`<div class="dh-stats">`;
+    h+=`踏破: ${p.visited} / ${p.total} (${p.rate}%)<br>`;
+    h+=`制覇: ${ps.score} / ${ps.maxScore} (${cr}%)`;
+    h+=`</div></div>`;
+
+    // Sort cities
+    let sorted=[...cities];
+    if(currentMode==='complete') sorted.sort((a,b)=>b.score-a.score||a.code.localeCompare(b.code));
+    else sorted.sort((a,b)=>b.visitDays-a.visitDays||a.code.localeCompare(b.code));
+
+    for(const c of sorted){
+      const scoreText=currentMode==='complete'?`${c.score}/3`:`${c.visitDays}日`;
+      const metaText=c.visitDays>0?`${c.firstVisit} ~ ${c.lastVisit}`:'—';
+      h+=`<div class="city-item">
+        <div class="city-lv" style="background:${FILL[c.level]};border:1px solid ${STROKE[c.level]};"></div>
+        <div class="city-info">
+          <div class="city-name">${c.name}</div>
+          <div class="city-meta">${metaText}</div>
+        </div>
+        <div class="city-score" style="color:${c.level>0?STROKE[c.level]:''}">${scoreText}</div>
+      </div>`;
+    }
+
+    content.innerHTML=h;
+    $('back-to-pref').addEventListener('click',()=>renderPrefList($('pref-search').value));
+  }
+
   renderPrefList();
-  $('pref-search').addEventListener('input',e=>renderPrefList(e.target.value));
-  document.querySelectorAll('.sort-btn').forEach(btn=>{
+
+  // Search
+  $('pref-search').addEventListener('input',e=>{
+    if(currentView==='cityDetail'){renderPrefList(e.target.value);}
+    else renderPrefList(e.target.value);
+  });
+
+  // Sort buttons
+  document.querySelectorAll('.ctrl-btn[data-sort]').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      document.querySelectorAll('.sort-btn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active'); currentSort=btn.dataset.sort;
-      renderPrefList($('pref-search').value);
+      document.querySelectorAll('.ctrl-btn[data-sort]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');currentSort=btn.dataset.sort;
+      if(currentView==='prefList') renderPrefList($('pref-search').value);
+      else if(currentPrefCode) showCityDetail(currentPrefCode);
+    });
+  });
+
+  // Mode toggle
+  document.querySelectorAll('.ctrl-btn[data-mode]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.ctrl-btn[data-mode]').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');currentMode=btn.dataset.mode;
+      if(currentView==='prefList') renderPrefList($('pref-search').value);
+      else if(currentPrefCode) showCityDetail(currentPrefCode);
     });
   });
 
@@ -458,11 +467,10 @@
     $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
     setTimeout(()=>map.invalidateSize(),350);
   });
-  // Mobile: start collapsed
-  if(window.innerWidth<=768){ sidebar.classList.add('collapsed'); $('sidebar-toggle').textContent='▶'; }
+  if(window.innerWidth<=768){sidebar.classList.add('collapsed');$('sidebar-toggle').textContent='▶';}
 
-  loading.classList.add('hidden');
-  setTimeout(()=>loading.remove(),500);
+  $('loading').classList.add('hidden');
+  setTimeout(()=>$('loading').remove(),500);
 })();
 </script>
 </body>

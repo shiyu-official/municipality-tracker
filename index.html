@@ -143,7 +143,8 @@
 <div id="header">
   <h1>踏破<span>マップ</span></h1>
   <div class="stat-chips">
-    <div class="stat-chip"><span class="label">訪問</span><span class="value large" id="stat-visited">-</span><span class="label">/</span><span class="value" id="stat-total">-</span></div>
+    <!-- [変更2] stat-label を動的に切り替えられるよう id を追加 -->
+    <div class="stat-chip"><span class="label" id="stat-visit-label">訪問</span><span class="value large" id="stat-visited">-</span><span class="label" id="stat-sep">/</span><span class="value" id="stat-total">-</span></div>
     <div class="stat-chip"><span class="label">踏破率</span><span class="value large" id="stat-rate">-</span></div>
     <div class="stat-chip"><span class="label">制覇率</span><span class="value large" id="stat-complete">-</span></div>
     <div class="stat-chip"><span class="label">期間</span><span class="value" id="stat-range">-</span></div>
@@ -210,8 +211,23 @@
   for(const c of Object.values(visitedData.cities)) totalScore+=Math.min(c.visitDays,3);
   const completeRate=maxScore>0?(totalScore/maxScore*100).toFixed(2):'0.00';
 
+  // ── [変更1] 政令区判定ヘルパー ──
+  // 市区町村コード下3桁が101〜199の範囲が政令区
+  function isSeireiKu(code){
+    const num=parseInt(code.substring(2),10);
+    return num>=101&&num<=199;
+  }
+  // topojsonのN03_003（gun/市名）とN03_004（city/区名）から表示名を生成
+  function buildFullName(code,gun,city){
+    if(isSeireiKu(code)){
+      // 政令区: 「市名+区名」（例: 札幌市中央区）
+      return (gun||'')+( city||'');
+    }
+    // 通常の市区町村: 郡名がある場合は「郡名+市区町村名」（旧来の挙動を維持）
+    return gun&&city&&city.endsWith('区')?gun+city:city||'';
+  }
+
   // ── Build per-prefecture city index ──
-  // cityCode → feature properties (from GeoJSON)
   const featureProps={};
   for(const f of geoData.features){
     const code=f.properties.N03_007;
@@ -222,7 +238,7 @@
     };
   }
   // All city codes grouped by pref
-  const prefCities={}; // prefCode → [{code,name,gun,visitDays,level,score}]
+  const prefCities={};
   const allCodes=new Set();
   for(const f of geoData.features){
     const code=f.properties.N03_007;
@@ -235,7 +251,8 @@
     const fp=featureProps[code]||{};
     const vc=visitedData.cities[code];
     const vd=vc?vc.visitDays:0;
-    const fullName=fp.gun&&fp.city&&fp.city.endsWith('区')?fp.gun+fp.city:fp.city;
+    // [変更1] buildFullName を使用
+    const fullName=buildFullName(code,fp.gun,fp.city);
     prefCities[pc].push({
       code, name:fullName||code, gun:fp.gun,
       visitDays:vd, level:getLevel(vd), score:Math.min(vd,3),
@@ -276,7 +293,8 @@
   function popupHTML(feature){
     const code=feature.properties.N03_007;
     const fp=featureProps[code]||{};
-    const fullName=fp.gun&&fp.city&&fp.city.endsWith('区')?fp.gun+fp.city:fp.city||'不明';
+    // [変更1] buildFullName を使用
+    const fullName=buildFullName(code,fp.gun,fp.city)||'不明';
     const city=visitedData.cities[code];
     const lv=getLevel(city?city.visitDays:0);
     const score=city?Math.min(city.visitDays,3):0;
@@ -304,7 +322,6 @@
     }
   }).addTo(map);
 
-  // Click map background to close popup
   map.on('click',()=>map.closePopup());
 
   // Tracks
@@ -321,9 +338,23 @@
   $('toggle-tracks').addEventListener('change',function(){if(!tracksLayer)return;this.checked?map.addLayer(tracksLayer):map.removeLayer(tracksLayer);});
   $('toggle-polygons').addEventListener('change',function(){this.checked?map.addLayer(geoLayer):map.removeLayer(geoLayer);});
 
-  // ── Header stats ──
-  $('stat-visited').textContent=meta.visitedCount;
-  $('stat-total').textContent=meta.totalMunicipalities;
+  // ── [変更2] Header stats ── モード切替で訪問chipを更新
+  function updateHeaderStats(mode){
+    if(mode==='complete'){
+      // 制覇モード: totalScore / maxScore
+      $('stat-visit-label').textContent='制覇';
+      $('stat-visited').textContent=totalScore;
+      $('stat-total').textContent=maxScore;
+    } else {
+      // 踏破モード: visitedCount / totalMunicipalities
+      $('stat-visit-label').textContent='訪問';
+      $('stat-visited').textContent=meta.visitedCount;
+      $('stat-total').textContent=meta.totalMunicipalities;
+    }
+  }
+
+  // 初期表示（踏破モード）
+  updateHeaderStats('visit');
   $('stat-rate').textContent=meta.coverageRate+'%';
   $('stat-complete').textContent=completeRate+'%';
   $('stat-range').textContent=(meta.dateRange[0]||'')+' ~ '+(meta.dateRange[1]||'');
@@ -331,8 +362,8 @@
   // ── Sidebar ──
   const content=$('sidebar-content');
   let currentSort='rate-desc';
-  let currentMode='visit'; // 'visit' or 'complete'
-  let currentView='prefList'; // 'prefList' or 'cityDetail'
+  let currentMode='visit';
+  let currentView='prefList';
   let currentPrefCode=null;
 
   function ringSVG(rate,size=40){
@@ -373,7 +404,7 @@
       const ps=prefStats[code]||{score:0,maxScore:p.total*3};
       const cr=ps.maxScore>0?(ps.score/ps.maxScore*100).toFixed(1):'0.0';
       const ringRate=currentMode==='visit'?p.rate:parseFloat(cr);
-      const rateLabel=currentMode==='visit'?`踏破 ${p.visited}/${p.total}`:`制覇 ${cr}%`;
+      const rateLabel=currentMode==='visit'?`踏破 ${p.visited}/${p.total}`:`制覇 ${ps.score}/${ps.maxScore}`;
       const subLabel=currentMode==='visit'?`制覇 ${cr}%`:`踏破 ${p.visited}/${p.total}`;
       return`<div class="pref-item" data-code="${code}">
         <div class="pref-rate-ring">${ringSVG(ringRate)}<span>${Math.round(ringRate)}</span></div>
@@ -397,7 +428,6 @@
     const cr=ps.maxScore>0?(ps.score/ps.maxScore*100).toFixed(1):'0.0';
     const cities=prefCities[prefCode]||[];
 
-    // Zoom to prefecture
     const layers=[];
     geoLayer.eachLayer(l=>{const c=l.feature.properties.N03_007;if(c&&c.startsWith(prefCode))layers.push(l);});
     if(layers.length) map.fitBounds(L.featureGroup(layers).getBounds(),{padding:[30,30]});
@@ -410,7 +440,6 @@
     h+=`制覇: ${ps.score} / ${ps.maxScore} (${cr}%)`;
     h+=`</div></div>`;
 
-    // Sort cities
     let sorted=[...cities];
     if(currentMode==='complete') sorted.sort((a,b)=>b.score-a.score||a.code.localeCompare(b.code));
     else sorted.sort((a,b)=>b.visitDays-a.visitDays||a.code.localeCompare(b.code));
@@ -455,6 +484,8 @@
     btn.addEventListener('click',()=>{
       document.querySelectorAll('.ctrl-btn[data-mode]').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');currentMode=btn.dataset.mode;
+      // [変更2] モード切替時にヘッダーを更新
+      updateHeaderStats(currentMode);
       if(currentView==='prefList') renderPrefList($('pref-search').value);
       else if(currentPrefCode) showCityDetail(currentPrefCode);
     });

@@ -1,0 +1,611 @@
+{
+  "meta": {
+    "generated": "2026-04-07T16:51:56.668760",
+    "totalMunicipalities": 1905,
+    "visitedCount": 39,
+    "coverageRate": 2.05,
+    "gpxFileCount": 2,
+    "dateRange": [
+      "2026-04-03",
+      "2026-04-05"
+    ]
+  },
+  "prefectures": {
+    "01": {
+      "name": "北海道",
+      "total": 194,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "02": {
+      "name": "青森県",
+      "total": 40,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "03": {
+      "name": "岩手県",
+      "total": 33,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "04": {
+      "name": "宮城県",
+      "total": 39,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "05": {
+      "name": "秋田県",
+      "total": 25,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "06": {
+      "name": "山形県",
+      "total": 35,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "07": {
+      "name": "福島県",
+      "total": 59,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "08": {
+      "name": "茨城県",
+      "total": 44,
+      "visited": 1,
+      "rate": 2.27
+    },
+    "09": {
+      "name": "栃木県",
+      "total": 25,
+      "visited": 13,
+      "rate": 52.0
+    },
+    "10": {
+      "name": "群馬県",
+      "total": 35,
+      "visited": 1,
+      "rate": 2.86
+    },
+    "11": {
+      "name": "埼玉県",
+      "total": 72,
+      "visited": 19,
+      "rate": 26.39
+    },
+    "12": {
+      "name": "千葉県",
+      "total": 60,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "13": {
+      "name": "東京都",
+      "total": 63,
+      "visited": 5,
+      "rate": 7.94
+    },
+    "14": {
+      "name": "神奈川県",
+      "total": 58,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "15": {
+      "name": "新潟県",
+      "total": 37,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "16": {
+      "name": "富山県",
+      "total": 15,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "17": {
+      "name": "石川県",
+      "total": 19,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "18": {
+      "name": "福井県",
+      "total": 17,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "19": {
+      "name": "山梨県",
+      "total": 27,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "20": {
+      "name": "長野県",
+      "total": 77,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "21": {
+      "name": "岐阜県",
+      "total": 42,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "22": {
+      "name": "静岡県",
+      "total": 39,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "23": {
+      "name": "愛知県",
+      "total": 70,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "24": {
+      "name": "三重県",
+      "total": 29,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "25": {
+      "name": "滋賀県",
+      "total": 19,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "26": {
+      "name": "京都府",
+      "total": 36,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "27": {
+      "name": "大阪府",
+      "total": 72,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "28": {
+      "name": "兵庫県",
+      "total": 49,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "29": {
+      "name": "奈良県",
+      "total": 39,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "30": {
+      "name": "和歌山県",
+      "total": 31,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "31": {
+      "name": "鳥取県",
+      "total": 19,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "32": {
+      "name": "島根県",
+      "total": 19,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "33": {
+      "name": "岡山県",
+      "total": 30,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "34": {
+      "name": "広島県",
+      "total": 30,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "35": {
+      "name": "山口県",
+      "total": 19,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "36": {
+      "name": "徳島県",
+      "total": 24,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "37": {
+      "name": "香川県",
+      "total": 17,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "38": {
+      "name": "愛媛県",
+      "total": 20,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "39": {
+      "name": "高知県",
+      "total": 34,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "40": {
+      "name": "福岡県",
+      "total": 73,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "41": {
+      "name": "佐賀県",
+      "total": 20,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "42": {
+      "name": "長崎県",
+      "total": 21,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "43": {
+      "name": "熊本県",
+      "total": 49,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "44": {
+      "name": "大分県",
+      "total": 18,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "45": {
+      "name": "宮崎県",
+      "total": 26,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "46": {
+      "name": "鹿児島県",
+      "total": 44,
+      "visited": 0,
+      "rate": 0.0
+    },
+    "47": {
+      "name": "沖縄県",
+      "total": 42,
+      "visited": 0,
+      "rate": 0.0
+    }
+  },
+  "cities": {
+    "08204": {
+      "name": "古河市",
+      "pref": "茨城県",
+      "prefCode": "08",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "09201": {
+      "name": "宇都宮市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "09203": {
+      "name": "栃木市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "09208": {
+      "name": "小山市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "09210": {
+      "name": "大田原市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "09211": {
+      "name": "矢板市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "09213": {
+      "name": "那須塩原市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "09214": {
+      "name": "さくら市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "09216": {
+      "name": "下野市",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "09301": {
+      "name": "上三川町",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "09361": {
+      "name": "壬生町",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "09364": {
+      "name": "野木町",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "09386": {
+      "name": "高根沢町",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "09407": {
+      "name": "那須町",
+      "pref": "栃木県",
+      "prefCode": "09",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "10521": {
+      "name": "板倉町",
+      "pref": "群馬県",
+      "prefCode": "10",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "11102": {
+      "name": "さいたま市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11103": {
+      "name": "さいたま市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11104": {
+      "name": "さいたま市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11105": {
+      "name": "さいたま市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11107": {
+      "name": "さいたま市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11108": {
+      "name": "さいたま市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11203": {
+      "name": "川口市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11210": {
+      "name": "加須市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "11214": {
+      "name": "春日部市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "11219": {
+      "name": "上尾市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11221": {
+      "name": "草加市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "11222": {
+      "name": "越谷市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "11223": {
+      "name": "蕨市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11232": {
+      "name": "久喜市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-05",
+      "visitDays": 2
+    },
+    "11238": {
+      "name": "蓮田市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11240": {
+      "name": "幸手市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "11246": {
+      "name": "白岡市",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "11442": {
+      "name": "宮代町",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "11464": {
+      "name": "杉戸町",
+      "pref": "埼玉県",
+      "prefCode": "11",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "13106": {
+      "name": "台東区",
+      "pref": "東京都",
+      "prefCode": "13",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "13116": {
+      "name": "豊島区",
+      "pref": "東京都",
+      "prefCode": "13",
+      "firstVisit": "2026-04-05",
+      "lastVisit": "2026-04-05",
+      "visitDays": 1
+    },
+    "13117": {
+      "name": "北区",
+      "pref": "東京都",
+      "prefCode": "13",
+      "firstVisit": "2026-04-03",
+      "lastVisit": "2026-04-05",
+      "visitDays": 3
+    },
+    "13118": {
+      "name": "荒川区",
+      "pref": "東京都",
+      "prefCode": "13",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    },
+    "13121": {
+      "name": "足立区",
+      "pref": "東京都",
+      "prefCode": "13",
+      "firstVisit": "2026-04-04",
+      "lastVisit": "2026-04-04",
+      "visitDays": 1
+    }
+  }
+}

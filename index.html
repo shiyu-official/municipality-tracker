@@ -6,25 +6,28 @@
 <title>踏破マップ — 市区町村コンプリート</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;500;700;900&family=DM+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
 
   :root {
-    --bg: #0a0e17;
-    --bg-panel: #111827;
-    --bg-panel-hover: #1a2337;
-    --border: #1e2a3a;
-    --text: #e2e8f0;
-    --text-dim: #64748b;
-    --text-bright: #f8fafc;
-    --accent: #38bdf8;
-    --accent-glow: rgba(56, 189, 248, 0.15);
-    --visited-1: #1e3a5f;
-    --visited-2: #1e5a8f;
-    --visited-3: #2778b5;
-    --visited-4: #38bdf8;
-    --visited-5: #7dd3fc;
-    --unvisited: #1a1f2e;
-    --unvisited-stroke: #2a3040;
+    --bg: #f5f5f0;
+    --bg-panel: #ffffff;
+    --bg-panel-hover: #f0f0ec;
+    --border: #e0ddd5;
+    --border-light: #eae7e0;
+    --text: #2c2c2c;
+    --text-dim: #8a8580;
+    --text-bright: #1a1a1a;
+    --accent: #d4542a;
+    --accent-light: rgba(212, 84, 42, 0.08);
+
+    --unvisited-fill: #edeae4;
+    --unvisited-stroke: #d5d0c8;
+    --visit-1-fill: #fce4b8;
+    --visit-1-stroke: #e0c690;
+    --visit-2-fill: #f0a868;
+    --visit-2-stroke: #d08840;
+    --visit-3-fill: #d4542a;
+    --visit-3-stroke: #b0401e;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -37,399 +40,96 @@
     overflow: hidden;
   }
 
-  /* ── Header ── */
   #header {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 1000;
-    height: 56px;
-    background: var(--bg-panel);
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    height: 54px; background: var(--bg-panel);
     border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    gap: 20px;
-    backdrop-filter: blur(12px);
+    display: flex; align-items: center; padding: 0 20px; gap: 20px;
   }
+  #header h1 { font-size: 16px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; color: var(--text-bright); }
+  #header h1 span { color: var(--accent); }
 
-  #header h1 {
-    font-size: 16px;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-  }
+  .stat-chips { display: flex; gap: 10px; align-items: center; flex-wrap: nowrap; overflow-x: auto; }
+  .stat-chip { display: flex; align-items: center; gap: 5px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; white-space: nowrap; font-family: 'DM Mono', monospace; }
+  .stat-chip .label { color: var(--text-dim); font-family: 'Noto Sans JP', sans-serif; font-size: 11px; }
+  .stat-chip .value { color: var(--text); font-weight: 500; }
+  .stat-chip .value.large { font-size: 15px; color: var(--accent); font-weight: 700; }
 
-  #header h1 span {
-    color: var(--accent);
-  }
-
-  .stat-chips {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-  }
-
-  .stat-chip {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 12px;
-    white-space: nowrap;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .stat-chip .label {
-    color: var(--text-dim);
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 11px;
-  }
-
-  .stat-chip .value {
-    color: var(--accent);
-    font-weight: 500;
-  }
-
-  .stat-chip .value.large {
-    font-size: 15px;
-    color: var(--text-bright);
-  }
-
-  /* ── Sidebar ── */
   #sidebar {
-    position: fixed;
-    top: 56px;
-    left: 0;
-    bottom: 0;
-    width: 320px;
-    background: var(--bg-panel);
-    border-right: 1px solid var(--border);
-    z-index: 999;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.3s ease;
+    position: fixed; top: 54px; left: 0; bottom: 0; width: 320px;
+    background: var(--bg-panel); border-right: 1px solid var(--border);
+    z-index: 999; display: flex; flex-direction: column; transition: transform 0.3s ease;
   }
-
-  #sidebar.collapsed {
-    transform: translateX(-320px);
-  }
+  #sidebar.collapsed { transform: translateX(-320px); }
 
   #sidebar-toggle {
-    position: fixed;
-    top: 66px;
-    left: 320px;
-    z-index: 1000;
-    width: 28px;
-    height: 48px;
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-left: none;
-    border-radius: 0 6px 6px 0;
-    color: var(--text-dim);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    transition: left 0.3s ease, background 0.2s;
+    position: fixed; top: 64px; left: 320px; z-index: 1000;
+    width: 26px; height: 44px; background: var(--bg-panel);
+    border: 1px solid var(--border); border-left: none;
+    border-radius: 0 6px 6px 0; color: var(--text-dim);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 13px; transition: left 0.3s ease, background 0.2s;
   }
+  #sidebar-toggle:hover { background: var(--bg-panel-hover); color: var(--text); }
+  #sidebar.collapsed + #sidebar-toggle { left: 0; }
 
-  #sidebar-toggle:hover {
-    background: var(--bg-panel-hover);
-    color: var(--text);
-  }
+  .sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border-light); }
+  .sidebar-header h2 { font-size: 12px; font-weight: 500; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  #pref-search { width: 100%; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 13px; font-family: 'Noto Sans JP', sans-serif; outline: none; transition: border-color 0.2s; }
+  #pref-search:focus { border-color: var(--accent); }
+  #pref-search::placeholder { color: var(--text-dim); }
 
-  #sidebar.collapsed + #sidebar-toggle {
-    left: 0;
-  }
+  .sort-controls { display: flex; gap: 4px; margin-top: 8px; }
+  .sort-btn { flex: 1; padding: 5px 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text-dim); font-size: 11px; cursor: pointer; font-family: 'Noto Sans JP', sans-serif; transition: all 0.2s; }
+  .sort-btn:hover { background: var(--bg-panel-hover); }
+  .sort-btn.active { background: var(--accent-light); border-color: var(--accent); color: var(--accent); font-weight: 500; }
 
-  .sidebar-header {
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-  }
+  #pref-list { flex: 1; overflow-y: auto; padding: 6px 8px; }
+  #pref-list::-webkit-scrollbar { width: 4px; }
+  #pref-list::-webkit-scrollbar-track { background: transparent; }
+  #pref-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-  .sidebar-header h2 {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-  }
+  .pref-item { padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s; display: flex; align-items: center; gap: 10px; }
+  .pref-item:hover { background: var(--bg-panel-hover); }
+  .pref-item .pref-rate-ring { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; font-family: 'DM Mono', monospace; flex-shrink: 0; position: relative; color: var(--text-bright); }
+  .pref-item .pref-rate-ring svg { position: absolute; top: 0; left: 0; transform: rotate(-90deg); }
+  .pref-info { flex: 1; min-width: 0; }
+  .pref-name { font-size: 13px; font-weight: 500; color: var(--text-bright); }
+  .pref-detail { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; margin-top: 2px; }
+  .pref-bar { display: flex; gap: 2px; margin-top: 4px; }
+  .pref-bar-seg { height: 4px; border-radius: 2px; }
 
-  #pref-search {
-    width: 100%;
-    padding: 8px 12px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text);
-    font-size: 13px;
-    font-family: 'Noto Sans JP', sans-serif;
-    outline: none;
-    transition: border-color 0.2s;
-  }
+  #map-container { position: fixed; top: 54px; left: 320px; right: 0; bottom: 0; transition: left 0.3s ease; }
+  #sidebar.collapsed ~ #map-container { left: 0; }
+  #map { width: 100%; height: 100%; background: var(--bg); }
+  .leaflet-container { background: var(--bg) !important; }
 
-  #pref-search:focus {
-    border-color: var(--accent);
-  }
+  .city-tooltip { background: var(--bg-panel) !important; border: 1px solid var(--border) !important; border-radius: 10px !important; padding: 12px 16px !important; color: var(--text) !important; font-family: 'Noto Sans JP', sans-serif !important; font-size: 13px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important; min-width: 160px; }
+  .city-tooltip .tip-pref { font-size: 11px; color: var(--text-dim); }
+  .city-tooltip .tip-name { font-weight: 700; font-size: 15px; color: var(--text-bright); margin-top: 1px; }
+  .city-tooltip .tip-badge { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 500; }
+  .city-tooltip .tip-badge.badge-0 { background: var(--unvisited-fill); color: var(--text-dim); }
+  .city-tooltip .tip-badge.badge-1 { background: var(--visit-1-fill); color: #8a6a20; }
+  .city-tooltip .tip-badge.badge-2 { background: var(--visit-2-fill); color: #6a3a10; }
+  .city-tooltip .tip-badge.badge-3 { background: var(--visit-3-fill); color: #fff; }
+  .city-tooltip .tip-detail { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-dim); margin-top: 6px; line-height: 1.6; }
+  .leaflet-tooltip-top:before { border-top-color: var(--bg-panel) !important; }
+  .leaflet-tooltip-bottom:before { border-bottom-color: var(--bg-panel) !important; }
 
-  #pref-search::placeholder {
-    color: var(--text-dim);
-  }
-
-  .sort-controls {
-    display: flex;
-    gap: 4px;
-    margin-top: 8px;
-  }
-
-  .sort-btn {
-    flex: 1;
-    padding: 5px 8px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text-dim);
-    font-size: 11px;
-    cursor: pointer;
-    font-family: 'Noto Sans JP', sans-serif;
-    transition: all 0.2s;
-  }
-
-  .sort-btn.active {
-    background: var(--accent-glow);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  #pref-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-  }
-
-  #pref-list::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  #pref-list::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  #pref-list::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-  }
-
-  .pref-item {
-    padding: 10px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .pref-item:hover {
-    background: var(--bg-panel-hover);
-  }
-
-  .pref-item .pref-rate-bar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    font-family: 'DM Mono', monospace;
-    flex-shrink: 0;
-    position: relative;
-  }
-
-  .pref-item .pref-rate-bar svg {
-    position: absolute;
-    top: 0; left: 0;
-    transform: rotate(-90deg);
-  }
-
-  .pref-info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .pref-name {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-bright);
-  }
-
-  .pref-detail {
-    font-size: 11px;
-    color: var(--text-dim);
-    font-family: 'DM Mono', monospace;
-    margin-top: 2px;
-  }
-
-  /* ── Map ── */
-  #map-container {
-    position: fixed;
-    top: 56px;
-    left: 320px;
-    right: 0;
-    bottom: 0;
-    transition: left 0.3s ease;
-  }
-
-  #sidebar.collapsed ~ #map-container {
-    left: 0;
-  }
-
-  #map {
-    width: 100%;
-    height: 100%;
-    background: var(--bg);
-  }
-
-  .leaflet-container {
-    background: var(--bg) !important;
-  }
-
-  /* Tooltip */
-  .city-tooltip {
-    background: var(--bg-panel) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-    padding: 10px 14px !important;
-    color: var(--text) !important;
-    font-family: 'Noto Sans JP', sans-serif !important;
-    font-size: 13px !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important;
-  }
-
-  .city-tooltip .tip-name {
-    font-weight: 700;
-    font-size: 14px;
-    color: var(--text-bright);
-  }
-
-  .city-tooltip .tip-pref {
-    font-size: 11px;
-    color: var(--text-dim);
-    margin-bottom: 4px;
-  }
-
-  .city-tooltip .tip-detail {
-    font-size: 12px;
-    font-family: 'DM Mono', monospace;
-    color: var(--accent);
-    margin-top: 4px;
-  }
-
-  .city-tooltip .tip-unvisited {
-    color: var(--text-dim);
-    font-style: italic;
-  }
-
-  .leaflet-tooltip-top:before,
-  .leaflet-tooltip-bottom:before,
-  .leaflet-tooltip-left:before,
-  .leaflet-tooltip-right:before {
-    border-top-color: var(--bg-panel) !important;
-  }
-
-  /* ── Loading ── */
-  #loading {
-    position: fixed;
-    inset: 0;
-    background: var(--bg);
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    transition: opacity 0.4s ease;
-  }
-
-  #loading.hidden {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  #loading h2 {
-    font-size: 18px;
-    font-weight: 300;
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
-  }
-
-  .loader {
-    width: 40px;
-    height: 40px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
+  #loading { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 0.5s ease; }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  #loading h2 { font-size: 20px; font-weight: 700; color: var(--text-bright); }
+  #loading h2 span { color: var(--accent); }
+  .loader { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
+  #loading-status { font-size: 12px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
 
-  #loading-status {
-    font-size: 12px;
-    color: var(--text-dim);
-    font-family: 'DM Mono', monospace;
-  }
+  .legend { position: fixed; bottom: 20px; right: 20px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; z-index: 999; box-shadow: 0 2px 12px rgba(0,0,0,0.05); }
+  .legend-title { font-weight: 700; color: var(--text-bright); margin-bottom: 10px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .legend-color { width: 20px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); }
+  .legend-label { color: var(--text); font-size: 12px; }
 
-  /* ── Legend ── */
-  .legend {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 16px;
-    z-index: 999;
-    font-size: 11px;
-  }
-
-  .legend-title {
-    font-weight: 500;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 4px;
-  }
-
-  .legend-color {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-    flex-shrink: 0;
-  }
-
-  .legend-label {
-    color: var(--text-dim);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-  }
-
-  /* ── Responsive ── */
   @media (max-width: 768px) {
     #sidebar { width: 280px; }
     #sidebar-toggle { left: 280px; }
@@ -438,7 +138,6 @@
     #sidebar:not(.collapsed) ~ #map-container { left: 280px; }
     .stat-chips { display: none; }
   }
-
   @media (max-width: 480px) {
     #sidebar { width: 100%; }
     #sidebar-toggle { display: none; }
@@ -448,14 +147,12 @@
 </head>
 <body>
 
-<!-- Loading -->
 <div id="loading">
   <div class="loader"></div>
-  <h2>踏破マップ</h2>
+  <h2>踏破<span>マップ</span></h2>
   <div id="loading-status">データを読み込み中...</div>
 </div>
 
-<!-- Header -->
 <div id="header">
   <h1>踏破<span>マップ</span></h1>
   <div class="stat-chips">
@@ -476,7 +173,6 @@
   </div>
 </div>
 
-<!-- Sidebar -->
 <div id="sidebar">
   <div class="sidebar-header">
     <h2>都道府県別</h2>
@@ -491,20 +187,16 @@
 </div>
 <button id="sidebar-toggle">◀</button>
 
-<!-- Map -->
 <div id="map-container">
   <div id="map"></div>
 </div>
 
-<!-- Legend -->
 <div class="legend">
-  <div class="legend-title">訪問日数</div>
-  <div class="legend-item"><div class="legend-color" style="background:#1a1f2e;border:1px solid #2a3040;"></div><span class="legend-label">未訪問</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:#1e3a5f;"></div><span class="legend-label">1日</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:#1e5a8f;"></div><span class="legend-label">2-10日</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:#2778b5;"></div><span class="legend-label">11-50日</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:#38bdf8;"></div><span class="legend-label">51-100日</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:#7dd3fc;"></div><span class="legend-label">101日+</span></div>
+  <div class="legend-title">訪問回数</div>
+  <div class="legend-item"><div class="legend-color" style="background:var(--unvisited-fill);border-color:var(--unvisited-stroke);"></div><span class="legend-label">未訪問</span></div>
+  <div class="legend-item"><div class="legend-color" style="background:var(--visit-1-fill);border-color:var(--visit-1-stroke);"></div><span class="legend-label">1回</span></div>
+  <div class="legend-item"><div class="legend-color" style="background:var(--visit-2-fill);border-color:var(--visit-2-stroke);"></div><span class="legend-label">2回</span></div>
+  <div class="legend-item"><div class="legend-color" style="background:var(--visit-3-fill);border-color:var(--visit-3-stroke);"></div><span class="legend-label">3回以上</span></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -514,62 +206,45 @@
   const loadingStatus = document.getElementById('loading-status');
   const loading = document.getElementById('loading');
 
-  // ── データ読み込み ──
+  function getLevel(visitDays) {
+    if (!visitDays || visitDays === 0) return 0;
+    if (visitDays === 1) return 1;
+    if (visitDays === 2) return 2;
+    return 3;
+  }
+  function getLevelLabel(level) {
+    return ['未訪問', '1回', '2回', '3回以上'][level];
+  }
+
+  const FILL = ['#edeae4','#fce4b8','#f0a868','#d4542a'];
+  const STROKE = ['#d5d0c8','#e0c690','#d08840','#b0401e'];
+
   loadingStatus.textContent = 'ポリゴンデータを読み込み中...';
   const [topoRes, visitedRes] = await Promise.all([
     fetch('data/municipalities.topojson'),
     fetch('data/visited_cities.json')
   ]);
-
   loadingStatus.textContent = 'データを解析中...';
   const topoData = await topoRes.json();
   const visitedData = await visitedRes.json();
-
-  // TopoJSON → GeoJSON
   const objectName = Object.keys(topoData.objects)[0];
   const geoData = topojson.feature(topoData, topoData.objects[objectName]);
-
-  // ── 色分けロジック ──
-  function getColor(visitDays) {
-    if (!visitDays || visitDays === 0) return '#1a1f2e';
-    if (visitDays === 1) return '#1e3a5f';
-    if (visitDays <= 10) return '#1e5a8f';
-    if (visitDays <= 50) return '#2778b5';
-    if (visitDays <= 100) return '#38bdf8';
-    return '#7dd3fc';
-  }
 
   function getStyle(feature) {
     const code = feature.properties.N03_007;
     const city = visitedData.cities[code];
-    const visitDays = city ? city.visitDays : 0;
+    const lv = getLevel(city ? city.visitDays : 0);
     return {
-      fillColor: getColor(visitDays),
-      fillOpacity: visitDays > 0 ? 0.75 : 0.4,
-      color: visitDays > 0 ? '#38bdf8' : '#2a3040',
-      weight: visitDays > 0 ? 0.8 : 0.3,
-      opacity: visitDays > 0 ? 0.5 : 0.3,
+      fillColor: FILL[lv], fillOpacity: lv === 0 ? 0.5 : 0.8,
+      color: STROKE[lv], weight: lv > 0 ? 1.2 : 0.5, opacity: lv > 0 ? 0.9 : 0.4,
     };
   }
 
-  // ── 地図初期化 ──
   loadingStatus.textContent = '地図を描画中...';
-  const map = L.map('map', {
-    center: [36.5, 137.5],
-    zoom: 6,
-    zoomControl: false,
-    attributionControl: false,
-  });
-
+  const map = L.map('map', { center: [36.5, 137.5], zoom: 6, zoomControl: false, attributionControl: false });
   L.control.zoom({ position: 'topright' }).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, opacity: 0.5 }).addTo(map);
 
-  // タイルレイヤー（ダーク）
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-    maxZoom: 18,
-    opacity: 0.3,
-  }).addTo(map);
-
-  // ── GeoJSON レイヤー ──
   const geoLayer = L.geoJSON(geoData, {
     style: getStyle,
     onEachFeature: function(feature, layer) {
@@ -577,137 +252,95 @@
       const name = feature.properties.N03_004 || '不明';
       const pref = feature.properties.N03_001 || '';
       const city = visitedData.cities[code];
+      const lv = getLevel(city ? city.visitDays : 0);
 
-      let tooltipContent = `<div class="tip-pref">${pref}</div><div class="tip-name">${name}</div>`;
+      let html = `<div class="tip-pref">${pref}</div><div class="tip-name">${name}</div>`;
+      html += `<span class="tip-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
       if (city) {
-        tooltipContent += `<div class="tip-detail">
-          初訪問: ${city.firstVisit}<br>
-          最終: ${city.lastVisit}<br>
-          訪問日数: ${city.visitDays}日
-        </div>`;
-      } else {
-        tooltipContent += `<div class="tip-unvisited">未訪問</div>`;
+        html += `<div class="tip-detail">初訪問: ${city.firstVisit}<br>最終: ${city.lastVisit}<br>訪問日数: ${city.visitDays}日</div>`;
       }
 
-      layer.bindTooltip(tooltipContent, {
-        className: 'city-tooltip',
-        sticky: true,
-        direction: 'top',
-        offset: [0, -10],
-      });
-
-      layer.on('mouseover', function() {
-        this.setStyle({ weight: 2, color: '#38bdf8', fillOpacity: 0.9 });
-        this.bringToFront();
-      });
-      layer.on('mouseout', function() {
-        geoLayer.resetStyle(this);
-      });
+      layer.bindTooltip(html, { className: 'city-tooltip', sticky: true, direction: 'top', offset: [0, -10] });
+      layer.on('mouseover', function() { this.setStyle({ weight: 2.5, color: '#d4542a', fillOpacity: 0.95 }); this.bringToFront(); });
+      layer.on('mouseout', function() { geoLayer.resetStyle(this); });
     }
   }).addTo(map);
 
-  // ── ヘッダー統計 ──
   const meta = visitedData.meta;
   document.getElementById('stat-visited').textContent = meta.visitedCount;
   document.getElementById('stat-total').textContent = meta.totalMunicipalities;
   document.getElementById('stat-rate').textContent = meta.coverageRate + '%';
-  document.getElementById('stat-range').textContent =
-    (meta.dateRange[0] || '') + ' ~ ' + (meta.dateRange[1] || '');
+  document.getElementById('stat-range').textContent = (meta.dateRange[0]||'') + ' ~ ' + (meta.dateRange[1]||'');
 
-  // ── サイドバー：都道府県リスト ──
+  // ── Sidebar ──
   const prefList = document.getElementById('pref-list');
   const prefs = visitedData.prefectures;
   let currentSort = 'rate-desc';
 
-  function createCircleSVG(rate) {
-    const r = 16;
-    const circumference = 2 * Math.PI * r;
-    const offset = circumference * (1 - rate / 100);
-    return `<svg width="40" height="40" viewBox="0 0 40 40">
-      <circle cx="20" cy="20" r="${r}" fill="none" stroke="#1e2a3a" stroke-width="2.5"/>
-      <circle cx="20" cy="20" r="${r}" fill="none" stroke="#38bdf8" stroke-width="2.5"
-        stroke-dasharray="${circumference}" stroke-dashoffset="${offset}" stroke-linecap="round"/>
-    </svg>`;
+  const prefLvCounts = {};
+  for (const [pc, p] of Object.entries(prefs)) { prefLvCounts[pc] = [p.total - p.visited, 0, 0, 0]; }
+  for (const [code, c] of Object.entries(visitedData.cities)) {
+    const pc = c.prefCode; const lv = getLevel(c.visitDays);
+    if (prefLvCounts[pc] && lv > 0) prefLvCounts[pc][lv]++;
+  }
+
+  function ringSVG(rate) {
+    const r = 17, circ = 2 * Math.PI * r, off = circ * (1 - rate / 100);
+    const col = rate >= 75 ? '#d4542a' : rate >= 25 ? '#f0a868' : '#d5d0c8';
+    return `<svg width="42" height="42" viewBox="0 0 42 42"><circle cx="21" cy="21" r="${r}" fill="none" stroke="#edeae4" stroke-width="3"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${circ}" stroke-dashoffset="${off}" stroke-linecap="round"/></svg>`;
+  }
+  function barHTML(pc) {
+    const c = prefLvCounts[pc]||[0,0,0,0]; const t = c.reduce((a,b)=>a+b,0);
+    if (!t) return '';
+    let h = '<div class="pref-bar">';
+    for (let i = 0; i < 4; i++) { const p = c[i]/t*100; if (p > 0) h += `<div class="pref-bar-seg" style="width:${p}%;background:${FILL[i]};"></div>`; }
+    return h + '</div>';
   }
 
   function renderPrefList(filter = '') {
     let entries = Object.entries(prefs);
-
-    if (filter) {
-      entries = entries.filter(([_, p]) => p.name.includes(filter));
-    }
-
-    if (currentSort === 'rate-desc') {
-      entries.sort((a, b) => b[1].rate - a[1].rate || a[0].localeCompare(b[0]));
-    } else if (currentSort === 'rate-asc') {
-      entries.sort((a, b) => a[1].rate - b[1].rate || a[0].localeCompare(b[0]));
-    } else {
-      entries.sort((a, b) => a[0].localeCompare(b[0]));
-    }
+    if (filter) entries = entries.filter(([_,p]) => p.name.includes(filter));
+    if (currentSort === 'rate-desc') entries.sort((a,b) => b[1].rate - a[1].rate || a[0].localeCompare(b[0]));
+    else if (currentSort === 'rate-asc') entries.sort((a,b) => a[1].rate - b[1].rate || a[0].localeCompare(b[0]));
+    else entries.sort((a,b) => a[0].localeCompare(b[0]));
 
     prefList.innerHTML = entries.map(([code, p]) => `
       <div class="pref-item" data-code="${code}">
-        <div class="pref-rate-bar">
-          ${createCircleSVG(p.rate)}
-          <span>${Math.round(p.rate)}</span>
-        </div>
+        <div class="pref-rate-ring">${ringSVG(p.rate)}<span>${Math.round(p.rate)}</span></div>
         <div class="pref-info">
           <div class="pref-name">${p.name}</div>
           <div class="pref-detail">${p.visited}/${p.total}</div>
+          ${barHTML(code)}
         </div>
-      </div>
-    `).join('');
+      </div>`).join('');
 
-    // クリックでズーム
     prefList.querySelectorAll('.pref-item').forEach(item => {
       item.addEventListener('click', () => {
-        const code = item.dataset.code;
-        // その都道府県のポリゴンを集めて bounds を計算
-        const layers = [];
-        geoLayer.eachLayer(layer => {
-          const c = layer.feature.properties.N03_007;
-          if (c && c.startsWith(code)) {
-            layers.push(layer);
-          }
-        });
-        if (layers.length > 0) {
-          const group = L.featureGroup(layers);
-          map.fitBounds(group.getBounds(), { padding: [30, 30] });
-        }
+        const code = item.dataset.code; const layers = [];
+        geoLayer.eachLayer(l => { const c = l.feature.properties.N03_007; if (c && c.startsWith(code)) layers.push(l); });
+        if (layers.length) map.fitBounds(L.featureGroup(layers).getBounds(), { padding: [30,30] });
       });
     });
   }
-
   renderPrefList();
-
-  // 検索
-  document.getElementById('pref-search').addEventListener('input', (e) => {
-    renderPrefList(e.target.value);
-  });
-
-  // ソート
+  document.getElementById('pref-search').addEventListener('input', e => renderPrefList(e.target.value));
   document.querySelectorAll('.sort-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentSort = btn.dataset.sort;
+      btn.classList.add('active'); currentSort = btn.dataset.sort;
       renderPrefList(document.getElementById('pref-search').value);
     });
   });
 
-  // サイドバー折りたたみ
   const sidebar = document.getElementById('sidebar');
   document.getElementById('sidebar-toggle').addEventListener('click', () => {
     sidebar.classList.toggle('collapsed');
-    const btn = document.getElementById('sidebar-toggle');
-    btn.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+    document.getElementById('sidebar-toggle').textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
     setTimeout(() => map.invalidateSize(), 350);
   });
 
-  // ── ローディング非表示 ──
   loading.classList.add('hidden');
   setTimeout(() => loading.remove(), 500);
-
 })();
 </script>
 </body>

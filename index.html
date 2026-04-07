@@ -11,23 +11,23 @@
   :root {
     --bg: #f5f5f0;
     --bg-panel: #ffffff;
-    --bg-panel-hover: #f0f0ec;
-    --border: #e0ddd5;
-    --border-light: #eae7e0;
+    --bg-panel-hover: #f0f2f5;
+    --border: #dde1e8;
+    --border-light: #e8ebf0;
     --text: #2c2c2c;
-    --text-dim: #8a8580;
+    --text-dim: #7a8494;
     --text-bright: #1a1a1a;
-    --accent: #d4542a;
-    --accent-light: rgba(212, 84, 42, 0.08);
+    --accent: #2563eb;
+    --accent-light: rgba(37, 99, 235, 0.08);
 
-    --unvisited-fill: #edeae4;
-    --unvisited-stroke: #d5d0c8;
-    --visit-1-fill: #fce4b8;
-    --visit-1-stroke: #e0c690;
-    --visit-2-fill: #f0a868;
-    --visit-2-stroke: #d08840;
-    --visit-3-fill: #d4542a;
-    --visit-3-stroke: #b0401e;
+    --unvisited-fill: #ebedf2;
+    --unvisited-stroke: #cdd1da;
+    --visit-1-fill: #bfdbfe;
+    --visit-1-stroke: #93c5fd;
+    --visit-2-fill: #60a5fa;
+    --visit-2-stroke: #3b82f6;
+    --visit-3-fill: #2563eb;
+    --visit-3-stroke: #1d4ed8;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -109,8 +109,8 @@
   .city-tooltip .tip-name { font-weight: 700; font-size: 15px; color: var(--text-bright); margin-top: 1px; }
   .city-tooltip .tip-badge { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 500; }
   .city-tooltip .tip-badge.badge-0 { background: var(--unvisited-fill); color: var(--text-dim); }
-  .city-tooltip .tip-badge.badge-1 { background: var(--visit-1-fill); color: #8a6a20; }
-  .city-tooltip .tip-badge.badge-2 { background: var(--visit-2-fill); color: #6a3a10; }
+  .city-tooltip .tip-badge.badge-1 { background: var(--visit-1-fill); color: #1e40af; }
+  .city-tooltip .tip-badge.badge-2 { background: var(--visit-2-fill); color: #1e3a5f; }
   .city-tooltip .tip-badge.badge-3 { background: var(--visit-3-fill); color: #fff; }
   .city-tooltip .tip-detail { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-dim); margin-top: 6px; line-height: 1.6; }
   .leaflet-tooltip-top:before { border-top-color: var(--bg-panel) !important; }
@@ -216,8 +216,8 @@
     return ['未訪問', '1回', '2回', '3回以上'][level];
   }
 
-  const FILL = ['#edeae4','#fce4b8','#f0a868','#d4542a'];
-  const STROKE = ['#d5d0c8','#e0c690','#d08840','#b0401e'];
+  const FILL = ['#ebedf2','#bfdbfe','#60a5fa','#2563eb'];
+  const STROKE = ['#cdd1da','#93c5fd','#3b82f6','#1d4ed8'];
 
   loadingStatus.textContent = 'ポリゴンデータを読み込み中...';
   const [topoRes, visitedRes] = await Promise.all([
@@ -261,7 +261,7 @@
       }
 
       layer.bindTooltip(html, { className: 'city-tooltip', sticky: true, direction: 'top', offset: [0, -10] });
-      layer.on('mouseover', function() { this.setStyle({ weight: 2.5, color: '#d4542a', fillOpacity: 0.95 }); this.bringToFront(); });
+      layer.on('mouseover', function() { this.setStyle({ weight: 2.5, color: '#2563eb', fillOpacity: 0.95 }); this.bringToFront(); });
       layer.on('mouseout', function() { geoLayer.resetStyle(this); });
     }
   }).addTo(map);
@@ -286,8 +286,8 @@
 
   function ringSVG(rate) {
     const r = 17, circ = 2 * Math.PI * r, off = circ * (1 - rate / 100);
-    const col = rate >= 75 ? '#d4542a' : rate >= 25 ? '#f0a868' : '#d5d0c8';
-    return `<svg width="42" height="42" viewBox="0 0 42 42"><circle cx="21" cy="21" r="${r}" fill="none" stroke="#edeae4" stroke-width="3"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${circ}" stroke-dashoffset="${off}" stroke-linecap="round"/></svg>`;
+    const col = rate >= 75 ? '#2563eb' : rate >= 25 ? '#60a5fa' : '#cdd1da';
+    return `<svg width="42" height="42" viewBox="0 0 42 42"><circle cx="21" cy="21" r="${r}" fill="none" stroke="#ebedf2" stroke-width="3"/><circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="${circ}" stroke-dashoffset="${off}" stroke-linecap="round"/></svg>`;
   }
   function barHTML(pc) {
     const c = prefLvCounts[pc]||[0,0,0,0]; const t = c.reduce((a,b)=>a+b,0);

@@ -287,6 +287,11 @@
   L.control.zoom({ position: 'topright' }).addTo(map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 18, opacity: 0.5 }).addTo(map);
 
+  // カスタム pane で軌跡を市区町村ポリゴンより上に描画
+  map.createPane('tracksPane');
+  map.getPane('tracksPane').style.zIndex = 450;  // overlayPane(400) より上
+  map.getPane('tracksPane').style.pointerEvents = 'none';  // クリック透過
+
   const geoLayer = L.geoJSON(geoData, {
     style: getStyle,
     onEachFeature: function(feature, layer) {
@@ -303,7 +308,9 @@
       }
 
       layer.bindTooltip(html, { className: 'city-tooltip', sticky: true, direction: 'top', offset: [0, -10] });
-      layer.on('mouseover', function() { this.setStyle({ weight: 2.5, color: '#2563eb', fillOpacity: 0.95 }); this.bringToFront(); });
+      layer.on('mouseover', function() {
+        this.setStyle({ weight: 2.5, color: '#2563eb', fillOpacity: 0.95 });
+      });
       layer.on('mouseout', function() { geoLayer.resetStyle(this); });
     }
   }).addTo(map);
@@ -313,6 +320,7 @@
   let tracksVisible = true;
   if (tracksData) {
     tracksLayer = L.geoJSON(tracksData, {
+      pane: 'tracksPane',
       style: {
         color: '#ef4444',
         weight: 1.8,

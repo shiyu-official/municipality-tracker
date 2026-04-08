@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>踏破マップ — 市区町村コンプリート</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,geometry&language=ja"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
   :root {
@@ -80,13 +80,10 @@
   #map-container{position:fixed;top:54px;left:320px;right:0;bottom:0;transition:left 0.3s ease;}
   #sidebar.collapsed ~ #map-container{left:0;}
   #map{width:100%;height:100%;background:var(--bg);}
-  .leaflet-container{background:var(--bg) !important;}
 
-  /* Popup override */
-  .leaflet-popup-content-wrapper{background:var(--bg-panel)!important;border:1px solid var(--border)!important;border-radius:10px!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;padding:0!important;}
-  .leaflet-popup-content{margin:12px 16px!important;font-family:'Noto Sans JP',sans-serif!important;font-size:13px!important;color:var(--text)!important;min-width:170px;}
-  .leaflet-popup-tip{background:var(--bg-panel)!important;border:1px solid var(--border)!important;}
-  .leaflet-popup-close-button{color:var(--text-dim)!important;font-size:18px!important;padding:6px 8px!important;}
+  /* InfoWindow override */
+  .gm-style .gm-style-iw-c{border-radius:10px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;}
+  .gm-style .gm-style-iw-d{overflow:auto!important;padding:12px 16px!important;}
   .pop-pref{font-size:11px;color:var(--text-dim);}
   .pop-name{font-weight:700;font-size:15px;color:var(--text-bright);margin-top:1px;}
   .pop-badge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500;}
@@ -210,7 +207,7 @@
   .mcm-option .mcm-title{font-weight:500;color:var(--text-bright);}
   .mcm-option .mcm-sub{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .mcm-overlay{position:fixed;inset:0;z-index:2001;background:transparent;}
-  .map-pick-active .leaflet-container{cursor:crosshair!important;}
+  .map-pick-active #map{cursor:crosshair!important;}
   .map-pick-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:2001;background:var(--bg-panel);border:1px solid var(--accent);border-radius:10px;padding:10px 20px;box-shadow:0 4px 20px rgba(37,99,235,0.15);font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;animation:hintSlideUp 0.3s ease;}
   @keyframes hintSlideUp{from{opacity:0;transform:translateX(-50%) translateY(16px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
   .map-pick-hint .hint-cancel{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;}
@@ -324,7 +321,6 @@
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
 <script>
 (async function(){
@@ -418,86 +414,106 @@
     if(prefStats[pc]&&lv>0){prefStats[pc].lvCounts[lv]++;prefStats[pc].score+=Math.min(c.visitDays,3);}
   }
 
-  // ── Map ──
+  // ── Map (Google Maps) ──
   $('loading-status').textContent='地図を描画中...';
-  const map=L.map('map',{center:[36.5,137.5],zoom:6,zoomControl:false,attributionControl:false});
-  L.control.zoom({position:'topright'}).addTo(map);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,opacity:0.6,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+  const map=new google.maps.Map($('map'),{
+    center:{lat:36.5,lng:137.5},zoom:6,
+    mapTypeControl:true,mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT},
+    zoomControl:true,zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_TOP},
+    streetViewControl:false,fullscreenControl:false,
+    styles:[{featureType:'water',stylers:[{color:'#dce6f0'}]}]
+  });
+  const infoWindow=new google.maps.InfoWindow();
 
-  map.createPane('tracksPane');
-  map.getPane('tracksPane').style.zIndex=450;
-  map.getPane('tracksPane').style.pointerEvents='none';
+  // GeoJSON市区町村ポリゴン
+  const geoDataLayer=new google.maps.Data({map:map});
+  geoDataLayer.addGeoJson(geoData);
 
-  function getStyle(feature){
-    const code=feature.properties.N03_007;
-    const city=visitedData.cities[code];
-    const lv=getLevel(city?city.visitDays:0);
-    return{fillColor:FILL[lv],fillOpacity:lv===0?0.5:0.8,color:STROKE[lv],weight:1.2,opacity:0.9};
+  function applyGeoStyles(){
+    geoDataLayer.setStyle(feature=>{
+      const code=feature.getProperty('N03_007');
+      const city=visitedData.cities[code];
+      const lv=getLevel(city?city.visitDays:0);
+      return{fillColor:FILL[lv],fillOpacity:lv===0?0.5:0.8,strokeColor:STROKE[lv],strokeWeight:1.2,strokeOpacity:0.9,clickable:true,zIndex:1};
+    });
+  }
+  applyGeoStyles();
+
+  // Hover
+  let hoveredFeature=null;
+  geoDataLayer.addListener('mouseover',e=>{
+    hoveredFeature=e.feature;
+    geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:'#2563eb',fillOpacity:0.95});
+  });
+  geoDataLayer.addListener('mouseout',e=>{
+    geoDataLayer.revertStyle(e.feature);
+    hoveredFeature=null;
+  });
+
+  // Click → InfoWindow or mapPick
+  geoDataLayer.addListener('click',e=>{
+    if(typeof mapPickMode!=='undefined'&&mapPickMode){
+      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},featureToProps(e.feature));
+      return;
+    }
+    infoWindow.setContent(popupHTMLFromFeature(e.feature));
+    infoWindow.setPosition(e.latLng);
+    infoWindow.open(map);
+  });
+
+  map.addListener('click',e=>{
+    if(typeof mapPickMode!=='undefined'&&mapPickMode){
+      const feat=findMunicipalityAtLatLng(e.latLng);
+      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},feat);
+      return;
+    }
+    infoWindow.close();
+  });
+
+  function featureToProps(feature){
+    const code=feature.getProperty('N03_007');
+    if(!code) return null;
+    return{properties:{N03_007:code,N03_001:feature.getProperty('N03_001'),N03_003:feature.getProperty('N03_003'),N03_004:feature.getProperty('N03_004')}};
   }
 
-  function popupHTML(feature){
-    const code=feature.properties.N03_007;
+  function popupHTMLFromFeature(feature){
+    const code=feature.getProperty('N03_007');
     const fp=featureProps[code]||{};
-    // [変更1] buildFullName を使用
     const fullName=buildFullName(code,fp.gun,fp.city)||'不明';
     const city=visitedData.cities[code];
     const lv=getLevel(city?city.visitDays:0);
     const score=city?Math.min(city.visitDays,3):0;
-    let h=`<div class="pop-pref">${fp.pref}</div><div class="pop-name">${fullName}</div>`;
+    let h=`<div style="font-family:'Noto Sans JP',sans-serif;font-size:13px;color:${getComputedStyle(document.documentElement).getPropertyValue('--text')}">`;
+    h+=`<div class="pop-pref">${fp.pref||''}</div><div class="pop-name">${fullName}</div>`;
     h+=`<span class="pop-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
-    if(city){
-      h+=`<div class="pop-detail">初訪問: ${city.firstVisit}<br>最終: ${city.lastVisit}<br>訪問日数: ${city.visitDays}日<br>制覇スコア: ${score}/3</div>`;
-    }
+    if(city) h+=`<div class="pop-detail">初訪問: ${city.firstVisit}<br>最終: ${city.lastVisit}<br>訪問日数: ${city.visitDays}日<br>制覇スコア: ${score}/3</div>`;
+    h+=`</div>`;
     return h;
   }
 
-  const geoLayer=L.geoJSON(geoData,{
-    style:getStyle,
-    onEachFeature:function(feature,layer){
-      layer.on('click',function(e){
-        if(typeof mapPickMode!=='undefined'&&mapPickMode){
-          L.DomEvent.stopPropagation(e);
-          handleMapPick(e.latlng,feature);
-          return;
-        }
-        L.DomEvent.stopPropagation(e);
-        map.closePopup();
-        L.popup({className:'city-popup',closeButton:true,autoPan:true,autoPanPadding:[40,40]})
-          .setLatLng(e.latlng)
-          .setContent(popupHTML(feature))
-          .openOn(map);
-      });
-      layer.on('mouseover',function(){this.setStyle({weight:2.5,color:'#2563eb',fillOpacity:0.95});});
-      layer.on('mouseout',function(){geoLayer.resetStyle(this);});
-    }
-  }).addTo(map);
-
-  map.on('click',function(e){
-    if(typeof mapPickMode!=='undefined'&&mapPickMode){
-      const feature=findMunicipalityAtPoint(e.latlng);
-      handleMapPick(e.latlng,feature);
-      return;
-    }
-    map.closePopup();
-  });
-
-  // Tracks
-  let tracksLayer=null;
+  // 軌跡レイヤー
+  let tracksDataLayer=null;
   if(tracksData){
-    tracksLayer=L.geoJSON(tracksData,{pane:'tracksPane',style:{color:'#ef4444',weight:1.8,opacity:0.55,lineCap:'round',lineJoin:'round'},interactive:false}).addTo(map);
+    tracksDataLayer=new google.maps.Data({map:map});
+    tracksDataLayer.addGeoJson(tracksData);
+    tracksDataLayer.setStyle({strokeColor:'#ef4444',strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
   }
 
-  // Route pane (top layer)
-  map.createPane('routePane');
-  map.getPane('routePane').style.zIndex=650;
-
-  // Layer toggles
-  const toggleDiv=L.DomUtil.create('div','layer-toggles');
+  // レイヤートグル（Google Maps カスタムコントロール）
+  const toggleDiv=document.createElement('div');
+  toggleDiv.className='layer-toggles';
+  toggleDiv.style.margin='10px';
   toggleDiv.innerHTML=`<label class="toggle-item"><input type="checkbox" id="toggle-tracks" ${tracksData?'checked':'disabled'}><span class="toggle-line"></span><span>軌跡</span></label><label class="toggle-item"><input type="checkbox" id="toggle-polygons" checked><span class="toggle-fill"></span><span>市区町村</span></label>`;
-  const TC=L.Control.extend({options:{position:'topright'},onAdd(){L.DomEvent.disableClickPropagation(toggleDiv);return toggleDiv;}});
-  map.addControl(new TC());
-  $('toggle-tracks').addEventListener('change',function(){if(!tracksLayer)return;this.checked?map.addLayer(tracksLayer):map.removeLayer(tracksLayer);});
-  $('toggle-polygons').addEventListener('change',function(){this.checked?map.addLayer(geoLayer):map.removeLayer(geoLayer);});
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
+  $('toggle-tracks').addEventListener('change',function(){if(!tracksDataLayer)return;tracksDataLayer.setMap(this.checked?map:null);});
+  $('toggle-polygons').addEventListener('change',function(){geoDataLayer.setMap(this.checked?map:null);});
+
+  // 互換ラッパー
+  map.getCenter_compat=()=>{const c=map.getCenter();return{lat:c.lat(),lng:c.lng()};};
+  map.fitBounds_compat=(sw,ne,padding)=>{
+    const bounds=new google.maps.LatLngBounds({lat:sw[0],lng:sw[1]},{lat:ne[0],lng:ne[1]});
+    map.fitBounds(bounds,padding||40);
+  };
 
   // ── [変更2] Header stats ── モード切替で訪問chipを更新
   function updateHeaderStats(mode){
@@ -589,9 +605,9 @@
     const cr=ps.maxScore>0?(ps.score/ps.maxScore*100).toFixed(1):'0.0';
     const cities=prefCities[prefCode]||[];
 
-    const layers=[];
-    geoLayer.eachLayer(l=>{const c=l.feature.properties.N03_007;if(c&&c.startsWith(prefCode))layers.push(l);});
-    if(layers.length) map.fitBounds(L.featureGroup(layers).getBounds(),{padding:[30,30]});
+    const bounds=new google.maps.LatLngBounds();
+    geoDataLayer.forEach(f=>{const c=f.getProperty('N03_007');if(c&&c.startsWith(prefCode)){f.getGeometry().forEachLatLng(ll=>bounds.extend(ll));}});
+    if(!bounds.isEmpty()) map.fitBounds(bounds,{top:30,right:30,bottom:30,left:30});
 
     let h=`<button class="back-btn" id="back-to-pref">← 都道府県一覧</button>`;
     h+=`<div class="detail-header">`;
@@ -653,92 +669,54 @@
   });
 
   // ── 検索・ルート機能 ──
-  const NOMINATIM='https://nominatim.openstreetmap.org';
-  const ROUTE_SERVERS={driving:'https://routing.openstreetmap.de/routed-car',walking:'https://routing.openstreetmap.de/routed-foot'};
   let searchMarker=null,routeLayer=null,routeFromCoord=null,routeToCoord=null,currentRouteMode='driving';
   let routeWaypoints=[]; // [{coord,name,isCityWaypoint,cityCode}]
   let mapPickMode=false,mapPickTarget=null,mapPickHintEl=null;
   let activeRouteInput=null; // 'from'|'to'|'wp-0'|'wp-1'...
 
-  let _lastNominatimTime=0;
-  async function _nominatimFetch(q){
-    // レートリミット: 前回から1.1秒待つ
-    const now=Date.now();
-    const wait=Math.max(0,1100-( now-_lastNominatimTime));
-    if(wait>0) await new Promise(r=>setTimeout(r,wait));
-    _lastNominatimTime=Date.now();
-    const url=`${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
-    try{
-      const r=await fetch(url,{headers:{'Accept-Language':'ja'}});
-      if(!r.ok) return [];
-      return await r.json();
-    }catch(e){return [];}
-  }
+  // Google Places / Geocoder
+  const placesService=new google.maps.places.PlacesService(map);
+  const geocoderService=new google.maps.Geocoder();
 
-  async function nominatimSearch(q){
+  async function placesSearch(q){
     if(!q.trim()) return [];
     const normalized=q.replace(/\u3000/g,' ').trim();
     const center=map.getCenter();
-
-    const words=normalized.split(/\s+/).filter(w=>w);
-
-    // まず元の検索語で検索
-    let results=await _nominatimFetch(normalized);
-
-    // スペース区切りで2単語以上なら逆順も試す（結果が少ない場合のみ）
-    if(words.length>=2&&words.length<=4){
-      const reversed=words.slice().reverse().join(' ');
-      if(reversed!==normalized){
-        const results2=await _nominatimFetch(reversed);
-        results=[...results,...results2];
-      }
-      // スペースなし連結も試す（「北見 ドーミーイン」→「北見ドーミーイン」）
-      if(results.length<3){
-        const joined=words.join('');
-        if(joined!==normalized){
-          const results3=await _nominatimFetch(joined);
-          results=[...results,...results3];
-        }
-      }
-    }
-
-    // 重複排除（display_nameで）
-    const seen=new Set();
-    const merged=[];
-    for(const r of results){
-      const key=r.display_name;
-      if(!seen.has(key)){seen.add(key);merged.push(r);}
-    }
-
-    // ソート: 検索ワード一致度を優先、同スコアなら地図中心からの距離
-    const lowerWords=words.map(w=>w.toLowerCase());
-    merged.sort((a,b)=>{
-      const na=a.display_name.toLowerCase(),nb=b.display_name.toLowerCase();
-      const sa=lowerWords.filter(w=>na.includes(w)).length;
-      const sb=lowerWords.filter(w=>nb.includes(w)).length;
-      if(sb!==sa) return sb-sa;
-      const da=(parseFloat(a.lat)-center.lat)**2+(parseFloat(a.lon)-center.lng)**2;
-      const db=(parseFloat(b.lat)-center.lat)**2+(parseFloat(b.lon)-center.lng)**2;
-      return da-db;
+    return new Promise(resolve=>{
+      placesService.textSearch({
+        query:normalized,
+        location:center,
+        language:'ja'
+      },(results,status)=>{
+        if(status===google.maps.places.PlacesServiceStatus.OK&&results){
+          resolve(results.slice(0,8).map(r=>({
+            name:r.name,
+            address:r.formatted_address,
+            lat:r.geometry.location.lat(),
+            lon:r.geometry.location.lng(),
+            place_id:r.place_id
+          })));
+        } else resolve([]);
+      });
     });
-
-    return merged.slice(0,8);
   }
 
-  // Nominatim reverse geocode (nearby POI)
-  async function nominatimReverse(lat,lon){
-    const url=`${NOMINATIM}/reverse?lat=${lat}&lon=${lon}&format=json&zoom=16&accept-language=ja`;
-    try{const r=await fetch(url,{headers:{'Accept-Language':'ja'}});return await r.json();}
-    catch(e){return null;}
+  async function reverseGeocode(lat,lon){
+    return new Promise(resolve=>{
+      geocoderService.geocode({location:{lat,lng:lon}},(results,status)=>{
+        if(status==='OK'&&results&&results.length){
+          resolve({display_name:results[0].formatted_address,lat:results[0].geometry.location.lat(),lon:results[0].geometry.location.lng()});
+        } else resolve(null);
+      });
+    });
   }
 
-  // 座標文字列の検出: "43.805, 143.893" や "43.805,143.893" 等にマッチ
+  // 座標文字列の検出
   function parseCoordString(str){
     const s=str.trim();
     const m=s.match(/^(-?\d+\.?\d*)\s*[,、]\s*(-?\d+\.?\d*)$/);
     if(!m) return null;
     const a=parseFloat(m[1]),b=parseFloat(m[2]);
-    // 日本の範囲: lat 20-46, lng 122-154
     if(a>=20&&a<=46&&b>=122&&b<=154) return {lat:a,lng:b};
     if(b>=20&&b<=46&&a>=122&&a<=154) return {lat:b,lng:a};
     return null;
@@ -754,43 +732,39 @@
     // 座標入力の検出
     const coord=parseCoordString(q);
     if(coord){
-      if(searchMarker) map.removeLayer(searchMarker);
-      searchMarker=L.marker([coord.lat,coord.lng]).addTo(map);
-      map.setView([coord.lat,coord.lng],15);
-      const rev=await nominatimReverse(coord.lat,coord.lng);
+      if(searchMarker) searchMarker.setMap(null);
+      searchMarker=new google.maps.Marker({position:{lat:coord.lat,lng:coord.lng},map:map});
+      map.setCenter({lat:coord.lat,lng:coord.lng});map.setZoom(15);
+      const rev=await reverseGeocode(coord.lat,coord.lng);
       const name=rev&&rev.display_name?rev.display_name.split(',')[0]:`${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
-      searchMarker.bindPopup(name).openPopup();
-      setTimeout(()=>{
-        const closeBtn=searchMarker?.getPopup()?.getElement()?.querySelector('.leaflet-popup-close-button');
-        if(closeBtn) closeBtn.addEventListener('click',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
-      },50);
+      const iw=new google.maps.InfoWindow({content:name});
+      iw.open(map,searchMarker);
+      iw.addListener('closeclick',()=>{if(searchMarker){searchMarker.setMap(null);searchMarker=null;}});
       searchResults.style.display='none';
       return;
     }
 
     searchResults.style.display='block';
     searchResults.innerHTML='<div class="search-result-item"><span style="color:var(--text-dim)">検索中...</span></div>';
-    const results=await nominatimSearch(q);
+    const results=await placesSearch(q);
     if(!results.length){
       searchResults.innerHTML='<div class="search-result-item"><span style="color:var(--text-dim)">見つかりませんでした</span></div>';
       return;
     }
     searchResults.innerHTML=results.map((r,i)=>`
       <div class="search-result-item" data-i="${i}" data-lat="${r.lat}" data-lon="${r.lon}">
-        <div class="sri-name">${r.display_name.split(',')[0]}</div>
-        <div class="sri-addr">${r.display_name.split(',').slice(1,3).join(',')}</div>
+        <div class="sri-name">${r.name}</div>
+        <div class="sri-addr">${(r.address||'').split(',').slice(0,2).join(',')}</div>
       </div>`).join('');
     searchResults.querySelectorAll('.search-result-item[data-lat]').forEach(el=>{
       el.addEventListener('click',()=>{
         const lat=parseFloat(el.dataset.lat),lon=parseFloat(el.dataset.lon);
-        if(searchMarker) map.removeLayer(searchMarker);
-        searchMarker=L.marker([lat,lon]).addTo(map).bindPopup(el.querySelector('.sri-name').textContent).openPopup();
-        // ポップアップの×ボタンクリック時のみピン削除
-        setTimeout(()=>{
-          const closeBtn=searchMarker.getPopup()?.getElement()?.querySelector('.leaflet-popup-close-button');
-          if(closeBtn) closeBtn.addEventListener('click',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
-        },50);
-        map.setView([lat,lon],14);
+        if(searchMarker) searchMarker.setMap(null);
+        searchMarker=new google.maps.Marker({position:{lat,lng:lon},map:map});
+        const iw=new google.maps.InfoWindow({content:el.querySelector('.sri-name').textContent});
+        iw.open(map,searchMarker);
+        iw.addListener('closeclick',()=>{if(searchMarker){searchMarker.setMap(null);searchMarker=null;}});
+        map.setCenter({lat,lng:lon});map.setZoom(14);
         searchResults.style.display='none';
       });
     });
@@ -805,9 +779,11 @@
   }
   $('locate-btn').addEventListener('click',()=>{
     getLocation((lat,lon)=>{
-      if(searchMarker) map.removeLayer(searchMarker);
-      searchMarker=L.marker([lat,lon]).addTo(map).bindPopup('現在地').openPopup();
-      map.setView([lat,lon],14);
+      if(searchMarker) searchMarker.setMap(null);
+      searchMarker=new google.maps.Marker({position:{lat,lng:lon},map:map});
+      const iw=new google.maps.InfoWindow({content:'現在地'});
+      iw.open(map,searchMarker);
+      map.setCenter({lat,lng:lon});map.setZoom(14);
     });
   });
 
@@ -894,12 +870,12 @@
       timer=setTimeout(async()=>{
         suggest.innerHTML='<div class="route-suggest-item"><div class="rsi-sub">検索中...</div></div>';
         suggest.style.display='block';
-        const results=await nominatimSearch(q);
+        const results=await placesSearch(q);
         if(!results.length){suggest.innerHTML='<div class="route-suggest-item"><div class="rsi-sub">見つかりませんでした</div></div>';return;}
         suggest.innerHTML=results.map((r,i)=>`
           <div class="route-suggest-item" data-lat="${r.lat}" data-lon="${r.lon}" data-i="${i}">
-            <div class="rsi-main">${r.display_name.split(',')[0]}</div>
-            <div class="rsi-sub">${r.display_name.split(',').slice(1,3).join(',')}</div>
+            <div class="rsi-main">${r.name}</div>
+            <div class="rsi-sub">${(r.address||'').split(',').slice(0,2).join(',')}</div>
           </div>`).join('');
         suggest.querySelectorAll('.route-suggest-item').forEach(el=>{
           el.addEventListener('click',()=>{
@@ -1001,7 +977,7 @@
     const boundary=getCityBoundaryRings(code);
     const centroid=getCityCentroid(code);
     if(!boundary.length||!centroid){
-      const results=await nominatimSearch(name+' 日本');
+      const results=await placesSearch(name);
       if(results.length) return [parseFloat(results[0].lat),parseFloat(results[0].lon)];
       return null;
     }
@@ -1024,34 +1000,42 @@
     // entryPtから中心方向に100m移動
     const pt100=moveToward(entryPt,centroid,100);
 
-    // Nominatim reverseで付近のスポットを取得
-    const rev=await nominatimReverse(pt100[0],pt100[1]);
+    // reverseGeocodeで付近のスポットを取得
+    const rev=await reverseGeocode(pt100[0],pt100[1]);
     if(rev&&rev.lat&&rev.lon) return [parseFloat(rev.lat),parseFloat(rev.lon)];
     return pt100;
   }
 
+  // geoDataのfeaturesからコード別に高速参照するインデックス
+  const _geoFeaturesByCode={};
+  for(const f of geoData.features){
+    const code=f.properties.N03_007;
+    if(!code) continue;
+    if(!_geoFeaturesByCode[code]) _geoFeaturesByCode[code]=[];
+    _geoFeaturesByCode[code].push(f);
+  }
+
   function getCityBoundaryRings(code){
-    // 全外周リングを[lat,lng]配列の配列として返す
     const rings=[];
-    geoLayer.eachLayer(l=>{
-      if(!l.feature||l.feature.properties.N03_007!==code) return;
-      const geom=l.feature.geometry;
+    const features=_geoFeaturesByCode[code]||[];
+    for(const f of features){
+      const geom=f.geometry;
       if(geom.type==='Polygon'){
         rings.push(geom.coordinates[0].map(c=>[c[1],c[0]]));
       } else if(geom.type==='MultiPolygon'){
         for(const poly of geom.coordinates) rings.push(poly[0].map(c=>[c[1],c[0]]));
       }
-    });
+    }
     return rings;
   }
 
   function getCityCentroid(code){
     let sumLat=0,sumLng=0,count=0;
-    geoLayer.eachLayer(l=>{
-      if(!l.feature||l.feature.properties.N03_007!==code) return;
-      const flat=flattenCoords(l.feature.geometry.coordinates);
+    const features=_geoFeaturesByCode[code]||[];
+    for(const f of features){
+      const flat=flattenCoords(f.geometry.coordinates);
       for(const c of flat){sumLng+=c[0];sumLat+=c[1];count++;}
-    });
+    }
     if(count===0) return null;
     return [sumLat/count,sumLng/count];
   }
@@ -1119,50 +1103,56 @@
   $('to-city-btn').addEventListener('click',()=>openCityModal(c=>routeToCoord=c,'route-to'));
 
   // ── 経由地管理 ──
-  let routePreviewMarkers=[]; // 地図上のプレビューマーカー/ハイライト
+  let routePreviewMarkers=[]; // google.maps.Marker or google.maps.Data
 
   function clearRoutePreview(){
-    routePreviewMarkers.forEach(m=>map.removeLayer(m));
+    routePreviewMarkers.forEach(m=>{
+      if(m.setMap) m.setMap(null);
+      else if(m instanceof google.maps.Data) m.setMap(null);
+    });
     routePreviewMarkers=[];
+  }
+
+  function makeCircleIcon(color,size){
+    return{url:'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size/2}" cy="${size/2}" r="${size/2-1}" fill="${color}" stroke="white" stroke-width="2"/></svg>`),scaledSize:new google.maps.Size(size,size),anchor:new google.maps.Point(size/2,size/2)};
   }
 
   function updateRoutePreview(){
     clearRoutePreview();
-    // 出発地のマーカー
     if(routeFromCoord){
       if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode){
         highlightCityOnMap(routeFromCity.cityCode,'#22c55e');
       } else {
-        const m=L.marker(routeFromCoord,{icon:L.divIcon({className:'',html:'<div style="background:#22c55e;border:2px solid #fff;width:14px;height:14px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(map);
+        const m=new google.maps.Marker({position:{lat:routeFromCoord[0],lng:routeFromCoord[1]},map,icon:makeCircleIcon('#22c55e',14)});
         routePreviewMarkers.push(m);
       }
     }
-    // 目的地のマーカー
     if(routeToCoord){
       if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
         highlightCityOnMap(routeToCity.cityCode,'#ef4444');
       } else {
-        const m=L.marker(routeToCoord,{icon:L.divIcon({className:'',html:'<div style="background:#ef4444;border:2px solid #fff;width:14px;height:14px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(map);
+        const m=new google.maps.Marker({position:{lat:routeToCoord[0],lng:routeToCoord[1]},map,icon:makeCircleIcon('#ef4444',14)});
         routePreviewMarkers.push(m);
       }
     }
-    // 経由地
     for(const wp of routeWaypoints){
       if(wp.isCityWaypoint&&wp.cityCode){
         highlightCityOnMap(wp.cityCode,'#f59e0b');
       } else if(wp.coord){
-        const m=L.marker(wp.coord,{icon:L.divIcon({className:'',html:'<div style="background:#f59e0b;border:2px solid #fff;width:12px;height:12px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(map);
+        const m=new google.maps.Marker({position:{lat:wp.coord[0],lng:wp.coord[1]},map,icon:makeCircleIcon('#f59e0b',12)});
         routePreviewMarkers.push(m);
       }
     }
   }
 
   function highlightCityOnMap(cityCode,color){
-    geoLayer.eachLayer(l=>{
-      if(!l.feature||l.feature.properties.N03_007!==cityCode) return;
-      const hl=L.geoJSON(l.feature,{style:{fillColor:color,fillOpacity:0.35,color:color,weight:2.5,opacity:0.8},interactive:false}).addTo(map);
-      routePreviewMarkers.push(hl);
-    });
+    const features=_geoFeaturesByCode[cityCode]||[];
+    for(const f of features){
+      const dl=new google.maps.Data({map:map});
+      dl.addGeoJson({type:'FeatureCollection',features:[f]});
+      dl.setStyle({fillColor:color,fillOpacity:0.35,strokeColor:color,strokeWeight:2.5,strokeOpacity:0.8,clickable:false});
+      routePreviewMarkers.push(dl);
+    }
   }
 
   function renderWaypoints(){
@@ -1271,12 +1261,12 @@
         timer=setTimeout(async()=>{
           suggest.innerHTML='<div class="route-suggest-item"><div class="rsi-sub">検索中...</div></div>';
           suggest.style.display='block';
-          const results=await nominatimSearch(q);
+          const results=await placesSearch(q);
           if(!results.length){suggest.innerHTML='<div class="route-suggest-item"><div class="rsi-sub">見つかりませんでした</div></div>';return;}
           suggest.innerHTML=results.map((r,ri)=>`
             <div class="route-suggest-item" data-lat="${r.lat}" data-lon="${r.lon}">
-              <div class="rsi-main">${r.display_name.split(',')[0]}</div>
-              <div class="rsi-sub">${r.display_name.split(',').slice(1,3).join(',')}</div>
+              <div class="rsi-main">${r.name}</div>
+              <div class="rsi-sub">${(r.address||'').split(',').slice(0,2).join(',')}</div>
             </div>`).join('');
           suggest.querySelectorAll('.route-suggest-item').forEach(el=>{
             el.addEventListener('click',()=>{
@@ -1301,19 +1291,21 @@
   });
 
   // ── 地図クリックでの地点追加 ──
-  function findMunicipalityAtPoint(latlng){
-    let found=null;
-    geoLayer.eachLayer(layer=>{
-      if(found) return;
-      if(!layer.feature||!layer.feature.properties.N03_007) return;
-      if(layer.getBounds&&layer.getBounds().contains(latlng)){
-        if(isPointInLayer(latlng,layer)) found=layer.feature;
-      }
-    });
-    return found;
+  function findMunicipalityAtLatLng(latLng){
+    // Google MapsのLatLngから{lat,lng}に変換して検索
+    return findMunicipalityAtPoint({lat:latLng.lat(),lng:latLng.lng()});
   }
-  function isPointInLayer(latlng,layer){
-    const t=layer.feature.geometry.type,c=layer.feature.geometry.coordinates;
+  function findMunicipalityAtPoint(latlng){
+    // latlng: {lat,lng}
+    for(const[code,features] of Object.entries(_geoFeaturesByCode)){
+      for(const f of features){
+        if(isPointInFeature(latlng,f)) return f;
+      }
+    }
+    return null;
+  }
+  function isPointInFeature(latlng,feature){
+    const t=feature.geometry.type,c=feature.geometry.coordinates;
     if(t==='Polygon') return isPointInPolygon(latlng,c);
     if(t==='MultiPolygon'){for(const p of c){if(isPointInPolygon(latlng,p)) return true;}}
     return false;
@@ -1380,7 +1372,7 @@
     overlay.addEventListener('click',closeModal);
 
     modal.querySelector('[data-action="exact"]').addEventListener('click',async()=>{
-      const rev=await nominatimReverse(latlng.lat,latlng.lng);
+      const rev=await reverseGeocode(latlng.lat,latlng.lng);
       const name=rev&&rev.display_name?rev.display_name.split(',')[0]:`${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
       applyPickResult([latlng.lat,latlng.lng],name,target,false,null);
       closeModal();
@@ -1421,39 +1413,60 @@
     updateRoutePreview();
   }
 
-  // ── ルート検索 ──
+  // ── ルート検索 (Google Directions Service) ──
+  const directionsService=new google.maps.DirectionsService();
+
   async function fetchRoute(points,opts={}){
-    const coordStr=points.map(c=>`${c[1]},${c[0]}`).join(';');
-    const server=ROUTE_SERVERS[currentRouteMode]||ROUTE_SERVERS.driving;
-    // alternatives=trueで代替ルートも取得
-    const alt=opts.noAlternatives?'false':'true';
-    const url=`${server}/route/v1/${currentRouteMode}/${coordStr}?overview=full&geometries=geojson&alternatives=${alt}`;
-    const res=await fetch(url);
-    if(!res.ok) return null;
-    const data=await res.json();
-    if(!data.routes||!data.routes.length) return null;
+    if(points.length<2) return null;
+    const origin={lat:points[0][0],lng:points[0][1]};
+    const dest={lat:points[points.length-1][0],lng:points[points.length-1][1]};
+    const waypoints=points.slice(1,points.length-1).map(p=>({location:{lat:p[0],lng:p[1]},stopover:true}));
+    const travelMode=currentRouteMode==='walking'?google.maps.TravelMode.WALKING:google.maps.TravelMode.DRIVING;
+    const provideAlts=!opts.noAlternatives&&waypoints.length===0; // 経由地ありだとalternatives不可
 
-    if(data.routes.length===1) return data.routes[0];
+    return new Promise(resolve=>{
+      directionsService.route({
+        origin,destination:dest,waypoints,
+        travelMode,provideRouteAlternatives:provideAlts,
+        region:'jp'
+      },(result,status)=>{
+        if(status!==google.maps.DirectionsStatus.OK||!result.routes.length){resolve(null);return;}
 
-    // 複数ルート候補がある場合、最速（duration最小）を選択
-    // ただし市区町村チェック用のcityCodesが渡された場合はそれも考慮
-    const cityCodes=opts.cityCodes||[];
-    let best=null,bestScore=Infinity;
-    for(const route of data.routes){
-      // 基本スコア: 所要時間（秒）
-      let score=route.duration;
-      // 市区町村通過ボーナス: 通過する市区町村1つにつきスコアを大幅減
-      if(cityCodes.length>0){
-        let passCount=0;
-        for(const code of cityCodes){
-          if(checkRoutePassesCity(route.geometry.coordinates,code)) passCount++;
+        // Directions結果を内部形式に変換
+        function convertRoute(route){
+          const leg=route.legs;
+          let totalDist=0,totalDur=0;
+          const coords=[];
+          for(const l of leg){
+            totalDist+=l.distance.value;
+            totalDur+=l.duration.value;
+            // overview_path からGeoJSON座標に
+          }
+          const path=route.overview_path||google.maps.geometry.encoding.decodePath(route.overview_polyline);
+          for(const p of path) coords.push([p.lng(),p.lat()]);
+          return{distance:totalDist,duration:totalDur,geometry:{coordinates:coords},_gRoute:route};
         }
-        // 通過していない市区町村1つにつき30分(1800秒)のペナルティ
-        score+=(cityCodes.length-passCount)*1800;
-      }
-      if(score<bestScore){bestScore=score;best=route;}
-    }
-    return best||data.routes[0];
+
+        if(result.routes.length===1){resolve(convertRoute(result.routes[0]));return;}
+
+        // 複数ルート: 最速＋市区町村通過考慮で選択
+        const cityCodes=opts.cityCodes||[];
+        let best=null,bestScore=Infinity;
+        for(const route of result.routes){
+          const conv=convertRoute(route);
+          let score=conv.duration;
+          if(cityCodes.length>0){
+            let passCount=0;
+            for(const code of cityCodes){
+              if(checkRoutePassesCity(conv.geometry.coordinates,code)) passCount++;
+            }
+            score+=(cityCodes.length-passCount)*1800;
+          }
+          if(score<bestScore){bestScore=score;best=conv;}
+        }
+        resolve(best||convertRoute(result.routes[0]));
+      });
+    });
   }
 
   function checkRoutePassesCity(routeCoords,cityCode){
@@ -1481,7 +1494,7 @@
 
   // 道路ベースで市区町村への侵入ポイントを求める
   // currentFrom: 出発点[lat,lng], nextDest: 次の目的[lat,lng], cityCode: 対象市区町村
-  // 方法: currentFrom→市区町村中心へのOSRMルートを取得し、
+  // 方法: currentFrom→市区町村中心へのルートを取得し、
   //        そのルート座標列でポリゴン内に入った地点から少し進んだ点を返す
   async function findCityEntryViaRoad(currentFrom,cityCode){
     const centroid=getCityCentroid(cityCode);
@@ -1530,18 +1543,18 @@
     if(!routeFromCoord&&fromVal){
       const c=parseCoordString(fromVal);
       if(c) routeFromCoord=[c.lat,c.lng];
-      else{const r=await nominatimSearch(fromVal);if(r.length) routeFromCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
+      else{const r=await placesSearch(fromVal);if(r.length) routeFromCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
     }
     if(!routeToCoord&&toVal){
       const c=parseCoordString(toVal);
       if(c) routeToCoord=[c.lat,c.lng];
-      else{const r=await nominatimSearch(toVal);if(r.length) routeToCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
+      else{const r=await placesSearch(toVal);if(r.length) routeToCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
     }
     for(const wp of routeWaypoints){
       if(!wp.coord&&wp.name){
         const c=parseCoordString(wp.name);
         if(c) wp.coord=[c.lat,c.lng];
-        else{const r=await nominatimSearch(wp.name);if(r.length) wp.coord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
+        else{const r=await placesSearch(wp.name);if(r.length) wp.coord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
       }
     }
     if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}
@@ -1553,7 +1566,7 @@
     const orderedWp=routeWaypoints.filter(wp=>wp.coord||wp.isCityWaypoint);
 
     // 逐次処理: 出発地→経由地1→経由地2→...→目的地 を順番に解決
-    // resolvedPoints: 最終的にOSRMに渡すポイント列（出発地は含む、目的地は最後に追加）
+    // resolvedPoints: 最終的にDirections APIに渡すポイント列
     const resolvedPoints=[routeFromCoord];
     const cityCheckResults=[];
     const wpMarkerData=[]; // 経由地マーカー用
@@ -1624,20 +1637,29 @@
     const dur=Math.round(finalRoute.duration/60);
     const h=Math.floor(dur/60),m=dur%60;
     const durStr=h>0?`${h}時間${m}分`:`${m}分`;
-    if(routeLayer) map.removeLayer(routeLayer);
-    if(window._wpMarkers){window._wpMarkers.forEach(m=>map.removeLayer(m));window._wpMarkers=[];}
+    if(routeLayer){routeLayer.setMap(null);routeLayer=null;}
+    if(window._wpMarkers){window._wpMarkers.forEach(m=>m.setMap(null));window._wpMarkers=[];}
 
-    routeLayer=L.geoJSON(finalRoute.geometry,{pane:'routePane',style:{color:'#f59e0b',weight:5,opacity:0.9}}).addTo(map);
+    // GeoJSONルートラインをGoogle Maps Polylineに変換
+    const routePath=finalRoute.geometry.coordinates.map(c=>({lat:c[1],lng:c[0]}));
+    routeLayer=new google.maps.Polyline({path:routePath,strokeColor:'#f59e0b',strokeWeight:5,strokeOpacity:0.9,zIndex:10,map:map});
 
     window._wpMarkers=[];
     for(const wd of wpMarkerData){
-      const marker=L.circleMarker([wd.coord[0],wd.coord[1]],{
-        pane:'routePane',radius:6,fillColor:'#fff',color:'#f59e0b',weight:3,fillOpacity:1
-      }).addTo(map).bindPopup(`<strong>経由地</strong><br>${wd.name}`);
+      const marker=new google.maps.Marker({
+        position:{lat:wd.coord[0],lng:wd.coord[1]},map,
+        icon:makeCircleIcon('#f59e0b',12),zIndex:11,
+        title:wd.name
+      });
+      const iw=new google.maps.InfoWindow({content:`<strong>経由地</strong><br>${wd.name}`});
+      marker.addListener('click',()=>iw.open(map,marker));
       window._wpMarkers.push(marker);
     }
 
-    map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
+    // fitBounds
+    const routeBounds=new google.maps.LatLngBounds();
+    routePath.forEach(p=>routeBounds.extend(p));
+    map.fitBounds(routeBounds,40);
     let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
     if(currentRouteMode==='walking') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(徒歩)</span>`;
     if(wpMarkerData.length) resultHTML+=`<br>経由地: <strong>${wpMarkerData.length}箇所</strong>`;
@@ -1751,8 +1773,8 @@
   }
 
   $('route-clear-btn').addEventListener('click',()=>{
-    if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}
-    if(window._wpMarkers){window._wpMarkers.forEach(m=>map.removeLayer(m));window._wpMarkers=[];}
+    if(routeLayer){routeLayer.setMap(null);routeLayer=null;}
+    if(window._wpMarkers){window._wpMarkers.forEach(m=>m.setMap(null));window._wpMarkers=[];}
     routeFromCoord=null;routeToCoord=null;
     routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
     routeToCity={isCityWaypoint:false,cityCode:null,name:''};
@@ -1770,7 +1792,7 @@
   $('sidebar-toggle').addEventListener('click',()=>{
     sidebar.classList.toggle('collapsed');
     $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
-    setTimeout(()=>map.invalidateSize(),350);
+    setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
   });
   if(window.innerWidth<=768){sidebar.classList.add('collapsed');$('sidebar-toggle').textContent='▶';}
 

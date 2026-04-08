@@ -522,10 +522,31 @@
   const toggleDiv=document.createElement('div');
   toggleDiv.className='layer-toggles';
   toggleDiv.style.margin='10px';
-  toggleDiv.innerHTML=`<label class="toggle-item"><input type="checkbox" id="toggle-tracks" ${tracksData?'checked':'disabled'}><span class="toggle-line"></span><span>軌跡</span></label><label class="toggle-item"><input type="checkbox" id="toggle-polygons" checked><span class="toggle-fill"></span><span>市区町村</span></label>`;
-  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
-  $('toggle-tracks').addEventListener('change',function(){if(!tracksDataLayer)return;tracksDataLayer.setMap(this.checked?map:null);});
-  $('toggle-polygons').addEventListener('change',function(){geoDataLayer.setMap(this.checked?map:null);});
+  
+　// 変更後
+　const chkTracks = document.createElement('input');
+　chkTracks.type = 'checkbox';
+　chkTracks.id = 'toggle-tracks';
+　if (tracksData) { chkTracks.checked = true; } else { chkTracks.disabled = true; }
+
+　const chkPolygons = document.createElement('input');
+　chkPolygons.type = 'checkbox';
+　chkPolygons.id = 'toggle-polygons';
+　chkPolygons.checked = true;
+
+　const lblTracks = document.createElement('label');
+　lblTracks.className = 'toggle-item';
+　lblTracks.append(chkTracks, Object.assign(document.createElement('span'),{className:'toggle-line'}), Object.assign(document.createElement('span'),{textContent:'軌跡'}));
+
+　const lblPolygons = document.createElement('label');
+　lblPolygons.className = 'toggle-item';
+　lblPolygons.append(chkPolygons, Object.assign(document.createElement('span'),{className:'toggle-fill'}), Object.assign(document.createElement('span'),{textContent:'市区町村'}));
+
+　toggleDiv.append(lblTracks, lblPolygons);
+　map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
+
+　chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
+　chkPolygons.addEventListener('change', function(){ geoDataLayer.setMap(this.checked?map:null); });
 
   // 互換ラッパー
   map.getCenter_compat=()=>{const c=map.getCenter();return{lat:c.lat(),lng:c.lng()};};

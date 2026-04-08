@@ -1476,7 +1476,11 @@
         travelMode,provideRouteAlternatives:provideAlts,
         region:'jp'
       },(result,status)=>{
-        if(status!==google.maps.DirectionsStatus.OK||!result.routes.length){resolve(null);return;}
+        if(status!==google.maps.DirectionsStatus.OK||!result||!result.routes||!result.routes.length){
+          console.error('Directions API error:',status,result);
+          resolve(null);
+          return;
+        }
 
         // Directions結果を内部形式に変換
         function convertRoute(route){
@@ -1486,9 +1490,27 @@
           for(const l of leg){
             totalDist+=l.distance.value;
             totalDur+=l.duration.value;
-            // overview_path からGeoJSON座標に
           }
-          const path=route.overview_path||google.maps.geometry.encoding.decodePath(route.overview_polyline);
+          // overview_pathが存在すればそれを使う（既にデコード済みLatLng配列）
+          // なければoverview_polyline.pointsをデコード
+          let path=route.overview_path;
+          if(!path||!path.length){
+            const encoded=route.overview_polyline;
+            if(encoded&&typeof encoded==='string'){
+              path=google.maps.geometry.encoding.decodePath(encoded);
+            } else if(encoded&&encoded.points){
+              path=google.maps.geometry.encoding.decodePath(encoded.points);
+            } else {
+              // フォールバック: legsのstepsから座標を抽出
+              path=[];
+              for(const l of leg){
+                for(const step of l.steps){
+                  if(step.path) path.push(...step.path);
+                  else if(step.lat_lngs) path.push(...step.lat_lngs);
+                }
+              }
+            }
+          }
           for(const p of path) coords.push([p.lng(),p.lat()]);
           return{distance:totalDist,duration:totalDur,geometry:{coordinates:coords},_gRoute:route};
         }

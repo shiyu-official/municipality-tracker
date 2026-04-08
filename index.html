@@ -210,6 +210,10 @@
   .map-pick-hint .hint-cancel{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;}
   .map-pick-hint .hint-cancel:hover{background:var(--bg-panel-hover);}
   .route-input.picking{border-color:var(--accent);box-shadow:0 0 0 2px rgba(37,99,235,0.15);}
+  .wp-drag-handle{cursor:grab;font-size:11px;color:var(--text-dim);padding:2px 2px;flex-shrink:0;user-select:none;touch-action:none;}
+  .wp-drag-handle:active{cursor:grabbing;}
+  .route-wp-row.dragging{opacity:0.4;background:var(--accent-light);}
+  .route-wp-row.drag-over{border-top:2px solid var(--accent);}
 
   @media(max-width:768px){
     #header{padding:0 10px;gap:8px;height:48px;}
@@ -652,7 +656,10 @@
 
   async function nominatimSearch(q){
     if(!q.trim()) return [];
-    const url=`${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
+    // スペース区切りをそのまま渡す（NominatimはスペースでAND的に検索する）
+    // 全角スペースも半角に正規化
+    const normalized=q.replace(/\u3000/g,' ').trim();
+    const url=`${NOMINATIM}/search?q=${encodeURIComponent(normalized)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
     const r=await fetch(url,{headers:{'Accept-Language':'ja'}});
     return await r.json();
   }
@@ -794,6 +801,10 @@
             input.value=el.querySelector('.rsi-main').textContent;
             coordSetter([parseFloat(el.dataset.lat),parseFloat(el.dataset.lon)]);
             suggest.style.display='none';
+            // 市区町村フラグリセット
+            if(inputId==='route-from') routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
+            if(inputId==='route-to') routeToCity={isCityWaypoint:false,cityCode:null,name:''};
+            updateRoutePreview();
           });
         });
       },400);
@@ -1004,13 +1015,60 @@
   $('to-city-btn').addEventListener('click',()=>openCityModal(c=>routeToCoord=c,'route-to'));
 
   // ── 経由地管理 ──
+  let routePreviewMarkers=[]; // 地図上のプレビューマーカー/ハイライト
+
+  function clearRoutePreview(){
+    routePreviewMarkers.forEach(m=>map.removeLayer(m));
+    routePreviewMarkers=[];
+  }
+
+  function updateRoutePreview(){
+    clearRoutePreview();
+    // 出発地のマーカー
+    if(routeFromCoord){
+      if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode){
+        highlightCityOnMap(routeFromCity.cityCode,'#22c55e');
+      } else {
+        const m=L.marker(routeFromCoord,{icon:L.divIcon({className:'',html:'<div style="background:#22c55e;border:2px solid #fff;width:14px;height:14px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(map);
+        routePreviewMarkers.push(m);
+      }
+    }
+    // 目的地のマーカー
+    if(routeToCoord){
+      if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
+        highlightCityOnMap(routeToCity.cityCode,'#ef4444');
+      } else {
+        const m=L.marker(routeToCoord,{icon:L.divIcon({className:'',html:'<div style="background:#ef4444;border:2px solid #fff;width:14px;height:14px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',iconSize:[14,14],iconAnchor:[7,7]})}).addTo(map);
+        routePreviewMarkers.push(m);
+      }
+    }
+    // 経由地
+    for(const wp of routeWaypoints){
+      if(wp.isCityWaypoint&&wp.cityCode){
+        highlightCityOnMap(wp.cityCode,'#f59e0b');
+      } else if(wp.coord){
+        const m=L.marker(wp.coord,{icon:L.divIcon({className:'',html:'<div style="background:#f59e0b;border:2px solid #fff;width:12px;height:12px;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(map);
+        routePreviewMarkers.push(m);
+      }
+    }
+  }
+
+  function highlightCityOnMap(cityCode,color){
+    geoLayer.eachLayer(l=>{
+      if(!l.feature||l.feature.properties.N03_007!==cityCode) return;
+      const hl=L.geoJSON(l.feature,{style:{fillColor:color,fillOpacity:0.35,color:color,weight:2.5,opacity:0.8},interactive:false}).addTo(map);
+      routePreviewMarkers.push(hl);
+    });
+  }
+
   function renderWaypoints(){
     const container=$('route-waypoints');
     container.innerHTML=routeWaypoints.map((wp,i)=>`
-      <div class="route-wp-row" data-wp-idx="${i}">
+      <div class="route-wp-row" data-wp-idx="${i}" draggable="true">
+        <div class="wp-drag-handle" title="ドラッグで並び替え">☰</div>
         <div class="route-dot via"></div>
         <div class="route-input-wrap">
-          <input class="route-input wp-input" data-wp-idx="${i}" type="text" placeholder="経由地（入力 or 地図クリック）" value="${wp.name||''}" autocomplete="off">
+          <input class="route-input wp-input" data-wp-idx="${i}" type="text" placeholder="経由地（入力 or 地図クリック）" value="${wp.name?wp.name+(wp.isCityWaypoint?'（市区町村経由）':''):''}" autocomplete="off">
           <div class="route-suggest wp-suggest" id="wp-suggest-${i}"></div>
         </div>
         <button class="route-icon-btn wp-city-btn" data-wp-idx="${i}" title="都市から選択">🗺</button>
@@ -1018,6 +1076,38 @@
         <button class="wp-remove-btn" data-wp-idx="${i}" title="削除">✕</button>
       </div>`).join('');
 
+    // ── ドラッグ&ドロップ ──
+    let dragIdx=null;
+    container.querySelectorAll('.route-wp-row').forEach(row=>{
+      row.addEventListener('dragstart',e=>{
+        dragIdx=parseInt(row.dataset.wpIdx);
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed='move';
+      });
+      row.addEventListener('dragend',()=>{
+        row.classList.remove('dragging');
+        container.querySelectorAll('.route-wp-row').forEach(r=>r.classList.remove('drag-over'));
+        dragIdx=null;
+      });
+      row.addEventListener('dragover',e=>{
+        e.preventDefault();
+        e.dataTransfer.dropEffect='move';
+        container.querySelectorAll('.route-wp-row').forEach(r=>r.classList.remove('drag-over'));
+        row.classList.add('drag-over');
+      });
+      row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+      row.addEventListener('drop',e=>{
+        e.preventDefault();
+        const dropIdx=parseInt(row.dataset.wpIdx);
+        if(dragIdx!==null&&dragIdx!==dropIdx){
+          const item=routeWaypoints.splice(dragIdx,1)[0];
+          routeWaypoints.splice(dropIdx,0,item);
+          renderWaypoints();
+        }
+      });
+    });
+
+    // 削除
     container.querySelectorAll('.wp-remove-btn').forEach(btn=>{
       btn.addEventListener('click',()=>{
         routeWaypoints.splice(parseInt(btn.dataset.wpIdx),1);
@@ -1046,6 +1136,8 @@
         getLocation((lat,lon)=>{
           routeWaypoints[idx].coord=[lat,lon];
           routeWaypoints[idx].name='現在地';
+          routeWaypoints[idx].isCityWaypoint=false;
+          routeWaypoints[idx].cityCode=null;
           renderWaypoints();
         });
       });
@@ -1059,6 +1151,8 @@
       input.addEventListener('input',()=>{
         clearTimeout(timer);
         routeWaypoints[idx].coord=null;
+        routeWaypoints[idx].isCityWaypoint=false;
+        routeWaypoints[idx].cityCode=null;
         const q=input.value.trim();
         if(!q){suggest.style.display='none';return;}
         timer=setTimeout(async()=>{
@@ -1076,11 +1170,13 @@
               routeWaypoints[idx].coord=[parseFloat(el.dataset.lat),parseFloat(el.dataset.lon)];
               routeWaypoints[idx].name=input.value;
               suggest.style.display='none';
+              updateRoutePreview();
             });
           });
         },400);
       });
     });
+    updateRoutePreview();
   }
 
   $('add-waypoint-btn').addEventListener('click',()=>{
@@ -1208,6 +1304,7 @@
         renderWaypoints();
       }
     }
+    updateRoutePreview();
   }
 
   // ── ルート検索 ──
@@ -1445,6 +1542,7 @@
     $('route-result').style.display='none';
     $('route-clear-btn').style.display='none';
     clearActiveInput();
+    clearRoutePreview();
   });
 
   // Sidebar toggle

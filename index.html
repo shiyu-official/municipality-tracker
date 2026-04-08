@@ -656,12 +656,49 @@
 
   async function nominatimSearch(q){
     if(!q.trim()) return [];
-    // スペース区切りをそのまま渡す（NominatimはスペースでAND的に検索する）
-    // 全角スペースも半角に正規化
     const normalized=q.replace(/\u3000/g,' ').trim();
-    const url=`${NOMINATIM}/search?q=${encodeURIComponent(normalized)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
-    const r=await fetch(url,{headers:{'Accept-Language':'ja'}});
-    return await r.json();
+    const center=map.getCenter();
+
+    // スペース区切りの場合、語順パターンを生成して並行検索
+    const words=normalized.split(/\s+/).filter(w=>w);
+    let queries=[normalized];
+    if(words.length>=2&&words.length<=4){
+      // 逆順も追加（「北見 ドーミーイン」→「ドーミーイン 北見」も検索）
+      const reversed=words.slice().reverse().join(' ');
+      if(reversed!==normalized) queries.push(reversed);
+      // スペースなし連結も追加（「ドーミーイン北見」）
+      const joined=words.join('');
+      if(joined!==normalized) queries.push(joined);
+      const joinedRev=words.slice().reverse().join('');
+      if(joinedRev!==joined&&joinedRev!==normalized) queries.push(joinedRev);
+    }
+
+    // 並行検索
+    const fetches=queries.map(async qry=>{
+      const url=`${NOMINATIM}/search?q=${encodeURIComponent(qry)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
+      try{const r=await fetch(url,{headers:{'Accept-Language':'ja'}});return await r.json();}
+      catch(e){return [];}
+    });
+    const allResults=await Promise.all(fetches);
+
+    // マージ＆重複排除（place_idで）
+    const seen=new Set();
+    const merged=[];
+    for(const results of allResults){
+      for(const r of results){
+        const key=r.place_id||`${r.lat},${r.lon}`;
+        if(!seen.has(key)){seen.add(key);merged.push(r);}
+      }
+    }
+
+    // 地図中心からの距離でソート
+    merged.sort((a,b)=>{
+      const da=(parseFloat(a.lat)-center.lat)**2+(parseFloat(a.lon)-center.lng)**2;
+      const db=(parseFloat(b.lat)-center.lat)**2+(parseFloat(b.lon)-center.lng)**2;
+      return da-db;
+    });
+
+    return merged.slice(0,8);
   }
 
   // Nominatim reverse geocode (nearby POI)

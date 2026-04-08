@@ -775,6 +775,9 @@
     input.addEventListener('input',()=>{
       clearTimeout(timer);
       coordSetter(null); // テキスト変更で座標リセット
+      // テキスト変更で市区町村フラグもリセット
+      if(inputId==='route-from') routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
+      if(inputId==='route-to') routeToCity={isCityWaypoint:false,cityCode:null,name:''};
       const q=input.value.trim();
       if(!q){suggest.style.display='none';return;}
       timer=setTimeout(async()=>{
@@ -857,16 +860,15 @@
       if(!html) html='<div style="padding:16px;text-align:center;color:var(--text-dim);font-size:12px;">該当なし</div>';
       modal.querySelector('#csm-list').innerHTML=html;
       modal.querySelectorAll('.csm-city-item').forEach(el=>{
-        el.addEventListener('click',async()=>{
+        el.addEventListener('click',()=>{
           const name=el.dataset.name;
           const code=el.dataset.code;
-          // 都市の境界入口スポットを探す（前後未確定なのでnull。ルート検索時に再計算）
-          const coord=await findCityEntryPoint(code,name,null,null);
-          if(coord){
-            coordSetter(coord);
-            if(inputId&&$(inputId)) $(inputId).value=name;
-            if(extraCallback) extraCallback(coord,name,code);
-          }
+          // 座標はルート検索時に前後ポイントから計算するため仮に重心をセット
+          const centroid=getCityCentroid(code);
+          const tmpCoord=centroid||[35.68,139.77];
+          coordSetter(tmpCoord);
+          if(inputId&&$(inputId)) $(inputId).value=name+'（市区町村経由）';
+          if(extraCallback) extraCallback(tmpCoord,name,code);
           modal.remove();
         });
       });
@@ -1175,25 +1177,32 @@
     });
     const cityOpt=modal.querySelector('[data-action="city"]');
     if(cityOpt){
-      cityOpt.addEventListener('click',async()=>{
-        // 選択時点では前後未確定なので仮座標。ルート検索時に再計算される
-        const coord=await findCityEntryPoint(code,cityName,[latlng.lat,latlng.lng],null);
-        applyPickResult(coord||[latlng.lat,latlng.lng],cityName,target,true,code);
+      cityOpt.addEventListener('click',()=>{
+        // 座標はルート検索時に前後ポイントから再計算。仮に重心をセット
+        const centroid=getCityCentroid(code);
+        const tmpCoord=centroid||[latlng.lat,latlng.lng];
+        applyPickResult(tmpCoord,cityName+'（市区町村経由）',target,true,code);
         closeModal();
       });
     }
   }
 
+  // 出発地・目的地の市区町村経由フラグ
+  let routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
+  let routeToCity={isCityWaypoint:false,cityCode:null,name:''};
+
   function applyPickResult(coord,name,target,isCityWaypoint,cityCode){
     if(target==='from'){
       routeFromCoord=coord;$('route-from').value=name;
+      routeFromCity={isCityWaypoint,cityCode,name:name.replace('（市区町村経由）','')};
     } else if(target==='to'){
       routeToCoord=coord;$('route-to').value=name;
+      routeToCity={isCityWaypoint,cityCode,name:name.replace('（市区町村経由）','')};
     } else if(target&&target.startsWith('wp-')){
       const idx=parseInt(target.substring(3));
       if(routeWaypoints[idx]){
         routeWaypoints[idx].coord=coord;
-        routeWaypoints[idx].name=name;
+        routeWaypoints[idx].name=name.replace('（市区町村経由）','');
         routeWaypoints[idx].isCityWaypoint=isCityWaypoint;
         routeWaypoints[idx].cityCode=cityCode;
         renderWaypoints();
@@ -1221,10 +1230,24 @@
     }
     if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}
 
-    // 市区町村経由地の座標を前後ポイントから境界入口100mに再計算
+    // 市区町村経由の座標を前後ポイントから境界入口100mに再計算
     const validWaypoints=routeWaypoints.filter(wp=>wp.coord);
     $('route-result').style.display='block';
     $('route-result').textContent='経由地を最適化中...';
+
+    // 出発地が市区町村経由の場合
+    if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode){
+      const nextPt=validWaypoints.length?validWaypoints[0].coord:routeToCoord;
+      const entry=await findCityEntryPoint(routeFromCity.cityCode,routeFromCity.name,null,nextPt);
+      if(entry) routeFromCoord=entry;
+    }
+    // 目的地が市区町村経由の場合
+    if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
+      const prevPt=validWaypoints.length?validWaypoints[validWaypoints.length-1].coord:routeFromCoord;
+      const entry=await findCityEntryPoint(routeToCity.cityCode,routeToCity.name,prevPt,null);
+      if(entry) routeToCoord=entry;
+    }
+    // 経由地が市区町村の場合
     for(let i=0;i<validWaypoints.length;i++){
       const wp=validWaypoints[i];
       if(!wp.isCityWaypoint||!wp.cityCode) continue;
@@ -1277,6 +1300,8 @@
     if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}
     if(window._wpMarkers){window._wpMarkers.forEach(m=>map.removeLayer(m));window._wpMarkers=[];}
     routeFromCoord=null;routeToCoord=null;
+    routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
+    routeToCity={isCityWaypoint:false,cityCode:null,name:''};
     routeWaypoints=[];
     renderWaypoints();
     $('route-from').value='';$('route-to').value='';

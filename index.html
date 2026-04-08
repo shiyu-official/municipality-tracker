@@ -1225,11 +1225,21 @@
     // routeCoords: [[lng,lat],...] GeoJSON形式
     const rings=getCityBoundaryRings(cityCode);
     if(!rings.length) return false;
-    // ルート座標を[lat,lng]に変換してポリゴン内判定
-    for(let i=0;i<routeCoords.length;i+=3){
+    // ルート座標を[lat,lng]に変換してポリゴン内判定（全点チェック）
+    for(let i=0;i<routeCoords.length;i++){
       const lat=routeCoords[i][1],lng=routeCoords[i][0];
       for(const ring of rings){
         if(isPointInRing({lat,lng},ring)) return true;
+      }
+    }
+    // 点でなくセグメントと境界の交差もチェック（ルートが市区町村を通過するが頂点が内部にない場合）
+    for(let i=0;i<routeCoords.length-1;i++){
+      const ax=routeCoords[i][1],  ay=routeCoords[i][0];
+      const bx=routeCoords[i+1][1],by=routeCoords[i+1][0];
+      for(const ring of rings){
+        for(let j=0;j<ring.length-1;j++){
+          if(segmentIntersection(ax,ay,bx,by,ring[j][0],ring[j][1],ring[j+1][0],ring[j+1][1])) return true;
+        }
       }
     }
     return false;
@@ -1247,26 +1257,69 @@
     return inside;
   }
 
-  // ルートが市区町村境界に最も近づく点から、境界の最近接点を求め、100m内側を返す
-  function findEntryFromRoute(routeCoords,cityCode){
+  // ルートのセグメントと市区町村境界の交差点を求め、次の目的地方向に100m入った地点を返す
+  // nextDestCoord: この経由地の「次のポイント」座標 [lat,lng]（100mの方向計算に使用）
+  function findEntryFromRoute(routeCoords,cityCode,nextDestCoord){
     const rings=getCityBoundaryRings(cityCode);
     const centroid=getCityCentroid(cityCode);
     if(!rings.length||!centroid) return null;
 
-    // ルート上で境界に最も近い点を探す
-    let bestBoundaryPt=null,bestDist=Infinity;
-    for(let i=0;i<routeCoords.length;i+=3){
-      const rlat=routeCoords[i][1],rlng=routeCoords[i][0];
+    // Step A: ルートセグメントと境界ポリゴンの交差点を探す（ルートの進行順で最初の交差）
+    let intersectionPt=null;
+    // ルート座標は[lng,lat]（GeoJSON）→ セグメントごとに[lat,lng]で処理
+    outer:
+    for(let i=0;i<routeCoords.length-1;i++){
+      const ax=routeCoords[i][1],  ay=routeCoords[i][0];   // lat, lng
+      const bx=routeCoords[i+1][1],by=routeCoords[i+1][0];
       for(const ring of rings){
-        for(const bp of ring){
-          const d=(rlat-bp[0])**2+(rlng-bp[1])**2;
-          if(d<bestDist){bestDist=d;bestBoundaryPt=bp;}
+        for(let j=0;j<ring.length-1;j++){
+          const cx=ring[j][0],  cy=ring[j][1];
+          const dx=ring[j+1][0],dy=ring[j+1][1];
+          const pt=segmentIntersection(ax,ay,bx,by,cx,cy,dx,dy);
+          if(pt){intersectionPt=pt;break outer;}
         }
       }
     }
-    if(!bestBoundaryPt) return null;
-    // 境界点から中心方向に100m入った地点
-    return moveToward(bestBoundaryPt,centroid,100);
+
+    // Step B: 交差点が見つからない場合（ルートが境界のすぐ外を通っている等）
+    // → ルートの各セグメントと境界の各辺で最も近い点ペアを求め、境界側の点を使う
+    if(!intersectionPt){
+      let bestDist=Infinity,bestPt=null;
+      for(let i=0;i<routeCoords.length-1;i++){
+        const ax=routeCoords[i][1],  ay=routeCoords[i][0];
+        const bx=routeCoords[i+1][1],by=routeCoords[i+1][0];
+        for(const ring of rings){
+          for(let j=0;j<ring.length-1;j++){
+            // 境界セグメントの中点とルートセグメントの最近接点の距離
+            const mx=(ring[j][0]+ring[j+1][0])/2;
+            const my=(ring[j][1]+ring[j+1][1])/2;
+            const cp=closestPointOnSegment(mx,my,ax,ay,bx,by);
+            const d=(cp[0]-mx)**2+(cp[1]-my)**2;
+            if(d<bestDist){
+              bestDist=d;
+              // 境界セグメントの中点をエントリー境界点として使用
+              bestPt=[mx,my];
+            }
+          }
+        }
+      }
+      if(!bestPt) return null;
+      intersectionPt=bestPt;
+    }
+
+    // Step C: 侵入点から「次の目的地方向」に100m移動
+    // nextDestCoordが指定されていればその方向、なければ重心方向
+    const dirTarget=nextDestCoord||centroid;
+    return moveToward(intersectionPt,dirTarget,100);
+  }
+
+  // 点(px,py)からセグメント(ax,ay)-(bx,by)への最近接点を返す
+  function closestPointOnSegment(px,py,ax,ay,bx,by){
+    const dx=bx-ax,dy=by-ay;
+    const lenSq=dx*dx+dy*dy;
+    if(lenSq<1e-14) return [ax,ay];
+    const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/lenSq));
+    return [ax+t*dx,ay+t*dy];
   }
 
   $('route-go-btn').addEventListener('click',async()=>{
@@ -1310,14 +1363,23 @@
     // Step 2: 各市区町村経由地について、ベースルートが既に通過しているかチェック
     const cityCheckResults=[];
     const neededCityWp=[];
-    for(const wp of cityWp){
+    // allWpの中でこの経由地の「次のポイント」を特定するため、全体の順序リストを作る
+    // 順序: routeFromCoord → allWp順 → routeToCoord
+    const orderedPoints=[routeFromCoord,...allWp.map(wp=>wp.coord),routeToCoord];
+    for(let wi=0;wi<cityWp.length;wi++){
+      const wp=cityWp[wi];
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,wp.cityCode);
       if(passes){
         cityCheckResults.push({name:wp.name,passes:true});
         // 既に通過しているので経由地として追加不要
       } else {
-        // 通過していない→最寄りの境界入口100m地点を経由地に追加
-        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,wp.cityCode);
+        // 通過していない→ルートと境界の交差点から次の目的地方向に100m入った地点を経由地に
+        // 「次のポイント」: allWp内でのこのwpの次の要素、なければrouteToCoord
+        const wpIdxInAll=allWp.indexOf(wp);
+        const nextCoord=wpIdxInAll>=0&&wpIdxInAll<allWp.length-1
+          ? allWp[wpIdxInAll+1].coord
+          : routeToCoord;
+        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,wp.cityCode,nextCoord);
         if(entry){
           neededCityWp.push({...wp,coord:entry});
           cityCheckResults.push({name:wp.name,passes:false});
@@ -1329,7 +1391,9 @@
     if(fromIsCity){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeFromCity.cityCode);
       if(!passes){
-        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeFromCity.cityCode);
+        // 出発地市区町村：次のポイント（最初の通常経由地 or 目的地）方向へ侵入
+        const nextAfterFrom=allWp.length>0?allWp[0].coord:routeToCoord;
+        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeFromCity.cityCode,nextAfterFrom);
         if(entry) routeFromCoord=entry;
       }
       cityCheckResults.push({name:routeFromCity.name,passes});
@@ -1337,7 +1401,9 @@
     if(toIsCity){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeToCity.cityCode);
       if(!passes){
-        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeToCity.cityCode);
+        // 目的地市区町村：最後の通常経由地 or 出発地から来る方向へ侵入
+        const prevBeforeTo=allWp.length>0?allWp[allWp.length-1].coord:routeFromCoord;
+        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeToCity.cityCode,routeToCoord);
         if(entry) routeToCoord=entry;
       }
       cityCheckResults.push({name:routeToCity.name,passes});

@@ -8,7 +8,7 @@
   // Google Maps APIをダイナミックに読み込み
   (function(){
     const s=document.createElement('script');
-    s.src='https://maps.googleapis.com/maps/api/js?key=AIzaSyBhYD65c-yfH1faQ_37y9NIe4Ft3Y5ad18&libraries=places,geometry&language=ja&callback=__gmapReady';
+    s.src='https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,geometry&language=ja&callback=__gmapReady';
     s.async=true;s.defer=true;
     document.head.appendChild(s);
   })();
@@ -96,7 +96,7 @@
   .gm-style .gm-style-iw-c{border-radius:10px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;}
   .gm-style .gm-style-iw-d{overflow:auto!important;padding:12px 16px!important;}
   .pop-pref{font-size:11px;color:var(--text-dim);}
-  .pop-name{font-weight:700;font-size:15px;color:var(--text-bright);margin-top:1px;}
+  .pop-name{font-weight:700;font-size:15px;color:var(--text-bright);margin-top:1px;white-space:nowrap;}
   .pop-badge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500;}
   .pop-badge.badge-0{background:var(--unvisited-fill);color:var(--text-dim);}
   .pop-badge.badge-1{background:var(--visit-1-fill);color:#1e40af;}
@@ -216,7 +216,7 @@
   .mcm-option .mcm-icon.city{background:rgba(245,158,11,0.1);color:#d97706;}
   .mcm-option .mcm-detail{flex:1;min-width:0;}
   .mcm-option .mcm-title{font-weight:500;color:var(--text-bright);}
-  .mcm-option .mcm-sub{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mcm-option .mcm-sub{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:normal;word-break:break-all;}
   .mcm-overlay{position:fixed;inset:0;z-index:2001;background:transparent;}
   .map-pick-active #map{cursor:crosshair!important;}
   .map-pick-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:2001;background:var(--bg-panel);border:1px solid var(--accent);border-radius:10px;padding:10px 20px;box-shadow:0 4px 20px rgba(37,99,235,0.15);font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;animation:hintSlideUp 0.3s ease;}
@@ -472,7 +472,9 @@
   // Click → InfoWindow or mapPick
   geoDataLayer.addListener('click',e=>{
     if(typeof mapPickMode!=='undefined'&&mapPickMode){
-      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},featureToProps(e.feature));
+      const cx=e.domEvent?e.domEvent.clientX:null;
+      const cy=e.domEvent?e.domEvent.clientY:null;
+      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},featureToProps(e.feature),cx,cy);
       return;
     }
     infoWindow.setContent(popupHTMLFromFeature(e.feature));
@@ -483,7 +485,9 @@
   map.addListener('click',e=>{
     if(typeof mapPickMode!=='undefined'&&mapPickMode){
       const feat=findMunicipalityAtLatLng(e.latLng);
-      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},feat);
+      const cx=e.domEvent?e.domEvent.clientX:null;
+      const cy=e.domEvent?e.domEvent.clientY:null;
+      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},feat,cx,cy);
       return;
     }
     infoWindow.close();
@@ -522,31 +526,10 @@
   const toggleDiv=document.createElement('div');
   toggleDiv.className='layer-toggles';
   toggleDiv.style.margin='10px';
-  
-　// 変更後
-　const chkTracks = document.createElement('input');
-　chkTracks.type = 'checkbox';
-　chkTracks.id = 'toggle-tracks';
-　if (tracksData) { chkTracks.checked = true; } else { chkTracks.disabled = true; }
-
-　const chkPolygons = document.createElement('input');
-　chkPolygons.type = 'checkbox';
-　chkPolygons.id = 'toggle-polygons';
-　chkPolygons.checked = true;
-
-　const lblTracks = document.createElement('label');
-　lblTracks.className = 'toggle-item';
-　lblTracks.append(chkTracks, Object.assign(document.createElement('span'),{className:'toggle-line'}), Object.assign(document.createElement('span'),{textContent:'軌跡'}));
-
-　const lblPolygons = document.createElement('label');
-　lblPolygons.className = 'toggle-item';
-　lblPolygons.append(chkPolygons, Object.assign(document.createElement('span'),{className:'toggle-fill'}), Object.assign(document.createElement('span'),{textContent:'市区町村'}));
-
-　toggleDiv.append(lblTracks, lblPolygons);
-　map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
-
-　chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
-　chkPolygons.addEventListener('change', function(){ geoDataLayer.setMap(this.checked?map:null); });
+  toggleDiv.innerHTML=`<label class="toggle-item"><input type="checkbox" id="toggle-tracks" ${tracksData?'checked':'disabled'}><span class="toggle-line"></span><span>軌跡</span></label><label class="toggle-item"><input type="checkbox" id="toggle-polygons" checked><span class="toggle-fill"></span><span>市区町村</span></label>`;
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
+  $('toggle-tracks').addEventListener('change',function(){if(!tracksDataLayer)return;tracksDataLayer.setMap(this.checked?map:null);});
+  $('toggle-polygons').addEventListener('change',function(){geoDataLayer.setMap(this.checked?map:null);});
 
   // 互換ラッパー
   map.getCenter_compat=()=>{const c=map.getCenter();return{lat:c.lat(),lng:c.lng()};};
@@ -1360,7 +1343,7 @@
     return inside;
   }
 
-  function handleMapPick(latlng,feature){
+  function handleMapPick(latlng,feature,clientX,clientY){
     if(!activeRouteInput) return;
     const target=activeRouteInput;
     // Remove existing modal
@@ -1372,8 +1355,6 @@
     const prefName=fp?fp.pref:'';
     const vc=code?visitedData.cities[code]:null;
     const isVisited=vc&&vc.visitDays>0;
-    const pt=map.latLngToContainerPoint(latlng);
-    const mapRect=$('map').getBoundingClientRect();
 
     const overlay=document.createElement('div');
     overlay.className='mcm-overlay';
@@ -1401,10 +1382,14 @@
     }
     modal.innerHTML=html;
 
-    let left=mapRect.left+pt.x+12,top=mapRect.top+pt.y-20;
-    if(left+280>window.innerWidth) left=mapRect.left+pt.x-292;
-    if(top+160>window.innerHeight) top=window.innerHeight-170;
-    if(top<54) top=54;
+    // clientX/Y（domEvent座標）を使ってモーダルを配置。取得できない場合は画面中央
+    const cx=clientX!=null?clientX:window.innerWidth/2;
+    const cy=clientY!=null?clientY:window.innerHeight/2;
+    const modalW=284,modalH=code?180:130;
+    let left=cx+12,top=cy-20;
+    if(left+modalW>window.innerWidth) left=cx-modalW-12;
+    if(top+modalH>window.innerHeight) top=window.innerHeight-modalH-10;
+    if(top<58) top=58;
     modal.style.left=left+'px';modal.style.top=top+'px';
     document.body.appendChild(modal);
 

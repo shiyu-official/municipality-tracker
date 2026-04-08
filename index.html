@@ -660,50 +660,63 @@
   let mapPickMode=false,mapPickTarget=null,mapPickHintEl=null;
   let activeRouteInput=null; // 'from'|'to'|'wp-0'|'wp-1'...
 
+  let _lastNominatimTime=0;
+  async function _nominatimFetch(q){
+    // レートリミット: 前回から1.1秒待つ
+    const now=Date.now();
+    const wait=Math.max(0,1100-( now-_lastNominatimTime));
+    if(wait>0) await new Promise(r=>setTimeout(r,wait));
+    _lastNominatimTime=Date.now();
+    const url=`${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
+    try{
+      const r=await fetch(url,{headers:{'Accept-Language':'ja'}});
+      if(!r.ok) return [];
+      return await r.json();
+    }catch(e){return [];}
+  }
+
   async function nominatimSearch(q){
     if(!q.trim()) return [];
     const normalized=q.replace(/\u3000/g,' ').trim();
     const center=map.getCenter();
 
     const words=normalized.split(/\s+/).filter(w=>w);
-    let queries=[normalized];
+
+    // まず元の検索語で検索
+    let results=await _nominatimFetch(normalized);
+
+    // スペース区切りで2単語以上なら逆順も試す（結果が少ない場合のみ）
     if(words.length>=2&&words.length<=4){
       const reversed=words.slice().reverse().join(' ');
-      if(reversed!==normalized) queries.push(reversed);
-      const joined=words.join('');
-      if(joined!==normalized) queries.push(joined);
-      const joinedRev=words.slice().reverse().join('');
-      if(joinedRev!==joined&&joinedRev!==normalized) queries.push(joinedRev);
+      if(reversed!==normalized){
+        const results2=await _nominatimFetch(reversed);
+        results=[...results,...results2];
+      }
+      // スペースなし連結も試す（「北見 ドーミーイン」→「北見ドーミーイン」）
+      if(results.length<3){
+        const joined=words.join('');
+        if(joined!==normalized){
+          const results3=await _nominatimFetch(joined);
+          results=[...results,...results3];
+        }
+      }
     }
 
-    // Nominatimレートリミット対策: 順次リクエスト（間隔200ms）
-    const allResults=[];
-    for(let i=0;i<queries.length;i++){
-      if(i>0) await new Promise(r=>setTimeout(r,200));
-      const url=`${NOMINATIM}/search?q=${encodeURIComponent(queries[i])}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
-      try{const r=await fetch(url,{headers:{'Accept-Language':'ja'}});allResults.push(await r.json());}
-      catch(e){allResults.push([]);}
-    }
-
-    // マージ＆重複排除（display_nameで同一地物を除去）
+    // 重複排除（display_nameで）
     const seen=new Set();
     const merged=[];
-    for(const results of allResults){
-      for(const r of results){
-        const key=r.display_name;
-        if(!seen.has(key)){seen.add(key);merged.push(r);}
-      }
+    for(const r of results){
+      const key=r.display_name;
+      if(!seen.has(key)){seen.add(key);merged.push(r);}
     }
 
     // ソート: 検索ワード一致度を優先、同スコアなら地図中心からの距離
     const lowerWords=words.map(w=>w.toLowerCase());
     merged.sort((a,b)=>{
       const na=a.display_name.toLowerCase(),nb=b.display_name.toLowerCase();
-      // 全ワードが名前に含まれる数をスコアに
       const sa=lowerWords.filter(w=>na.includes(w)).length;
       const sb=lowerWords.filter(w=>nb.includes(w)).length;
-      if(sb!==sa) return sb-sa; // 一致度高い方が上
-      // 同スコアなら距離
+      if(sb!==sa) return sb-sa;
       const da=(parseFloat(a.lat)-center.lat)**2+(parseFloat(a.lon)-center.lng)**2;
       const db=(parseFloat(b.lat)-center.lat)**2+(parseFloat(b.lon)-center.lng)**2;
       return da-db;

@@ -448,6 +448,13 @@
     style:getStyle,
     onEachFeature:function(feature,layer){
       layer.on('click',function(e){
+        // Map pick mode intercept
+        if(mapPickMode){
+          L.DomEvent.stopPropagation(e);
+          const target=$('map-pick-target').value;
+          showMapClickModal(e.latlng,feature,target);
+          return;
+        }
         L.DomEvent.stopPropagation(e);
         map.closePopup();
         L.popup({className:'city-popup',closeButton:true,autoPan:true,autoPanPadding:[40,40]})
@@ -1053,25 +1060,7 @@
     map.closePopup();
   });
 
-  // Also intercept geoLayer clicks in pick mode
-  const origGeoLayerOnEach=geoLayer;
-  geoLayer.eachLayer(layer=>{
-    layer.off('click');
-    layer.on('click',function(e){
-      if(mapPickMode){
-        L.DomEvent.stopPropagation(e);
-        const target=$('map-pick-target').value;
-        showMapClickModal(e.latlng,layer.feature,target);
-        return;
-      }
-      L.DomEvent.stopPropagation(e);
-      map.closePopup();
-      L.popup({className:'city-popup',closeButton:true,autoPan:true,autoPanPadding:[40,40]})
-        .setLatLng(e.latlng)
-        .setContent(popupHTML(layer.feature))
-        .openOn(map);
-    });
-  });
+  // geoLayer click handling is integrated in onEachFeature above
 
   // ── ルート検索実行（経由地対応） ──
   $('route-go-btn').addEventListener('click',async()=>{

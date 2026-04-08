@@ -659,21 +659,17 @@
     const normalized=q.replace(/\u3000/g,' ').trim();
     const center=map.getCenter();
 
-    // スペース区切りの場合、語順パターンを生成して並行検索
     const words=normalized.split(/\s+/).filter(w=>w);
     let queries=[normalized];
     if(words.length>=2&&words.length<=4){
-      // 逆順も追加（「北見 ドーミーイン」→「ドーミーイン 北見」も検索）
       const reversed=words.slice().reverse().join(' ');
       if(reversed!==normalized) queries.push(reversed);
-      // スペースなし連結も追加（「ドーミーイン北見」）
       const joined=words.join('');
       if(joined!==normalized) queries.push(joined);
       const joinedRev=words.slice().reverse().join('');
       if(joinedRev!==joined&&joinedRev!==normalized) queries.push(joinedRev);
     }
 
-    // 並行検索
     const fetches=queries.map(async qry=>{
       const url=`${NOMINATIM}/search?q=${encodeURIComponent(qry)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
       try{const r=await fetch(url,{headers:{'Accept-Language':'ja'}});return await r.json();}
@@ -681,18 +677,25 @@
     });
     const allResults=await Promise.all(fetches);
 
-    // マージ＆重複排除（place_idで）
+    // マージ＆重複排除（display_nameで同一地物を除去）
     const seen=new Set();
     const merged=[];
     for(const results of allResults){
       for(const r of results){
-        const key=r.place_id||`${r.lat},${r.lon}`;
+        const key=r.display_name;
         if(!seen.has(key)){seen.add(key);merged.push(r);}
       }
     }
 
-    // 地図中心からの距離でソート
+    // ソート: 検索ワード一致度を優先、同スコアなら地図中心からの距離
+    const lowerWords=words.map(w=>w.toLowerCase());
     merged.sort((a,b)=>{
+      const na=a.display_name.toLowerCase(),nb=b.display_name.toLowerCase();
+      // 全ワードが名前に含まれる数をスコアに
+      const sa=lowerWords.filter(w=>na.includes(w)).length;
+      const sb=lowerWords.filter(w=>nb.includes(w)).length;
+      if(sb!==sa) return sb-sa; // 一致度高い方が上
+      // 同スコアなら距離
       const da=(parseFloat(a.lat)-center.lat)**2+(parseFloat(a.lon)-center.lng)**2;
       const db=(parseFloat(b.lat)-center.lat)**2+(parseFloat(b.lon)-center.lng)**2;
       return da-db;
@@ -733,10 +736,10 @@
       if(searchMarker) map.removeLayer(searchMarker);
       searchMarker=L.marker([coord.lat,coord.lng]).addTo(map);
       map.setView([coord.lat,coord.lng],15);
-      // reverseで地名を取得してポップアップに表示
       const rev=await nominatimReverse(coord.lat,coord.lng);
       const name=rev&&rev.display_name?rev.display_name.split(',')[0]:`${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
       searchMarker.bindPopup(name).openPopup();
+      searchMarker.on('popupclose',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
       searchResults.style.display='none';
       return;
     }
@@ -758,6 +761,7 @@
         const lat=parseFloat(el.dataset.lat),lon=parseFloat(el.dataset.lon);
         if(searchMarker) map.removeLayer(searchMarker);
         searchMarker=L.marker([lat,lon]).addTo(map).bindPopup(el.querySelector('.sri-name').textContent).openPopup();
+        searchMarker.on('popupclose',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
         map.setView([lat,lon],14);
         searchResults.style.display='none';
       });

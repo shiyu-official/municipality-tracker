@@ -12,7 +12,7 @@
     --border:#dde1e8; --border-light:#e8ebf0;
     --text:#2c2c2c; --text-dim:#7a8494; --text-bright:#1a1a1a;
     --accent:#2563eb; --accent-light:rgba(37,99,235,0.08);
-    --unvisited-fill:#ebedf2; --unvisited-stroke:#cdd1da;
+    --unvisited-fill:#d5d8e0; --unvisited-stroke:#b0b5c3;
     --visit-1-fill:#bfdbfe; --visit-1-stroke:#93c5fd;
     --visit-2-fill:#60a5fa; --visit-2-stroke:#3b82f6;
     --visit-3-fill:#2563eb; --visit-3-stroke:#1d4ed8;
@@ -160,6 +160,38 @@
   #route-clear-btn{width:100%;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text-dim);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;display:none;}
   #route-clear-btn:hover{background:var(--bg-panel-hover);}
 
+  /* 経由地 */
+  .route-waypoints{margin:0 0 4px 0;}
+  .route-wp-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;animation:wpFadeIn 0.2s ease;}
+  @keyframes wpFadeIn{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+  .route-dot.via{background:#f59e0b;width:8px;height:8px;border:2px solid #d97706;}
+  .wp-remove-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;border-radius:4px;}
+  .wp-remove-btn:hover{color:#ef4444;background:rgba(239,68,68,0.08);}
+  #add-waypoint-btn{width:100%;padding:5px;background:var(--bg);border:1px dashed var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:8px;transition:all 0.15s;}
+  #add-waypoint-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+  .map-pick-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:2001;background:var(--bg-panel);border:1px solid var(--accent);border-radius:10px;padding:10px 20px;box-shadow:0 4px 20px rgba(37,99,235,0.15);font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;animation:hintSlideUp 0.3s ease;}
+  @keyframes hintSlideUp{from{opacity:0;transform:translateX(-50%) translateY(16px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+  .map-pick-hint .hint-cancel{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;}
+  .map-pick-hint .hint-cancel:hover{background:var(--bg-panel-hover);}
+  #map-pick-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 4px;display:flex;align-items:center;gap:2px;}
+  #map-pick-btn:hover{color:var(--accent);}
+  #map-pick-btn.active{color:var(--accent);}
+
+  /* 地図クリック選択モーダル */
+  .map-click-modal{position:fixed;z-index:2002;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:0;width:280px;animation:modalPop 0.2s ease;}
+  @keyframes modalPop{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+  .mcm-header{padding:12px 16px 8px;font-size:13px;font-weight:700;color:var(--text-bright);border-bottom:1px solid var(--border-light);}
+  .mcm-option{padding:12px 16px;cursor:pointer;transition:background 0.12s;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);}
+  .mcm-option:hover{background:var(--bg-panel-hover);}
+  .mcm-option:last-child{border-radius:0 0 12px 12px;}
+  .mcm-option .mcm-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+  .mcm-option .mcm-icon.pin{background:rgba(37,99,235,0.1);color:var(--accent);}
+  .mcm-option .mcm-icon.city{background:rgba(245,158,11,0.1);color:#d97706;}
+  .mcm-option .mcm-detail{flex:1;min-width:0;}
+  .mcm-option .mcm-title{font-weight:500;color:var(--text-bright);}
+  .mcm-option .mcm-sub{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mcm-overlay{position:fixed;inset:0;z-index:2001;background:transparent;}
+
   .city-select-modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:2000;display:flex;align-items:center;justify-content:center;}
   .csm-inner{background:var(--bg-panel);border-radius:12px;width:340px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
   .csm-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -260,6 +292,16 @@
         <button style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 4px;" id="to-city-btn" title="訪問済み都市から選択">🗺</button>
         <button style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 4px;" id="to-locate-btn" title="現在地">📍</button>
       </div>
+      <div class="route-waypoints" id="route-waypoints"></div>
+      <button id="add-waypoint-btn">＋ 経由地を追加</button>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <button id="map-pick-btn" title="地図をクリックして地点を追加">📌 地図から選択</button>
+        <select id="map-pick-target" style="flex:1;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;">
+          <option value="from">出発地</option>
+          <option value="to">目的地</option>
+          <option value="waypoint">経由地追加</option>
+        </select>
+      </div>
       <button id="route-go-btn">ルートを検索</button>
       <div id="route-result"></div>
       <button id="route-clear-btn">ルートをクリア</button>
@@ -269,7 +311,7 @@
 
 <div class="legend">
   <div class="legend-title">訪問回数</div>
-  <div class="legend-item"><div class="legend-color" style="background:var(--unvisited-fill);"></div><span class="legend-label">未訪問</span></div>
+  <div class="legend-item"><div class="legend-color" style="background:#d5d8e0;"></div><span class="legend-label">未訪問</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></div>
@@ -280,8 +322,8 @@
 <script>
 (async function(){
   const $=id=>document.getElementById(id);
-  const FILL=['#ebedf2','#bfdbfe','#60a5fa','#2563eb'];
-  const STROKE=['#cdd1da','#93c5fd','#3b82f6','#1d4ed8'];
+  const FILL=['#d5d8e0','#bfdbfe','#60a5fa','#2563eb'];
+  const STROKE=['#b0b5c3','#93c5fd','#3b82f6','#1d4ed8'];
 
   function getLevel(d){if(!d||d===0)return 0;if(d===1)return 1;if(d===2)return 2;return 3;}
   function getLevelLabel(l){return['未訪問','1回','2回','3回以上'][l];}
@@ -418,7 +460,7 @@
     }
   }).addTo(map);
 
-  map.on('click',()=>map.closePopup());
+  // map click handled in pick mode section below
 
   // Tracks
   let tracksLayer=null;
@@ -754,7 +796,284 @@
   $('from-city-btn').addEventListener('click',()=>openCityModal(c=>routeFromCoord=c,'route-from'));
   $('to-city-btn').addEventListener('click',()=>openCityModal(c=>routeToCoord=c,'route-to'));
 
-  // ルート検索実行
+  // ── 経由地管理 ──
+  let routeWaypoints=[]; // [{coord:[lat,lon], name:'...', isCityWaypoint:false, cityCode:null}]
+  let wpIdCounter=0;
+
+  function renderWaypoints(){
+    const container=$('route-waypoints');
+    container.innerHTML=routeWaypoints.map((wp,i)=>`
+      <div class="route-wp-row" data-wp-idx="${i}">
+        <div class="route-dot via"></div>
+        <div class="route-input-wrap">
+          <input class="route-input wp-input" data-wp-idx="${i}" type="text" placeholder="経由地" value="${wp.name||''}" autocomplete="off">
+          <div class="route-suggest wp-suggest" id="wp-suggest-${i}"></div>
+        </div>
+        <button class="wp-remove-btn" data-wp-idx="${i}" title="削除">✕</button>
+      </div>`).join('');
+    // Remove buttons
+    container.querySelectorAll('.wp-remove-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        routeWaypoints.splice(parseInt(btn.dataset.wpIdx),1);
+        renderWaypoints();
+      });
+    });
+    // Autocomplete for each waypoint
+    container.querySelectorAll('.wp-input').forEach(input=>{
+      const idx=parseInt(input.dataset.wpIdx);
+      const suggest=container.querySelector('#wp-suggest-'+idx);
+      let timer=null;
+      input.addEventListener('input',()=>{
+        clearTimeout(timer);
+        const q=input.value.trim();
+        if(!q){suggest.style.display='none';return;}
+        timer=setTimeout(async()=>{
+          const results=await nominatimSearch(q);
+          if(!results.length){suggest.style.display='none';return;}
+          suggest.innerHTML=results.map((r,ri)=>`
+            <div class="route-suggest-item" data-lat="${r.lat}" data-lon="${r.lon}" data-ri="${ri}">
+              <div class="rsi-main">${r.display_name.split(',')[0]}</div>
+              <div class="rsi-sub">${r.display_name.split(',').slice(1,3).join(',')}</div>
+            </div>`).join('');
+          suggest.style.display='block';
+          suggest.querySelectorAll('.route-suggest-item').forEach(el=>{
+            el.addEventListener('click',()=>{
+              input.value=el.querySelector('.rsi-main').textContent;
+              routeWaypoints[idx].coord=[parseFloat(el.dataset.lat),parseFloat(el.dataset.lon)];
+              routeWaypoints[idx].name=input.value;
+              suggest.style.display='none';
+            });
+          });
+        },400);
+      });
+      document.addEventListener('click',e=>{if(!e.target.closest('#wp-suggest-'+idx)&&e.target!==input) suggest.style.display='none';});
+    });
+  }
+
+  $('add-waypoint-btn').addEventListener('click',()=>{
+    routeWaypoints.push({coord:null,name:'',isCityWaypoint:false,cityCode:null});
+    renderWaypoints();
+    // Focus last input
+    const inputs=$('route-waypoints').querySelectorAll('.wp-input');
+    if(inputs.length) inputs[inputs.length-1].focus();
+  });
+
+  // ── 地図クリックで地点追加 ──
+  let mapPickMode=false;
+  let mapPickHintEl=null;
+
+  function findMunicipalityAtPoint(latlng){
+    // Search through geoLayer to find which municipality polygon contains the point
+    let found=null;
+    geoLayer.eachLayer(layer=>{
+      if(found) return;
+      const feature=layer.feature;
+      if(!feature||!feature.properties.N03_007) return;
+      // Use leaflet's getBounds for quick check then detailed check
+      if(layer.getBounds&&layer.getBounds().contains(latlng)){
+        // For precise check, use ray-casting on polygon coords
+        if(isPointInLayer(latlng,layer)) found=feature;
+      }
+    });
+    return found;
+  }
+
+  function isPointInLayer(latlng,layer){
+    // Check if point is inside polygon/multipolygon
+    const type=layer.feature.geometry.type;
+    const coords=layer.feature.geometry.coordinates;
+    if(type==='Polygon') return isPointInPolygon(latlng,coords);
+    if(type==='MultiPolygon'){
+      for(const poly of coords){if(isPointInPolygon(latlng,poly)) return true;}
+    }
+    return false;
+  }
+
+  function isPointInPolygon(latlng,polygonCoords){
+    // polygonCoords is array of rings, first ring is outer boundary
+    const ring=polygonCoords[0];
+    if(!ring) return false;
+    const x=latlng.lng, y=latlng.lat;
+    let inside=false;
+    for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+      const xi=ring[i][0],yi=ring[i][1];
+      const xj=ring[j][0],yj=ring[j][1];
+      if((yi>y)!==(yj>y)&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+
+  function showMapClickModal(latlng, feature, target){
+    // Remove any existing modal
+    document.querySelectorAll('.mcm-overlay,.map-click-modal').forEach(el=>el.remove());
+
+    const code=feature?feature.properties.N03_007:null;
+    const fp=code?featureProps[code]:null;
+    const cityName=fp?buildFullName(code,fp.gun,fp.city):'不明';
+    const prefName=fp?fp.pref:'';
+    const vc=code?visitedData.cities[code]:null;
+    const isVisited=vc&&vc.visitDays>0;
+
+    // Convert latlng to pixel position
+    const pt=map.latLngToContainerOffset?map.latLngToContainerOffset(latlng):map.latLngToContainerPoint(latlng);
+    const mapRect=$('map').getBoundingClientRect();
+
+    const overlay=document.createElement('div');
+    overlay.className='mcm-overlay';
+    document.body.appendChild(overlay);
+
+    const modal=document.createElement('div');
+    modal.className='map-click-modal';
+
+    let optionsHTML=`
+      <div class="mcm-header">地点を${target==='from'?'出発地':target==='to'?'目的地':'経由地'}に設定</div>
+      <div class="mcm-option" data-action="exact">
+        <div class="mcm-icon pin">📍</div>
+        <div class="mcm-detail">
+          <div class="mcm-title">この地点を使用</div>
+          <div class="mcm-sub">${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</div>
+        </div>
+      </div>`;
+
+    if(code){
+      optionsHTML+=`
+        <div class="mcm-option" data-action="city" data-code="${code}">
+          <div class="mcm-icon city">${isVisited?'✅':'🏙'}</div>
+          <div class="mcm-detail">
+            <div class="mcm-title">${cityName}を経由</div>
+            <div class="mcm-sub">${prefName}・${isVisited?'訪問済み':'未訪問'}</div>
+          </div>
+        </div>`;
+    }
+
+    modal.innerHTML=optionsHTML;
+
+    // Position modal near click point
+    let left=mapRect.left+pt.x+12;
+    let top=mapRect.top+pt.y-20;
+    if(left+280>window.innerWidth) left=mapRect.left+pt.x-292;
+    if(top+160>window.innerHeight) top=window.innerHeight-170;
+    if(top<54) top=54;
+    modal.style.left=left+'px';
+    modal.style.top=top+'px';
+    document.body.appendChild(modal);
+
+    function closeModal(){overlay.remove();modal.remove();}
+    overlay.addEventListener('click',closeModal);
+
+    // Handle "exact" option
+    modal.querySelector('[data-action="exact"]').addEventListener('click',()=>{
+      const name=`${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`;
+      applyMapPickResult([latlng.lat,latlng.lng],name,target,false,null);
+      closeModal();
+    });
+
+    // Handle "city" option
+    const cityOpt=modal.querySelector('[data-action="city"]');
+    if(cityOpt){
+      cityOpt.addEventListener('click',()=>{
+        applyMapPickResult([latlng.lat,latlng.lng],cityName,target,true,code);
+        closeModal();
+      });
+    }
+  }
+
+  function applyMapPickResult(coord,name,target,isCityWaypoint,cityCode){
+    if(target==='from'){
+      routeFromCoord=coord;
+      $('route-from').value=name;
+      if(isCityWaypoint){
+        $('route-from').dataset.cityCode=cityCode;
+        $('route-from').dataset.isCity='true';
+      } else {
+        delete $('route-from').dataset.cityCode;
+        delete $('route-from').dataset.isCity;
+      }
+    } else if(target==='to'){
+      routeToCoord=coord;
+      $('route-to').value=name;
+      if(isCityWaypoint){
+        $('route-to').dataset.cityCode=cityCode;
+        $('route-to').dataset.isCity='true';
+      } else {
+        delete $('route-to').dataset.cityCode;
+        delete $('route-to').dataset.isCity;
+      }
+    } else if(target==='waypoint'){
+      routeWaypoints.push({coord,name,isCityWaypoint,cityCode});
+      renderWaypoints();
+    }
+    // Exit pick mode
+    exitMapPickMode();
+  }
+
+  function enterMapPickMode(){
+    mapPickMode=true;
+    $('map-pick-btn').classList.add('active');
+    $('map').style.cursor='crosshair';
+    // Show hint bar
+    if(mapPickHintEl) mapPickHintEl.remove();
+    const target=$('map-pick-target').value;
+    const targetLabel=target==='from'?'出発地':target==='to'?'目的地':'経由地';
+    mapPickHintEl=document.createElement('div');
+    mapPickHintEl.className='map-pick-hint';
+    mapPickHintEl.innerHTML=`<span>🖱 地図をクリックして<strong>${targetLabel}</strong>を選択</span><button class="hint-cancel">キャンセル</button>`;
+    document.body.appendChild(mapPickHintEl);
+    mapPickHintEl.querySelector('.hint-cancel').addEventListener('click',exitMapPickMode);
+  }
+
+  function exitMapPickMode(){
+    mapPickMode=false;
+    $('map-pick-btn').classList.remove('active');
+    $('map').style.cursor='';
+    if(mapPickHintEl){mapPickHintEl.remove();mapPickHintEl=null;}
+  }
+
+  $('map-pick-btn').addEventListener('click',()=>{
+    if(mapPickMode) exitMapPickMode();
+    else{
+      // Open route panel if not open
+      if(routePanel.style.display!=='block'){
+        routePanel.style.display='block';
+        $('route-toggle-btn').classList.add('active');
+      }
+      enterMapPickMode();
+    }
+  });
+
+  // Override map click to intercept for pick mode
+  map.on('click',function(e){
+    if(mapPickMode){
+      L.DomEvent.stopPropagation(e);
+      const target=$('map-pick-target').value;
+      const feature=findMunicipalityAtPoint(e.latlng);
+      showMapClickModal(e.latlng,feature,target);
+      return;
+    }
+    map.closePopup();
+  });
+
+  // Also intercept geoLayer clicks in pick mode
+  const origGeoLayerOnEach=geoLayer;
+  geoLayer.eachLayer(layer=>{
+    layer.off('click');
+    layer.on('click',function(e){
+      if(mapPickMode){
+        L.DomEvent.stopPropagation(e);
+        const target=$('map-pick-target').value;
+        showMapClickModal(e.latlng,layer.feature,target);
+        return;
+      }
+      L.DomEvent.stopPropagation(e);
+      map.closePopup();
+      L.popup({className:'city-popup',closeButton:true,autoPan:true,autoPanPadding:[40,40]})
+        .setLatLng(e.latlng)
+        .setContent(popupHTML(layer.feature))
+        .openOn(map);
+    });
+  });
+
+  // ── ルート検索実行（経由地対応） ──
   $('route-go-btn').addEventListener('click',async()=>{
     // 未入力の場合はNominatimで検索
     const fromVal=$('route-from').value.trim();
@@ -767,10 +1086,26 @@
       const r=await nominatimSearch(toVal);
       if(r.length) routeToCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];
     }
+    // 経由地のテキスト入力を座標に変換
+    for(const wp of routeWaypoints){
+      if(!wp.coord){
+        const wpInput=$('route-waypoints').querySelector(`.wp-input[data-wp-idx="${routeWaypoints.indexOf(wp)}"]`);
+        if(wpInput&&wpInput.value.trim()){
+          const r=await nominatimSearch(wpInput.value.trim());
+          if(r.length) wp.coord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];
+        }
+      }
+    }
     if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}
 
+    // 都市経由の場合、その都市ポリゴンの境界上で最短の通過点を後で調整するため
+    // まずは全ウェイポイントの座標リストを構築
+    const validWaypoints=routeWaypoints.filter(wp=>wp.coord);
+    const allPoints=[routeFromCoord,...validWaypoints.map(wp=>wp.coord),routeToCoord];
+    const coordStr=allPoints.map(c=>`${c[1]},${c[0]}`).join(';');
+
     const osrmMode=OSRM_MODES[currentRouteMode];
-    const url=`https://router.project-osrm.org/route/v1/${osrmMode}/${routeFromCoord[1]},${routeFromCoord[0]};${routeToCoord[1]},${routeToCoord[0]}?overview=full&geometries=geojson`;
+    const url=`https://router.project-osrm.org/route/v1/${osrmMode}/${coordStr}?overview=full&geometries=geojson`;
     $('route-result').style.display='block';
     $('route-result').textContent='ルートを計算中...';
     try{
@@ -778,24 +1113,84 @@
       const data=await res.json();
       if(!data.routes||!data.routes.length){$('route-result').textContent='ルートが見つかりませんでした';return;}
       const route=data.routes[0];
+
+      // 都市経由の場合：ルートが都市ポリゴンを通過しているか確認
+      let cityCheckNotes=[];
+      for(const wp of validWaypoints){
+        if(wp.isCityWaypoint&&wp.cityCode){
+          const cityName=wp.name;
+          // ルートのジオメトリが該当都市ポリゴンと交差するか簡易チェック
+          const passes=checkRoutePassesThroughCity(route.geometry.coordinates,wp.cityCode);
+          if(passes){
+            cityCheckNotes.push(`✅ ${cityName}を通過`);
+          } else {
+            cityCheckNotes.push(`⚠ ${cityName}のルート通過を確認できませんでした`);
+          }
+        }
+      }
+
       const dist=(route.distance/1000).toFixed(1);
       const dur=Math.round(route.duration/60);
       const h=Math.floor(dur/60),m=dur%60;
       const durStr=h>0?`${h}時間${m}分`:`${m}分`;
       if(routeLayer) map.removeLayer(routeLayer);
+      // Remove old waypoint markers
+      if(window._wpMarkers){window._wpMarkers.forEach(m=>map.removeLayer(m));window._wpMarkers=[];}
+
       routeLayer=L.geoJSON(route.geometry,{style:{color:'#2563eb',weight:4,opacity:0.8}}).addTo(map);
+
+      // Add waypoint markers
+      window._wpMarkers=[];
+      for(const wp of validWaypoints){
+        const marker=L.circleMarker([wp.coord[0],wp.coord[1]],{
+          radius:6,fillColor:'#f59e0b',color:'#d97706',weight:2,fillOpacity:0.9
+        }).addTo(map).bindPopup(`<strong>経由地</strong><br>${wp.name}`);
+        window._wpMarkers.push(marker);
+      }
+
       map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
-      $('route-result').innerHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
+      let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
+      if(validWaypoints.length) resultHTML+=`<br>経由地: <strong>${validWaypoints.length}箇所</strong>`;
+      if(cityCheckNotes.length) resultHTML+='<br>'+cityCheckNotes.join('<br>');
+      $('route-result').innerHTML=resultHTML;
       $('route-clear-btn').style.display='block';
     }catch(e){$('route-result').textContent='ルート取得に失敗しました';}
   });
 
+  // 都市ポリゴン通過チェック
+  function checkRoutePassesThroughCity(routeCoords,cityCode){
+    // routeCoords: [[lng,lat],...] from GeoJSON
+    // Check if any route point falls inside the city polygon
+    let cityLayers=[];
+    geoLayer.eachLayer(l=>{
+      if(l.feature&&l.feature.properties.N03_007===cityCode) cityLayers.push(l);
+    });
+    if(!cityLayers.length) return false;
+    // Sample route points (every 5th for performance)
+    for(let i=0;i<routeCoords.length;i+=5){
+      const pt=L.latLng(routeCoords[i][1],routeCoords[i][0]);
+      for(const cl of cityLayers){
+        if(isPointInLayer(pt,cl)) return true;
+      }
+    }
+    return false;
+  }
+  });
+
   $('route-clear-btn').addEventListener('click',()=>{
     if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}
+    if(window._wpMarkers){window._wpMarkers.forEach(m=>map.removeLayer(m));window._wpMarkers=[];}
     routeFromCoord=null;routeToCoord=null;
+    routeWaypoints=[];
+    renderWaypoints();
     $('route-from').value='';$('route-to').value='';
+    delete $('route-from').dataset.cityCode;
+    delete $('route-from').dataset.isCity;
+    delete $('route-to').dataset.cityCode;
+    delete $('route-to').dataset.isCity;
     $('route-result').style.display='none';
     $('route-clear-btn').style.display='none';
+    exitMapPickMode();
   });
 
   // Sidebar toggle

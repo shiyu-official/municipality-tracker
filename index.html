@@ -4,7 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>踏破マップ — 市区町村コンプリート</title>
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBhYD65c-yfH1faQ_37y9NIe4Ft3Y5ad18&libraries=places,geometry&language=ja"></script>
+<script>
+  // Google Maps APIをダイナミックに読み込み
+  (function(){
+    const s=document.createElement('script');
+    s.src='https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places,geometry&language=ja&callback=__gmapReady';
+    s.async=true;s.defer=true;
+    document.head.appendChild(s);
+  })();
+  let __gmapResolve;
+  const __gmapPromise=new Promise(r=>{__gmapResolve=r;});
+  function __gmapReady(){__gmapResolve();}
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
   :root {
@@ -325,6 +336,11 @@
 <script>
 (async function(){
   const $=id=>document.getElementById(id);
+
+  // Google Maps APIの読み込み完了を待つ
+  $('loading-status').textContent='Google Maps APIを初期化中...';
+  await __gmapPromise;
+
   const FILL=['#d5d8e0','#bfdbfe','#60a5fa','#2563eb'];
   const STROKE=['#b0b5c3','#93c5fd','#3b82f6','#1d4ed8'];
 
@@ -426,8 +442,11 @@
   const infoWindow=new google.maps.InfoWindow();
 
   // GeoJSON市区町村ポリゴン
+  $('loading-status').textContent=`市区町村ポリゴンを描画中...(${geoData.features.length}件)`;
+  await new Promise(r=>setTimeout(r,50)); // UI更新を待つ
   const geoDataLayer=new google.maps.Data({map:map});
   geoDataLayer.addGeoJson(geoData);
+  await new Promise(r=>setTimeout(r,50)); // 描画を待つ
 
   function applyGeoStyles(){
     geoDataLayer.setStyle(feature=>{

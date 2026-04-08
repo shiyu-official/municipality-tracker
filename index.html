@@ -671,12 +671,39 @@
     catch(e){return null;}
   }
 
+  // 座標文字列の検出: "43.805, 143.893" や "43.805,143.893" 等にマッチ
+  function parseCoordString(str){
+    const s=str.trim();
+    const m=s.match(/^(-?\d+\.?\d*)\s*[,、]\s*(-?\d+\.?\d*)$/);
+    if(!m) return null;
+    const a=parseFloat(m[1]),b=parseFloat(m[2]);
+    // 日本の範囲: lat 20-46, lng 122-154
+    if(a>=20&&a<=46&&b>=122&&b<=154) return {lat:a,lng:b};
+    if(b>=20&&b<=46&&a>=122&&a<=154) return {lat:b,lng:a};
+    return null;
+  }
+
   // 場所名検索→ピン
   const searchInput=$('search-input');
   const searchResults=$('search-results');
   async function doSearch(){
     const q=searchInput.value.trim();
     if(!q){searchResults.style.display='none';return;}
+
+    // 座標入力の検出
+    const coord=parseCoordString(q);
+    if(coord){
+      if(searchMarker) map.removeLayer(searchMarker);
+      searchMarker=L.marker([coord.lat,coord.lng]).addTo(map);
+      map.setView([coord.lat,coord.lng],15);
+      // reverseで地名を取得してポップアップに表示
+      const rev=await nominatimReverse(coord.lat,coord.lng);
+      const name=rev&&rev.display_name?rev.display_name.split(',')[0]:`${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
+      searchMarker.bindPopup(name).openPopup();
+      searchResults.style.display='none';
+      return;
+    }
+
     searchResults.style.display='block';
     searchResults.innerHTML='<div class="search-result-item"><span style="color:var(--text-dim)">検索中...</span></div>';
     const results=await nominatimSearch(q);
@@ -787,6 +814,14 @@
       if(inputId==='route-to') routeToCity={isCityWaypoint:false,cityCode:null,name:''};
       const q=input.value.trim();
       if(!q){suggest.style.display='none';return;}
+      // 座標入力検出
+      const coord=parseCoordString(q);
+      if(coord){
+        coordSetter([coord.lat,coord.lng]);
+        suggest.style.display='none';
+        updateRoutePreview();
+        return;
+      }
       timer=setTimeout(async()=>{
         const results=await nominatimSearch(q);
         if(!results.length){suggest.style.display='none';return;}
@@ -1155,6 +1190,15 @@
         routeWaypoints[idx].cityCode=null;
         const q=input.value.trim();
         if(!q){suggest.style.display='none';return;}
+        // 座標入力検出
+        const coord=parseCoordString(q);
+        if(coord){
+          routeWaypoints[idx].coord=[coord.lat,coord.lng];
+          routeWaypoints[idx].name=q;
+          suggest.style.display='none';
+          updateRoutePreview();
+          return;
+        }
         timer=setTimeout(async()=>{
           const results=await nominatimSearch(q);
           if(!results.length){suggest.style.display='none';return;}
@@ -1390,17 +1434,20 @@
     const fromVal=$('route-from').value.trim();
     const toVal=$('route-to').value.trim();
     if(!routeFromCoord&&fromVal){
-      const r=await nominatimSearch(fromVal);
-      if(r.length) routeFromCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];
+      const c=parseCoordString(fromVal);
+      if(c) routeFromCoord=[c.lat,c.lng];
+      else{const r=await nominatimSearch(fromVal);if(r.length) routeFromCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
     }
     if(!routeToCoord&&toVal){
-      const r=await nominatimSearch(toVal);
-      if(r.length) routeToCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];
+      const c=parseCoordString(toVal);
+      if(c) routeToCoord=[c.lat,c.lng];
+      else{const r=await nominatimSearch(toVal);if(r.length) routeToCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
     }
     for(const wp of routeWaypoints){
       if(!wp.coord&&wp.name){
-        const r=await nominatimSearch(wp.name);
-        if(r.length) wp.coord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];
+        const c=parseCoordString(wp.name);
+        if(c) wp.coord=[c.lat,c.lng];
+        else{const r=await nominatimSearch(wp.name);if(r.length) wp.coord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];}
       }
     }
     if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}

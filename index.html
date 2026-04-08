@@ -860,8 +860,8 @@
         el.addEventListener('click',async()=>{
           const name=el.dataset.name;
           const code=el.dataset.code;
-          // 都市の重心付近のスポットを探す
-          const coord=await findCityEntryPoint(code,name);
+          // 都市の境界入口スポットを探す（前後未確定なのでnull。ルート検索時に再計算）
+          const coord=await findCityEntryPoint(code,name,null,null);
           if(coord){
             coordSetter(coord);
             if(inputId&&$(inputId)) $(inputId).value=name;
@@ -877,29 +877,62 @@
     modal.addEventListener('click',e=>{if(e.target===modal) modal.remove();});
   }
 
-  // 都市の入口ポイントを取得（市区町村ポリゴンの重心付近のスポット）
-  async function findCityEntryPoint(code,name){
-    // まずポリゴンの重心を計算
+  // 都市の入口ポイントを取得
+  // fromPt, toPt: ルート上の前後のポイント[lat,lng] — 方向を計算するため
+  // 境界から中心に向かって100m入った地点付近のスポットを返す
+  async function findCityEntryPoint(code,name,fromPt,toPt){
+    const boundary=getCityBoundaryRings(code);
     const centroid=getCityCentroid(code);
-    if(!centroid) {
-      // fallback: Nominatimで検索
+    if(!boundary.length||!centroid){
       const results=await nominatimSearch(name+' 日本');
       if(results.length) return [parseFloat(results[0].lat),parseFloat(results[0].lon)];
       return null;
     }
-    // 重心から少しずらした位置（都市境界から100m程度内側のスポット）
-    // Nominatim reverseで付近のスポット名を取得
-    const rev=await nominatimReverse(centroid[0],centroid[1]);
+
+    // fromPt→toPtの直線がポリゴン境界と交差する点を求める
+    let entryPt=null;
+    if(fromPt&&toPt){
+      entryPt=findLinePolygonEntry(fromPt,toPt,boundary);
+    }
+    if(!entryPt&&fromPt){
+      // fromPt→centroidの線で境界交差を求める
+      entryPt=findLinePolygonEntry(fromPt,centroid,boundary);
+    }
+    if(!entryPt){
+      // fallback: ポリゴンの境界上で重心に最も近い点
+      entryPt=findClosestBoundaryPoint(centroid,boundary);
+    }
+    if(!entryPt) return centroid;
+
+    // entryPtから中心方向に100m移動
+    const pt100=moveToward(entryPt,centroid,100);
+
+    // Nominatim reverseで付近のスポットを取得
+    const rev=await nominatimReverse(pt100[0],pt100[1]);
     if(rev&&rev.lat&&rev.lon) return [parseFloat(rev.lat),parseFloat(rev.lon)];
-    return centroid;
+    return pt100;
+  }
+
+  function getCityBoundaryRings(code){
+    // 全外周リングを[lat,lng]配列の配列として返す
+    const rings=[];
+    geoLayer.eachLayer(l=>{
+      if(!l.feature||l.feature.properties.N03_007!==code) return;
+      const geom=l.feature.geometry;
+      if(geom.type==='Polygon'){
+        rings.push(geom.coordinates[0].map(c=>[c[1],c[0]]));
+      } else if(geom.type==='MultiPolygon'){
+        for(const poly of geom.coordinates) rings.push(poly[0].map(c=>[c[1],c[0]]));
+      }
+    });
+    return rings;
   }
 
   function getCityCentroid(code){
     let sumLat=0,sumLng=0,count=0;
     geoLayer.eachLayer(l=>{
       if(!l.feature||l.feature.properties.N03_007!==code) return;
-      const coords=l.feature.geometry.coordinates;
-      const flat=flattenCoords(coords);
+      const flat=flattenCoords(l.feature.geometry.coordinates);
       for(const c of flat){sumLng+=c[0];sumLat+=c[1];count++;}
     });
     if(count===0) return null;
@@ -909,11 +942,60 @@
   function flattenCoords(coords){
     const result=[];
     function recurse(arr){
-      if(typeof arr[0]==='number') {result.push(arr);return;}
+      if(typeof arr[0]==='number'){result.push(arr);return;}
       for(const a of arr) recurse(a);
     }
     recurse(coords);
     return result;
+  }
+
+  // fromPt→toPtの線分がrings(境界)と交差する最初の点を返す
+  function findLinePolygonEntry(fromPt,toPt,rings){
+    let best=null,bestDist=Infinity;
+    const ax=fromPt[0],ay=fromPt[1],bx=toPt[0],by=toPt[1];
+    for(const ring of rings){
+      for(let i=0;i<ring.length-1;i++){
+        const cx=ring[i][0],cy=ring[i][1],dx=ring[i+1][0],dy=ring[i+1][1];
+        const pt=segmentIntersection(ax,ay,bx,by,cx,cy,dx,dy);
+        if(pt){
+          const d=(pt[0]-ax)**2+(pt[1]-ay)**2;
+          if(d<bestDist){bestDist=d;best=pt;}
+        }
+      }
+    }
+    return best;
+  }
+
+  // 2つの線分の交点（存在すれば[lat,lng]、なければnull）
+  function segmentIntersection(ax,ay,bx,by,cx,cy,dx,dy){
+    const denom=(bx-ax)*(dy-cy)-(by-ay)*(dx-cx);
+    if(Math.abs(denom)<1e-12) return null;
+    const t=((cx-ax)*(dy-cy)-(cy-ay)*(dx-cx))/denom;
+    const u=((cx-ax)*(by-ay)-(cy-ay)*(bx-ax))/denom;
+    if(t>=0&&t<=1&&u>=0&&u<=1) return [ax+t*(bx-ax),ay+t*(by-ay)];
+    return null;
+  }
+
+  function findClosestBoundaryPoint(center,rings){
+    let best=null,bestDist=Infinity;
+    for(const ring of rings){
+      for(const pt of ring){
+        const d=(pt[0]-center[0])**2+(pt[1]-center[1])**2;
+        if(d<bestDist){bestDist=d;best=pt;}
+      }
+    }
+    return best;
+  }
+
+  // fromからtoの方向にdistMeters移動した地点を返す
+  function moveToward(from,to,distMeters){
+    const R=6371000;
+    const dLat=(to[0]-from[0])*Math.PI/180;
+    const dLng=(to[1]-from[1])*Math.PI/180;
+    const totalDist=Math.sqrt(dLat*dLat+dLng*dLng*Math.cos(from[0]*Math.PI/180)**2)*R;
+    if(totalDist<1) return from;
+    const ratio=Math.min(distMeters/totalDist,0.5);
+    return [from[0]+ratio*(to[0]-from[0]),from[1]+ratio*(to[1]-from[1])];
   }
 
   $('from-city-btn').addEventListener('click',()=>openCityModal(c=>routeFromCoord=c,'route-from'));
@@ -1094,7 +1176,8 @@
     const cityOpt=modal.querySelector('[data-action="city"]');
     if(cityOpt){
       cityOpt.addEventListener('click',async()=>{
-        const coord=await findCityEntryPoint(code,cityName);
+        // 選択時点では前後未確定なので仮座標。ルート検索時に再計算される
+        const coord=await findCityEntryPoint(code,cityName,[latlng.lat,latlng.lng],null);
         applyPickResult(coord||[latlng.lat,latlng.lng],cityName,target,true,code);
         closeModal();
       });
@@ -1138,7 +1221,19 @@
     }
     if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}
 
+    // 市区町村経由地の座標を前後ポイントから境界入口100mに再計算
     const validWaypoints=routeWaypoints.filter(wp=>wp.coord);
+    $('route-result').style.display='block';
+    $('route-result').textContent='経由地を最適化中...';
+    for(let i=0;i<validWaypoints.length;i++){
+      const wp=validWaypoints[i];
+      if(!wp.isCityWaypoint||!wp.cityCode) continue;
+      const prevPt=i===0?routeFromCoord:validWaypoints[i-1].coord;
+      const nextPt=i===validWaypoints.length-1?routeToCoord:validWaypoints[i+1].coord;
+      const entryCoord=await findCityEntryPoint(wp.cityCode,wp.name,prevPt,nextPt);
+      if(entryCoord) wp.coord=entryCoord;
+    }
+
     const allPoints=[routeFromCoord,...validWaypoints.map(wp=>wp.coord),routeToCoord];
     const coordStr=allPoints.map(c=>`${c[1]},${c[0]}`).join(';');
 

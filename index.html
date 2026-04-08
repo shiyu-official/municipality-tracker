@@ -277,7 +277,7 @@
   $('loading-status').textContent='地図を描画中...';
   const map=L.map('map',{center:[36.5,137.5],zoom:6,zoomControl:false,attributionControl:false});
   L.control.zoom({position:'topright'}).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{maxZoom:19,opacity:0.6,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>'}).addTo(map);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,opacity:0.6,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
 
   map.createPane('tracksPane');
   map.getPane('tracksPane').style.zIndex=450;

@@ -1537,15 +1537,6 @@
     // 出発地が市区町村の場合の処理は最後（全体ルートで判定）
     // まず通常の経由地はそのまま、市区町村経由地は逐次判定
 
-    // 「次の確定ポイント」を求めるヘルパー
-    // 現在位置からの次の非市区町村ポイント（通常経由地 or 目的地）を返す
-    function getNextFixedPoint(fromIdx){
-      for(let j=fromIdx;j<orderedWp.length;j++){
-        if(!orderedWp[j].isCityWaypoint && orderedWp[j].coord) return orderedWp[j].coord;
-      }
-      return routeToCoord;
-    }
-
     let currentFrom=routeFromCoord;
     for(let i=0;i<orderedWp.length;i++){
       const wp=orderedWp[i];
@@ -1555,68 +1546,50 @@
         wpMarkerData.push({coord:wp.coord,name:wp.name});
         currentFrom=wp.coord;
       } else if(wp.cityCode){
-        // 市区町村経由地: currentFrom → 次の確定ポイント間のルートで通過判定
-        const nextFixed=getNextFixedPoint(i+1);
+        // 市区町村経由地: 必ず侵入ポイントを追加
+        // （通過判定は最終ルート確定後に事後チェックする）
         $('route-result').textContent=`${wp.name}の経由を計算中...`;
-
-        let segRoute;
-        try{ segRoute=await fetchRoute([currentFrom,nextFixed]); }
-        catch(e){ segRoute=null; }
-
-        if(segRoute&&checkRoutePassesCity(segRoute.geometry.coordinates,wp.cityCode)){
-          // このルートで既に通過 → ポイント追加不要
-          cityCheckResults.push({name:wp.name,passes:true});
-        } else {
-          // 通過しない → 道路ベースで侵入ポイントを計算
-          const entryPt=await findCityEntryViaRoad(currentFrom,wp.cityCode);
-          if(entryPt){
-            resolvedPoints.push(entryPt);
-            wpMarkerData.push({coord:entryPt,name:wp.name});
-            currentFrom=entryPt;
-          }
-          cityCheckResults.push({name:wp.name,passes:false});
+        const entryPt=await findCityEntryViaRoad(currentFrom,wp.cityCode);
+        if(entryPt){
+          resolvedPoints.push(entryPt);
+          wpMarkerData.push({coord:entryPt,name:wp.name,cityCode:wp.cityCode});
+          currentFrom=entryPt;
         }
+        cityCheckResults.push({name:wp.name,passes:false});
       }
     }
 
     // 目的地が市区町村の場合
     if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
-      let segRoute;
-      try{ segRoute=await fetchRoute([currentFrom,routeToCoord]); }
-      catch(e){ segRoute=null; }
-      if(segRoute&&checkRoutePassesCity(segRoute.geometry.coordinates,routeToCity.cityCode)){
-        cityCheckResults.push({name:routeToCity.name,passes:true});
-      } else {
-        const entryPt=await findCityEntryViaRoad(currentFrom,routeToCity.cityCode);
-        if(entryPt) routeToCoord=entryPt;
-        cityCheckResults.push({name:routeToCity.name,passes:false});
-      }
+      const entryPt=await findCityEntryViaRoad(currentFrom,routeToCity.cityCode);
+      if(entryPt) routeToCoord=entryPt;
+      cityCheckResults.push({name:routeToCity.name,passes:false});
     }
 
-    // 出発地が市区町村の場合（最初の区間で判定）
+    // 出発地が市区町村の場合
     if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode){
       const nextPt=resolvedPoints.length>1?resolvedPoints[1]:routeToCoord;
-      let segRoute;
-      try{ segRoute=await fetchRoute([routeFromCoord,nextPt]); }
-      catch(e){ segRoute=null; }
-      if(segRoute&&checkRoutePassesCity(segRoute.geometry.coordinates,routeFromCity.cityCode)){
-        cityCheckResults.push({name:routeFromCity.name,passes:true});
-      } else {
-        // 出発地の場合、次のポイントから逆向きに侵入
-        const entryPt=await findCityEntryViaRoad(nextPt,routeFromCity.cityCode);
-        if(entryPt){resolvedPoints[0]=entryPt;routeFromCoord=entryPt;}
-        cityCheckResults.push({name:routeFromCity.name,passes:false});
-      }
+      const entryPt=await findCityEntryViaRoad(nextPt,routeFromCity.cityCode);
+      if(entryPt){resolvedPoints[0]=entryPt;routeFromCoord=entryPt;}
+      cityCheckResults.push({name:routeFromCity.name,passes:false});
     }
 
     resolvedPoints.push(routeToCoord);
 
-    // 最終ルートを取得
+    // 最終ルートを取得して、事後的に各市区町村の通過を確認
     $('route-result').textContent='最終ルートを計算中...';
     let finalRoute;
     try{ finalRoute=await fetchRoute(resolvedPoints); }
     catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
     if(!finalRoute){$('route-result').textContent='ルートが見つかりませんでした';return;}
+
+    // 事後チェック: 最終ルートが各市区町村を実際に通過しているか確認
+    for(const cr of cityCheckResults){
+      const wd=wpMarkerData.find(w=>w.cityCode&&w.name===cr.name);
+      if(wd&&wd.cityCode){
+        cr.passes=checkRoutePassesCity(finalRoute.geometry.coordinates,wd.cityCode);
+      }
+    }
 
     // 描画
     const dist=(finalRoute.distance/1000).toFixed(1);

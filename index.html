@@ -116,6 +116,63 @@
   .legend-color{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid rgba(0,0,0,0.08);}
   .legend-label{color:var(--text);font-size:11px;}
 
+  /* ── 検索・ルートUI ── */
+  #search-panel{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:1001;width:420px;max-width:calc(100vw - 32px);}
+  #search-box-wrap{display:flex;align-items:center;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.10);padding:0 10px;gap:6px;height:42px;}
+  #search-input{flex:1;border:none;background:transparent;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;}
+  #search-input::placeholder{color:var(--text-dim);}
+  #search-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:4px;display:flex;align-items:center;}
+  #search-btn:hover{color:var(--accent);}
+  #route-toggle-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:15px;padding:4px;display:flex;align-items:center;border-left:1px solid var(--border-light);padding-left:10px;}
+  #route-toggle-btn:hover{color:var(--accent);}
+  #route-toggle-btn.active{color:var(--accent);}
+  #locate-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:15px;padding:4px;display:flex;align-items:center;}
+  #locate-btn:hover{color:var(--accent);}
+
+  #search-results{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.10);margin-top:6px;overflow:hidden;display:none;}
+  .search-result-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border-light);transition:background 0.12s;}
+  .search-result-item:last-child{border-bottom:none;}
+  .search-result-item:hover{background:var(--bg-panel-hover);}
+  .sri-name{font-weight:500;color:var(--text-bright);}
+  .sri-addr{font-size:11px;color:var(--text-dim);margin-top:2px;}
+
+  #route-panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.10);margin-top:6px;padding:12px 14px;display:none;}
+  .route-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+  .route-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .route-dot.start{background:#22c55e;}
+  .route-dot.end{background:#ef4444;}
+  .route-input-wrap{flex:1;position:relative;}
+  .route-input{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;}
+  .route-input:focus{border-color:var(--accent);}
+  .route-input::placeholder{color:var(--text-dim);}
+  .route-suggest{position:absolute;top:100%;left:0;right:0;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);z-index:10;display:none;max-height:180px;overflow-y:auto;}
+  .route-suggest-item{padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background 0.1s;}
+  .route-suggest-item:last-child{border-bottom:none;}
+  .route-suggest-item:hover{background:var(--bg-panel-hover);}
+  .rsi-main{font-weight:500;color:var(--text-bright);}
+  .rsi-sub{font-size:10px;color:var(--text-dim);}
+  .route-type-row{display:flex;gap:4px;margin-bottom:10px;}
+  .route-type-btn{flex:1;padding:5px 4px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--text-dim);text-align:center;}
+  .route-type-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:600;}
+  #route-go-btn{width:100%;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:10px;}
+  #route-go-btn:hover{background:#1d4ed8;}
+  #route-result{margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:7px;font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;display:none;line-height:1.8;}
+  #route-clear-btn{width:100%;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text-dim);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;display:none;}
+  #route-clear-btn:hover{background:var(--bg-panel-hover);}
+
+  .city-select-modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:2000;display:flex;align-items:center;justify-content:center;}
+  .csm-inner{background:var(--bg-panel);border-radius:12px;width:340px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
+  .csm-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .csm-header h3{font-size:14px;font-weight:700;color:var(--text-bright);}
+  .csm-close{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;}
+  .csm-search{padding:10px 14px;border-bottom:1px solid var(--border-light);}
+  .csm-search input{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;}
+  .csm-list{flex:1;overflow-y:auto;padding:4px 8px;}
+  .csm-city-item{padding:8px 10px;border-radius:6px;cursor:pointer;transition:background 0.12s;}
+  .csm-city-item:hover{background:var(--bg-panel-hover);}
+  .csm-city-name{font-size:13px;font-weight:500;color:var(--text-bright);}
+  .csm-city-pref{font-size:11px;color:var(--text-dim);}
+
   @media(max-width:768px){
     #header{padding:0 10px;gap:8px;height:48px;}
     #header h1{font-size:14px;}
@@ -169,7 +226,46 @@
 </div>
 <button id="sidebar-toggle">◀</button>
 
-<div id="map-container"><div id="map"></div></div>
+<div id="map-container">
+  <div id="map"></div>
+  <div id="search-panel">
+    <div id="search-box-wrap">
+      <button id="search-btn" title="検索">🔍</button>
+      <input id="search-input" type="text" placeholder="場所・住所を検索..." autocomplete="off">
+      <button id="locate-btn" title="現在地">📍</button>
+      <button id="route-toggle-btn" title="ルート検索">↔</button>
+    </div>
+    <div id="search-results"></div>
+    <div id="route-panel">
+      <div class="route-type-row">
+        <button class="route-type-btn active" data-mode="driving">🚗 車</button>
+        <button class="route-type-btn" data-mode="walking">🚶 徒歩</button>
+        <button class="route-type-btn" data-mode="cycling">🚴 自転車</button>
+      </div>
+      <div class="route-row">
+        <div class="route-dot start"></div>
+        <div class="route-input-wrap">
+          <input class="route-input" id="route-from" type="text" placeholder="出発地（場所名・住所・現在地）" autocomplete="off">
+          <div class="route-suggest" id="route-from-suggest"></div>
+        </div>
+        <button style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 4px;" id="from-city-btn" title="訪問済み都市から選択">🗺</button>
+        <button style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 4px;" id="from-locate-btn" title="現在地">📍</button>
+      </div>
+      <div class="route-row">
+        <div class="route-dot end"></div>
+        <div class="route-input-wrap">
+          <input class="route-input" id="route-to" type="text" placeholder="目的地（場所名・住所・都市名）" autocomplete="off">
+          <div class="route-suggest" id="route-to-suggest"></div>
+        </div>
+        <button style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 4px;" id="to-city-btn" title="訪問済み都市から選択">🗺</button>
+        <button style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--text-dim);padding:2px 4px;" id="to-locate-btn" title="現在地">📍</button>
+      </div>
+      <button id="route-go-btn">ルートを検索</button>
+      <div id="route-result"></div>
+      <button id="route-clear-btn">ルートをクリア</button>
+    </div>
+  </div>
+</div>
 
 <div class="legend">
   <div class="legend-title">訪問回数</div>
@@ -489,6 +585,217 @@
       if(currentView==='prefList') renderPrefList($('pref-search').value);
       else if(currentPrefCode) showCityDetail(currentPrefCode);
     });
+  });
+
+  // ── 検索・ルート機能 ──
+  const NOMINATIM='https://nominatim.openstreetmap.org';
+  const OSRM_MODES={driving:'car',walking:'foot',cycling:'bike'};
+  let searchMarker=null,routeLayer=null,routeFromCoord=null,routeToCoord=null,currentRouteMode='driving';
+
+  // Nominatim検索
+  async function nominatimSearch(q){
+    if(!q.trim()) return [];
+    const url=`${NOMINATIM}/search?q=${encodeURIComponent(q)}&format=json&limit=5&countrycodes=jp&accept-language=ja`;
+    const r=await fetch(url,{headers:{'Accept-Language':'ja'}});
+    return await r.json();
+  }
+
+  // 場所名検索→ピン
+  const searchInput=$('search-input');
+  const searchResults=$('search-results');
+
+  async function doSearch(){
+    const q=searchInput.value.trim();
+    if(!q){searchResults.style.display='none';return;}
+    searchResults.style.display='block';
+    searchResults.innerHTML='<div class="search-result-item"><span style="color:var(--text-dim)">検索中...</span></div>';
+    const results=await nominatimSearch(q);
+    if(!results.length){
+      searchResults.innerHTML='<div class="search-result-item"><span style="color:var(--text-dim)">見つかりませんでした</span></div>';
+      return;
+    }
+    searchResults.innerHTML=results.map((r,i)=>`
+      <div class="search-result-item" data-i="${i}" data-lat="${r.lat}" data-lon="${r.lon}">
+        <div class="sri-name">${r.display_name.split(',')[0]}</div>
+        <div class="sri-addr">${r.display_name.split(',').slice(1,3).join(',')}</div>
+      </div>`).join('');
+    searchResults.querySelectorAll('.search-result-item[data-lat]').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const lat=parseFloat(el.dataset.lat),lon=parseFloat(el.dataset.lon);
+        if(searchMarker) map.removeLayer(searchMarker);
+        searchMarker=L.marker([lat,lon]).addTo(map).bindPopup(el.querySelector('.sri-name').textContent).openPopup();
+        map.setView([lat,lon],14);
+        searchResults.style.display='none';
+      });
+    });
+  }
+
+  $('search-btn').addEventListener('click',doSearch);
+  searchInput.addEventListener('keydown',e=>{if(e.key==='Enter') doSearch();});
+  document.addEventListener('click',e=>{if(!e.target.closest('#search-panel')) searchResults.style.display='none';});
+
+  // 現在地ボタン
+  function getLocation(cb){
+    if(!navigator.geolocation){alert('このブラウザは現在地取得に対応していません');return;}
+    navigator.geolocation.getCurrentPosition(pos=>cb(pos.coords.latitude,pos.coords.longitude),()=>alert('現在地を取得できませんでした'));
+  }
+  $('locate-btn').addEventListener('click',()=>{
+    getLocation((lat,lon)=>{
+      if(searchMarker) map.removeLayer(searchMarker);
+      searchMarker=L.marker([lat,lon]).addTo(map).bindPopup('現在地').openPopup();
+      map.setView([lat,lon],14);
+    });
+  });
+
+  // ルートパネル開閉
+  const routePanel=$('route-panel');
+  $('route-toggle-btn').addEventListener('click',()=>{
+    const open=routePanel.style.display==='block';
+    routePanel.style.display=open?'none':'block';
+    $('route-toggle-btn').classList.toggle('active',!open);
+    searchResults.style.display='none';
+  });
+
+  // ルート移動モード
+  document.querySelectorAll('.route-type-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.route-type-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRouteMode=btn.dataset.mode;
+    });
+  });
+
+  // ルート入力のオートコンプリート
+  function setupRouteSuggest(inputId,suggestId,coordSetter){
+    const input=$('route-panel').querySelector('#'+inputId);
+    const suggest=$('route-panel').querySelector('#'+suggestId);
+    let timer=null;
+    input.addEventListener('input',()=>{
+      clearTimeout(timer);
+      const q=input.value.trim();
+      if(!q){suggest.style.display='none';return;}
+      timer=setTimeout(async()=>{
+        const results=await nominatimSearch(q);
+        if(!results.length){suggest.style.display='none';return;}
+        suggest.innerHTML=results.map((r,i)=>`
+          <div class="route-suggest-item" data-lat="${r.lat}" data-lon="${r.lon}" data-i="${i}">
+            <div class="rsi-main">${r.display_name.split(',')[0]}</div>
+            <div class="rsi-sub">${r.display_name.split(',').slice(1,3).join(',')}</div>
+          </div>`).join('');
+        suggest.style.display='block';
+        suggest.querySelectorAll('.route-suggest-item').forEach(el=>{
+          el.addEventListener('click',()=>{
+            input.value=el.querySelector('.rsi-main').textContent;
+            coordSetter([parseFloat(el.dataset.lat),parseFloat(el.dataset.lon)]);
+            suggest.style.display='none';
+          });
+        });
+      },400);
+    });
+    document.addEventListener('click',e=>{if(!e.target.closest('#'+suggestId)&&!e.target.closest('#'+inputId)) suggest.style.display='none';});
+  }
+  setupRouteSuggest('route-from','route-from-suggest',c=>routeFromCoord=c);
+  setupRouteSuggest('route-to','route-to-suggest',c=>routeToCoord=c);
+
+  // 現在地ボタン（ルート用）
+  function setLocateToRoute(inputId,coordSetter){
+    getLocation((lat,lon)=>{
+      $(inputId).value='現在地';
+      coordSetter([lat,lon]);
+    });
+  }
+  $('from-locate-btn').addEventListener('click',()=>setLocateToRoute('route-from',c=>routeFromCoord=c));
+  $('to-locate-btn').addEventListener('click',()=>setLocateToRoute('route-to',c=>routeToCoord=c));
+
+  // 訪問済み都市選択モーダル
+  function openCityModal(coordSetter,inputId){
+    const modal=document.createElement('div');
+    modal.className='city-select-modal';
+    // 訪問済み都市リストを構築
+    const visited=[];
+    for(const[pc,cities] of Object.entries(prefCities)){
+      for(const c of cities){
+        if(c.visitDays>0) visited.push({...c,prefName:prefs[pc]?.name||''});
+      }
+    }
+    visited.sort((a,b)=>a.prefName.localeCompare(b.prefName)||a.name.localeCompare(b.name));
+
+    modal.innerHTML=`<div class="csm-inner">
+      <div class="csm-header"><h3>訪問済み都市から選択</h3><button class="csm-close">✕</button></div>
+      <div class="csm-search"><input type="text" placeholder="都市名で絞り込み..." id="csm-filter"></div>
+      <div class="csm-list" id="csm-list"></div>
+    </div>`;
+    document.body.appendChild(modal);
+
+    const renderList=(filter='')=>{
+      const filtered=filter?visited.filter(c=>c.name.includes(filter)||c.prefName.includes(filter)):visited;
+      modal.querySelector('#csm-list').innerHTML=filtered.map((c,i)=>`
+        <div class="csm-city-item" data-i="${i}" data-name="${c.name}" data-code="${c.code}">
+          <div class="csm-city-name">${c.name}</div>
+          <div class="csm-city-pref">${c.prefName}</div>
+        </div>`).join('');
+      modal.querySelectorAll('.csm-city-item').forEach(el=>{
+        el.addEventListener('click',async()=>{
+          const name=el.dataset.name;
+          const results=await nominatimSearch(name+' 日本');
+          if(results.length){
+            coordSetter([parseFloat(results[0].lat),parseFloat(results[0].lon)]);
+            $(inputId).value=name;
+          }
+          modal.remove();
+        });
+      });
+    };
+    renderList();
+    modal.querySelector('#csm-filter').addEventListener('input',e=>renderList(e.target.value));
+    modal.querySelector('.csm-close').addEventListener('click',()=>modal.remove());
+    modal.addEventListener('click',e=>{if(e.target===modal) modal.remove();});
+  }
+  $('from-city-btn').addEventListener('click',()=>openCityModal(c=>routeFromCoord=c,'route-from'));
+  $('to-city-btn').addEventListener('click',()=>openCityModal(c=>routeToCoord=c,'route-to'));
+
+  // ルート検索実行
+  $('route-go-btn').addEventListener('click',async()=>{
+    // 未入力の場合はNominatimで検索
+    const fromVal=$('route-from').value.trim();
+    const toVal=$('route-to').value.trim();
+    if(!routeFromCoord&&fromVal){
+      const r=await nominatimSearch(fromVal);
+      if(r.length) routeFromCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];
+    }
+    if(!routeToCoord&&toVal){
+      const r=await nominatimSearch(toVal);
+      if(r.length) routeToCoord=[parseFloat(r[0].lat),parseFloat(r[0].lon)];
+    }
+    if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}
+
+    const osrmMode=OSRM_MODES[currentRouteMode];
+    const url=`https://router.project-osrm.org/route/v1/${osrmMode}/${routeFromCoord[1]},${routeFromCoord[0]};${routeToCoord[1]},${routeToCoord[0]}?overview=full&geometries=geojson`;
+    $('route-result').style.display='block';
+    $('route-result').textContent='ルートを計算中...';
+    try{
+      const res=await fetch(url);
+      const data=await res.json();
+      if(!data.routes||!data.routes.length){$('route-result').textContent='ルートが見つかりませんでした';return;}
+      const route=data.routes[0];
+      const dist=(route.distance/1000).toFixed(1);
+      const dur=Math.round(route.duration/60);
+      const h=Math.floor(dur/60),m=dur%60;
+      const durStr=h>0?`${h}時間${m}分`:`${m}分`;
+      if(routeLayer) map.removeLayer(routeLayer);
+      routeLayer=L.geoJSON(route.geometry,{style:{color:'#2563eb',weight:4,opacity:0.8}}).addTo(map);
+      map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
+      $('route-result').innerHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
+      $('route-clear-btn').style.display='block';
+    }catch(e){$('route-result').textContent='ルート取得に失敗しました';}
+  });
+
+  $('route-clear-btn').addEventListener('click',()=>{
+    if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}
+    routeFromCoord=null;routeToCoord=null;
+    $('route-from').value='';$('route-to').value='';
+    $('route-result').style.display='none';
+    $('route-clear-btn').style.display='none';
   });
 
   // Sidebar toggle

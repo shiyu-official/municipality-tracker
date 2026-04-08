@@ -1628,62 +1628,49 @@
     if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}
 
     $('route-result').style.display='block';
-    $('route-result').textContent='ルートを最適化中...';
+    $('route-result').textContent='ルートを計算中...';
 
-    // 全経由地を元の順番で（通常+市区町村混在）
+    // 全経由地を元の順番で構築
     const orderedWp=routeWaypoints.filter(wp=>wp.coord||wp.isCityWaypoint);
-
-    // 逐次処理: 出発地→経由地1→経由地2→...→目的地 を順番に解決
-    // resolvedPoints: 最終的にDirections APIに渡すポイント列
     const resolvedPoints=[routeFromCoord];
     const cityCheckResults=[];
-    const wpMarkerData=[]; // 経由地マーカー用
+    const wpMarkerData=[];
 
-    // 出発地が市区町村の場合の処理は最後（全体ルートで判定）
-    // まず通常の経由地はそのまま、市区町村経由地は逐次判定
-
+    // 市区町村経由地は重心座標を経由地として使う（Directions APIが道路にスナップしてくれる）
     let currentFrom=routeFromCoord;
-    for(let i=0;i<orderedWp.length;i++){
-      const wp=orderedWp[i];
+    for(const wp of orderedWp){
       if(!wp.isCityWaypoint){
-        // 通常の経由地: そのまま追加
         resolvedPoints.push(wp.coord);
         wpMarkerData.push({coord:wp.coord,name:wp.name});
         currentFrom=wp.coord;
       } else if(wp.cityCode){
-        // 市区町村経由地: 必ず侵入ポイントを追加
-        // （通過判定は最終ルート確定後に事後チェックする）
-        $('route-result').textContent=`${wp.name}の経由を計算中...`;
-        const entryPt=await findCityEntryViaRoad(currentFrom,wp.cityCode);
-        if(entryPt){
-          resolvedPoints.push(entryPt);
-          wpMarkerData.push({coord:entryPt,name:wp.name,cityCode:wp.cityCode});
-          currentFrom=entryPt;
+        const centroid=getCityCentroid(wp.cityCode);
+        if(centroid){
+          resolvedPoints.push(centroid);
+          wpMarkerData.push({coord:centroid,name:wp.name,cityCode:wp.cityCode});
+          currentFrom=centroid;
         }
         cityCheckResults.push({name:wp.name,passes:false});
       }
     }
 
-    // 目的地が市区町村の場合
-    if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
-      const entryPt=await findCityEntryViaRoad(currentFrom,routeToCity.cityCode);
-      if(entryPt) routeToCoord=entryPt;
-      cityCheckResults.push({name:routeToCity.name,passes:false});
-    }
-
     // 出発地が市区町村の場合
     if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode){
-      const nextPt=resolvedPoints.length>1?resolvedPoints[1]:routeToCoord;
-      const entryPt=await findCityEntryViaRoad(nextPt,routeFromCity.cityCode);
-      if(entryPt){resolvedPoints[0]=entryPt;routeFromCoord=entryPt;}
+      const centroid=getCityCentroid(routeFromCity.cityCode);
+      if(centroid){resolvedPoints[0]=centroid;routeFromCoord=centroid;}
       cityCheckResults.push({name:routeFromCity.name,passes:false});
+    }
+
+    // 目的地が市区町村の場合
+    if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
+      const centroid=getCityCentroid(routeToCity.cityCode);
+      if(centroid) routeToCoord=centroid;
+      cityCheckResults.push({name:routeToCity.name,passes:false});
     }
 
     resolvedPoints.push(routeToCoord);
 
-    // 最終ルートを取得して、事後的に各市区町村の通過を確認
-    $('route-result').textContent='最終ルートを計算中...';
-    // 市区町村コードリスト（代替ルート選択時の通過判定用）
+    // 1回のDirections APIコールで全経由地を含むルートを取得
     const allCityCodes=wpMarkerData.filter(w=>w.cityCode).map(w=>w.cityCode);
     if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode) allCityCodes.push(routeFromCity.cityCode);
     if(routeToCity.isCityWaypoint&&routeToCity.cityCode) allCityCodes.push(routeToCity.cityCode);
@@ -1698,6 +1685,15 @@
       if(wd&&wd.cityCode){
         cr.passes=checkRoutePassesCity(finalRoute.geometry.coordinates,wd.cityCode);
       }
+    }
+    // 出発地・目的地の市区町村も確認
+    if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode){
+      const cr=cityCheckResults.find(c=>c.name===routeFromCity.name);
+      if(cr) cr.passes=checkRoutePassesCity(finalRoute.geometry.coordinates,routeFromCity.cityCode);
+    }
+    if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
+      const cr=cityCheckResults.find(c=>c.name===routeToCity.name);
+      if(cr) cr.passes=checkRoutePassesCity(finalRoute.geometry.coordinates,routeToCity.cityCode);
     }
 
     // 描画

@@ -1210,7 +1210,65 @@
     }
   }
 
-  // ── ルート検索実行 ──
+  // ── ルート検索実行（2段階: 直通ルート→通過チェック→必要な経由地のみ追加） ──
+  async function fetchRoute(points){
+    const coordStr=points.map(c=>`${c[1]},${c[0]}`).join(';');
+    const server=ROUTE_SERVERS[currentRouteMode]||ROUTE_SERVERS.driving;
+    const url=`${server}/route/v1/${currentRouteMode}/${coordStr}?overview=full&geometries=geojson`;
+    const res=await fetch(url);
+    const data=await res.json();
+    if(!data.routes||!data.routes.length) return null;
+    return data.routes[0];
+  }
+
+  function checkRoutePassesCity(routeCoords,cityCode){
+    // routeCoords: [[lng,lat],...] GeoJSON形式
+    const rings=getCityBoundaryRings(cityCode);
+    if(!rings.length) return false;
+    // ルート座標を[lat,lng]に変換してポリゴン内判定
+    for(let i=0;i<routeCoords.length;i+=3){
+      const lat=routeCoords[i][1],lng=routeCoords[i][0];
+      for(const ring of rings){
+        if(isPointInRing({lat,lng},ring)) return true;
+      }
+    }
+    return false;
+  }
+
+  function isPointInRing(latlng,ring){
+    // ring: [[lat,lng],...]
+    const x=latlng.lng,y=latlng.lat;
+    let inside=false;
+    for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+      const yi=ring[i][0],xi=ring[i][1];
+      const yj=ring[j][0],xj=ring[j][1];
+      if((yi>y)!==(yj>y)&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+
+  // ルートが市区町村境界に最も近づく点から、境界の最近接点を求め、100m内側を返す
+  function findEntryFromRoute(routeCoords,cityCode){
+    const rings=getCityBoundaryRings(cityCode);
+    const centroid=getCityCentroid(cityCode);
+    if(!rings.length||!centroid) return null;
+
+    // ルート上で境界に最も近い点を探す
+    let bestBoundaryPt=null,bestDist=Infinity;
+    for(let i=0;i<routeCoords.length;i+=3){
+      const rlat=routeCoords[i][1],rlng=routeCoords[i][0];
+      for(const ring of rings){
+        for(const bp of ring){
+          const d=(rlat-bp[0])**2+(rlng-bp[1])**2;
+          if(d<bestDist){bestDist=d;bestBoundaryPt=bp;}
+        }
+      }
+    }
+    if(!bestBoundaryPt) return null;
+    // 境界点から中心方向に100m入った地点
+    return moveToward(bestBoundaryPt,centroid,100);
+  }
+
   $('route-go-btn').addEventListener('click',async()=>{
     const fromVal=$('route-from').value.trim();
     const toVal=$('route-to').value.trim();
@@ -1230,70 +1288,116 @@
     }
     if(!routeFromCoord||!routeToCoord){alert('出発地と目的地を入力してください');return;}
 
-    // 市区町村経由の座標を前後ポイントから境界入口100mに再計算
-    const validWaypoints=routeWaypoints.filter(wp=>wp.coord);
     $('route-result').style.display='block';
-    $('route-result').textContent='経由地を最適化中...';
+    $('route-result').textContent='ルートを最適化中...';
 
-    // 出発地が市区町村経由の場合
-    if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode){
-      const nextPt=validWaypoints.length?validWaypoints[0].coord:routeToCoord;
-      const entry=await findCityEntryPoint(routeFromCity.cityCode,routeFromCity.name,null,nextPt);
-      if(entry) routeFromCoord=entry;
-    }
-    // 目的地が市区町村経由の場合
-    if(routeToCity.isCityWaypoint&&routeToCity.cityCode){
-      const prevPt=validWaypoints.length?validWaypoints[validWaypoints.length-1].coord:routeFromCoord;
-      const entry=await findCityEntryPoint(routeToCity.cityCode,routeToCity.name,prevPt,null);
-      if(entry) routeToCoord=entry;
-    }
-    // 経由地が市区町村の場合
-    for(let i=0;i<validWaypoints.length;i++){
-      const wp=validWaypoints[i];
-      if(!wp.isCityWaypoint||!wp.cityCode) continue;
-      const prevPt=i===0?routeFromCoord:validWaypoints[i-1].coord;
-      const nextPt=i===validWaypoints.length-1?routeToCoord:validWaypoints[i+1].coord;
-      const entryCoord=await findCityEntryPoint(wp.cityCode,wp.name,prevPt,nextPt);
-      if(entryCoord) wp.coord=entryCoord;
-    }
+    // Step 1: 通常の経由地（市区町村でないもの）だけでポイント列を構築
+    const allWp=routeWaypoints.filter(wp=>wp.coord);
+    const normalWp=allWp.filter(wp=>!wp.isCityWaypoint);
+    const cityWp=allWp.filter(wp=>wp.isCityWaypoint&&wp.cityCode);
 
-    const allPoints=[routeFromCoord,...validWaypoints.map(wp=>wp.coord),routeToCoord];
-    const coordStr=allPoints.map(c=>`${c[1]},${c[0]}`).join(';');
+    // 出発地・目的地が市区町村の場合も同様に扱う
+    let fromIsCity=routeFromCity.isCityWaypoint&&routeFromCity.cityCode;
+    let toIsCity=routeToCity.isCityWaypoint&&routeToCity.cityCode;
 
-    const server=ROUTE_SERVERS[currentRouteMode]||ROUTE_SERVERS.driving;
-    const url=`${server}/route/v1/${currentRouteMode}/${coordStr}?overview=full&geometries=geojson`;
-    $('route-result').style.display='block';
-    $('route-result').textContent='ルートを計算中...';
-    try{
-      const res=await fetch(url);
-      const data=await res.json();
-      if(!data.routes||!data.routes.length){$('route-result').textContent='ルートが見つかりませんでした';return;}
-      const route=data.routes[0];
-      const dist=(route.distance/1000).toFixed(1);
-      const dur=Math.round(route.duration/60);
-      const h=Math.floor(dur/60),m=dur%60;
-      const durStr=h>0?`${h}時間${m}分`:`${m}分`;
-      if(routeLayer) map.removeLayer(routeLayer);
-      if(window._wpMarkers){window._wpMarkers.forEach(m=>map.removeLayer(m));window._wpMarkers=[];}
+    // 通常経由地のみでルートを取得
+    const basePoints=[routeFromCoord,...normalWp.map(wp=>wp.coord),routeToCoord];
+    let baseRoute;
+    try{ baseRoute=await fetchRoute(basePoints); }
+    catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
+    if(!baseRoute){$('route-result').textContent='ルートが見つかりませんでした';return;}
 
-      // 黄色でルートを最上レイヤーに表示
-      routeLayer=L.geoJSON(route.geometry,{pane:'routePane',style:{color:'#f59e0b',weight:5,opacity:0.9}}).addTo(map);
-
-      window._wpMarkers=[];
-      for(const wp of validWaypoints){
-        const marker=L.circleMarker([wp.coord[0],wp.coord[1]],{
-          pane:'routePane',radius:6,fillColor:'#fff',color:'#f59e0b',weight:3,fillOpacity:1
-        }).addTo(map).bindPopup(`<strong>経由地</strong><br>${wp.name}`);
-        window._wpMarkers.push(marker);
+    // Step 2: 各市区町村経由地について、ベースルートが既に通過しているかチェック
+    const cityCheckResults=[];
+    const neededCityWp=[];
+    for(const wp of cityWp){
+      const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,wp.cityCode);
+      if(passes){
+        cityCheckResults.push({name:wp.name,passes:true});
+        // 既に通過しているので経由地として追加不要
+      } else {
+        // 通過していない→最寄りの境界入口を経由地に追加
+        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,wp.cityCode);
+        if(entry){
+          const rev=await nominatimReverse(entry[0],entry[1]);
+          const coord=(rev&&rev.lat)?[parseFloat(rev.lat),parseFloat(rev.lon)]:entry;
+          neededCityWp.push({...wp,coord});
+          cityCheckResults.push({name:wp.name,passes:false});
+        }
       }
+    }
 
-      map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
-      let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
-      if(currentRouteMode==='walking') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(徒歩)</span>`;
-      if(validWaypoints.length) resultHTML+=`<br>経由地: <strong>${validWaypoints.length}箇所</strong>`;
-      $('route-result').innerHTML=resultHTML;
-      $('route-clear-btn').style.display='block';
-    }catch(e){$('route-result').textContent='ルート取得に失敗しました';}
+    // 出発地・目的地の市区町村処理
+    if(fromIsCity){
+      const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeFromCity.cityCode);
+      if(!passes){
+        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeFromCity.cityCode);
+        if(entry){
+          const rev=await nominatimReverse(entry[0],entry[1]);
+          routeFromCoord=(rev&&rev.lat)?[parseFloat(rev.lat),parseFloat(rev.lon)]:entry;
+        }
+      }
+      cityCheckResults.push({name:routeFromCity.name,passes});
+    }
+    if(toIsCity){
+      const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeToCity.cityCode);
+      if(!passes){
+        const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeToCity.cityCode);
+        if(entry){
+          const rev=await nominatimReverse(entry[0],entry[1]);
+          routeToCoord=(rev&&rev.lat)?[parseFloat(rev.lat),parseFloat(rev.lon)]:entry;
+        }
+      }
+      cityCheckResults.push({name:routeToCity.name,passes});
+    }
+
+    // Step 3: 必要な市区町村経由地を含めて最終ルートを構築
+    // 通常経由地+必要な市区町村経由地を元の順番に沿って並べる
+    const finalWp=[...normalWp,...neededCityWp];
+    // 元のrouteWaypointsの順序に合わせてソート
+    finalWp.sort((a,b)=>{
+      const ai=routeWaypoints.indexOf(a)>=0?routeWaypoints.indexOf(a):routeWaypoints.findIndex(w=>w.cityCode===a.cityCode);
+      const bi=routeWaypoints.indexOf(b)>=0?routeWaypoints.indexOf(b):routeWaypoints.findIndex(w=>w.cityCode===b.cityCode);
+      return ai-bi;
+    });
+
+    let finalRoute=baseRoute;
+    if(neededCityWp.length>0||fromIsCity||toIsCity){
+      // 市区町村経由地が必要な場合は再ルーティング
+      const finalPoints=[routeFromCoord,...finalWp.map(wp=>wp.coord),routeToCoord];
+      $('route-result').textContent='最終ルートを計算中...';
+      try{ finalRoute=await fetchRoute(finalPoints); }
+      catch(e){/* ベースルートを使用 */}
+      if(!finalRoute) finalRoute=baseRoute;
+    }
+
+    // 描画
+    const dist=(finalRoute.distance/1000).toFixed(1);
+    const dur=Math.round(finalRoute.duration/60);
+    const h=Math.floor(dur/60),m=dur%60;
+    const durStr=h>0?`${h}時間${m}分`:`${m}分`;
+    if(routeLayer) map.removeLayer(routeLayer);
+    if(window._wpMarkers){window._wpMarkers.forEach(m=>map.removeLayer(m));window._wpMarkers=[];}
+
+    routeLayer=L.geoJSON(finalRoute.geometry,{pane:'routePane',style:{color:'#f59e0b',weight:5,opacity:0.9}}).addTo(map);
+
+    window._wpMarkers=[];
+    for(const wp of finalWp){
+      const marker=L.circleMarker([wp.coord[0],wp.coord[1]],{
+        pane:'routePane',radius:6,fillColor:'#fff',color:'#f59e0b',weight:3,fillOpacity:1
+      }).addTo(map).bindPopup(`<strong>経由地</strong><br>${wp.name}`);
+      window._wpMarkers.push(marker);
+    }
+
+    map.fitBounds(routeLayer.getBounds(),{padding:[40,40]});
+    let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
+    if(currentRouteMode==='walking') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(徒歩)</span>`;
+    if(finalWp.length) resultHTML+=`<br>経由地: <strong>${finalWp.length}箇所</strong>`;
+    for(const cr of cityCheckResults){
+      resultHTML+=`<br>${cr.passes?'✅':'📌'} ${cr.name}${cr.passes?' — ルート上で通過済み':''}`;
+    }
+    $('route-result').innerHTML=resultHTML;
+    $('route-clear-btn').style.display='block';
   });
 
   $('route-clear-btn').addEventListener('click',()=>{

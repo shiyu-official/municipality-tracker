@@ -277,7 +277,7 @@
   $('loading-status').textContent='地図を描画中...';
   const map=L.map('map',{center:[36.5,137.5],zoom:6,zoomControl:false,attributionControl:false});
   L.control.zoom({position:'topright'}).addTo(map);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,opacity:0.6,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{maxZoom:19,opacity:0.6,attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>'}).addTo(map);
 
   map.createPane('tracksPane');
   map.getPane('tracksPane').style.zIndex=450;
@@ -287,7 +287,7 @@
     const code=feature.properties.N03_007;
     const city=visitedData.cities[code];
     const lv=getLevel(city?city.visitDays:0);
-    return{fillColor:FILL[lv],fillOpacity:lv===0?0.5:0.8,color:STROKE[lv],weight:lv>0?1.2:0.5,opacity:lv>0?0.9:0.4};
+    return{fillColor:FILL[lv],fillOpacity:lv===0?0.5:0.8,color:STROKE[lv],weight:lv>0?1.2:0.8,opacity:lv>0?0.9:0.7};
   }
 
   function popupHTML(feature){

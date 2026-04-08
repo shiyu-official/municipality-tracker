@@ -1422,14 +1422,38 @@
   }
 
   // ── ルート検索 ──
-  async function fetchRoute(points){
+  async function fetchRoute(points,opts={}){
     const coordStr=points.map(c=>`${c[1]},${c[0]}`).join(';');
     const server=ROUTE_SERVERS[currentRouteMode]||ROUTE_SERVERS.driving;
-    const url=`${server}/route/v1/${currentRouteMode}/${coordStr}?overview=full&geometries=geojson`;
+    // alternatives=trueで代替ルートも取得
+    const alt=opts.noAlternatives?'false':'true';
+    const url=`${server}/route/v1/${currentRouteMode}/${coordStr}?overview=full&geometries=geojson&alternatives=${alt}`;
     const res=await fetch(url);
+    if(!res.ok) return null;
     const data=await res.json();
     if(!data.routes||!data.routes.length) return null;
-    return data.routes[0];
+
+    if(data.routes.length===1) return data.routes[0];
+
+    // 複数ルート候補がある場合、最速（duration最小）を選択
+    // ただし市区町村チェック用のcityCodesが渡された場合はそれも考慮
+    const cityCodes=opts.cityCodes||[];
+    let best=null,bestScore=Infinity;
+    for(const route of data.routes){
+      // 基本スコア: 所要時間（秒）
+      let score=route.duration;
+      // 市区町村通過ボーナス: 通過する市区町村1つにつきスコアを大幅減
+      if(cityCodes.length>0){
+        let passCount=0;
+        for(const code of cityCodes){
+          if(checkRoutePassesCity(route.geometry.coordinates,code)) passCount++;
+        }
+        // 通過していない市区町村1つにつき30分(1800秒)のペナルティ
+        score+=(cityCodes.length-passCount)*1800;
+      }
+      if(score<bestScore){bestScore=score;best=route;}
+    }
+    return best||data.routes[0];
   }
 
   function checkRoutePassesCity(routeCoords,cityCode){
@@ -1467,7 +1491,7 @@
 
     // currentFromから市区町村の重心方向へのルートを取得
     let probeRoute;
-    try{ probeRoute=await fetchRoute([currentFrom,centroid]); }
+    try{ probeRoute=await fetchRoute([currentFrom,centroid],{noAlternatives:true}); }
     catch(e){ return null; }
     if(!probeRoute) return null;
 
@@ -1578,8 +1602,12 @@
 
     // 最終ルートを取得して、事後的に各市区町村の通過を確認
     $('route-result').textContent='最終ルートを計算中...';
+    // 市区町村コードリスト（代替ルート選択時の通過判定用）
+    const allCityCodes=wpMarkerData.filter(w=>w.cityCode).map(w=>w.cityCode);
+    if(routeFromCity.isCityWaypoint&&routeFromCity.cityCode) allCityCodes.push(routeFromCity.cityCode);
+    if(routeToCity.isCityWaypoint&&routeToCity.cityCode) allCityCodes.push(routeToCity.cityCode);
     let finalRoute;
-    try{ finalRoute=await fetchRoute(resolvedPoints); }
+    try{ finalRoute=await fetchRoute(resolvedPoints,{cityCodes:allCityCodes}); }
     catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
     if(!finalRoute){$('route-result').textContent='ルートが見つかりませんでした';return;}
 

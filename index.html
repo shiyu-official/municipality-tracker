@@ -1316,12 +1316,10 @@
         cityCheckResults.push({name:wp.name,passes:true});
         // 既に通過しているので経由地として追加不要
       } else {
-        // 通過していない→最寄りの境界入口を経由地に追加
+        // 通過していない→最寄りの境界入口100m地点を経由地に追加
         const entry=findEntryFromRoute(baseRoute.geometry.coordinates,wp.cityCode);
         if(entry){
-          const rev=await nominatimReverse(entry[0],entry[1]);
-          const coord=(rev&&rev.lat)?[parseFloat(rev.lat),parseFloat(rev.lon)]:entry;
-          neededCityWp.push({...wp,coord});
+          neededCityWp.push({...wp,coord:entry});
           cityCheckResults.push({name:wp.name,passes:false});
         }
       }
@@ -1332,10 +1330,7 @@
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeFromCity.cityCode);
       if(!passes){
         const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeFromCity.cityCode);
-        if(entry){
-          const rev=await nominatimReverse(entry[0],entry[1]);
-          routeFromCoord=(rev&&rev.lat)?[parseFloat(rev.lat),parseFloat(rev.lon)]:entry;
-        }
+        if(entry) routeFromCoord=entry;
       }
       cityCheckResults.push({name:routeFromCity.name,passes});
     }
@@ -1343,10 +1338,7 @@
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeToCity.cityCode);
       if(!passes){
         const entry=findEntryFromRoute(baseRoute.geometry.coordinates,routeToCity.cityCode);
-        if(entry){
-          const rev=await nominatimReverse(entry[0],entry[1]);
-          routeToCoord=(rev&&rev.lat)?[parseFloat(rev.lat),parseFloat(rev.lon)]:entry;
-        }
+        if(entry) routeToCoord=entry;
       }
       cityCheckResults.push({name:routeToCity.name,passes});
     }

@@ -1244,24 +1244,49 @@
     return inside;
   }
 
-  // ルート上で境界に最も近い地点を見つけ、そこから100m内側を返す
-  function findEntryFromRoute(routeCoords,cityCode){
-    const rings=getCityBoundaryRings(cityCode);
+  // 道路ベースで市区町村への侵入ポイントを求める
+  // currentFrom: 出発点[lat,lng], nextDest: 次の目的[lat,lng], cityCode: 対象市区町村
+  // 方法: currentFrom→市区町村中心へのOSRMルートを取得し、
+  //        そのルート座標列でポリゴン内に入った地点から少し進んだ点を返す
+  async function findCityEntryViaRoad(currentFrom,cityCode){
     const centroid=getCityCentroid(cityCode);
-    if(!rings.length||!centroid) return null;
+    if(!centroid) return null;
+    const rings=getCityBoundaryRings(cityCode);
+    if(!rings.length) return null;
 
-    let bestBoundaryPt=null,bestDist=Infinity;
-    for(let i=0;i<routeCoords.length;i+=2){
-      const rlat=routeCoords[i][1],rlng=routeCoords[i][0];
+    // currentFromから市区町村の重心方向へのルートを取得
+    let probeRoute;
+    try{ probeRoute=await fetchRoute([currentFrom,centroid]); }
+    catch(e){ return null; }
+    if(!probeRoute) return null;
+
+    // ルート座標列を走査してポリゴン内に入った最初の点を見つける
+    const coords=probeRoute.geometry.coordinates;
+    let entryIdx=-1;
+    for(let i=0;i<coords.length;i++){
+      const lat=coords[i][1],lng=coords[i][0];
       for(const ring of rings){
-        for(const bp of ring){
-          const d=(rlat-bp[0])**2+(rlng-bp[1])**2;
-          if(d<bestDist){bestDist=d;bestBoundaryPt=bp;}
-        }
+        if(isPointInRing({lat,lng},ring)){entryIdx=i;break;}
       }
+      if(entryIdx>=0) break;
     }
-    if(!bestBoundaryPt) return null;
-    return moveToward(bestBoundaryPt,centroid,100);
+
+    if(entryIdx<0) return null;
+
+    // 侵入点からさらに数ポイント先（約100m相当）を返す
+    // ルート座標間の距離を積算して100m先の点を見つける
+    let accumulated=0;
+    let targetIdx=entryIdx;
+    for(let i=entryIdx;i<coords.length-1;i++){
+      const dLat=coords[i+1][1]-coords[i][1];
+      const dLng=coords[i+1][0]-coords[i][0];
+      const dist=Math.sqrt(dLat*dLat+dLng*dLng)*111000; // 非常に粗い度→m変換
+      accumulated+=dist;
+      targetIdx=i+1;
+      if(accumulated>=100) break;
+    }
+
+    return [coords[targetIdx][1],coords[targetIdx][0]];
   }
 
   $('route-go-btn').addEventListener('click',async()=>{
@@ -1328,20 +1353,8 @@
           // このルートで既に通過 → ポイント追加不要
           cityCheckResults.push({name:wp.name,passes:true});
         } else {
-          // 通過しない → 境界入口100mのポイントを追加
-          let entryPt=null;
-          if(segRoute){
-            entryPt=findEntryFromRoute(segRoute.geometry.coordinates,wp.cityCode);
-          }
-          if(!entryPt){
-            // fallback: 直線で境界交差→100m
-            const boundary=getCityBoundaryRings(wp.cityCode);
-            const centroid=getCityCentroid(wp.cityCode);
-            if(boundary.length&&centroid){
-              const crossing=findLinePolygonEntry(currentFrom,nextFixed,boundary);
-              entryPt=crossing?moveToward(crossing,centroid,100):moveToward(findClosestBoundaryPoint(currentFrom,boundary),centroid,100);
-            }
-          }
+          // 通過しない → 道路ベースで侵入ポイントを計算
+          const entryPt=await findCityEntryViaRoad(currentFrom,wp.cityCode);
           if(entryPt){
             resolvedPoints.push(entryPt);
             wpMarkerData.push({coord:entryPt,name:wp.name});
@@ -1360,8 +1373,7 @@
       if(segRoute&&checkRoutePassesCity(segRoute.geometry.coordinates,routeToCity.cityCode)){
         cityCheckResults.push({name:routeToCity.name,passes:true});
       } else {
-        let entryPt=null;
-        if(segRoute) entryPt=findEntryFromRoute(segRoute.geometry.coordinates,routeToCity.cityCode);
+        const entryPt=await findCityEntryViaRoad(currentFrom,routeToCity.cityCode);
         if(entryPt) routeToCoord=entryPt;
         cityCheckResults.push({name:routeToCity.name,passes:false});
       }
@@ -1376,8 +1388,8 @@
       if(segRoute&&checkRoutePassesCity(segRoute.geometry.coordinates,routeFromCity.cityCode)){
         cityCheckResults.push({name:routeFromCity.name,passes:true});
       } else {
-        let entryPt=null;
-        if(segRoute) entryPt=findEntryFromRoute(segRoute.geometry.coordinates,routeFromCity.cityCode);
+        // 出発地の場合、次のポイントから逆向きに侵入
+        const entryPt=await findCityEntryViaRoad(nextPt,routeFromCity.cityCode);
         if(entryPt){resolvedPoints[0]=entryPt;routeFromCoord=entryPt;}
         cityCheckResults.push({name:routeFromCity.name,passes:false});
       }

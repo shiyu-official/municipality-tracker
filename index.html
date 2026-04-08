@@ -739,7 +739,10 @@
       const rev=await nominatimReverse(coord.lat,coord.lng);
       const name=rev&&rev.display_name?rev.display_name.split(',')[0]:`${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
       searchMarker.bindPopup(name).openPopup();
-      searchMarker.on('popupclose',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
+      setTimeout(()=>{
+        const closeBtn=searchMarker?.getPopup()?.getElement()?.querySelector('.leaflet-popup-close-button');
+        if(closeBtn) closeBtn.addEventListener('click',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
+      },50);
       searchResults.style.display='none';
       return;
     }
@@ -761,7 +764,11 @@
         const lat=parseFloat(el.dataset.lat),lon=parseFloat(el.dataset.lon);
         if(searchMarker) map.removeLayer(searchMarker);
         searchMarker=L.marker([lat,lon]).addTo(map).bindPopup(el.querySelector('.sri-name').textContent).openPopup();
-        searchMarker.on('popupclose',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
+        // ポップアップの×ボタンクリック時のみピン削除
+        setTimeout(()=>{
+          const closeBtn=searchMarker.getPopup()?.getElement()?.querySelector('.leaflet-popup-close-button');
+          if(closeBtn) closeBtn.addEventListener('click',()=>{if(searchMarker){map.removeLayer(searchMarker);searchMarker=null;}});
+        },50);
         map.setView([lat,lon],14);
         searchResults.style.display='none';
       });

@@ -1560,79 +1560,73 @@
     return inside;
   }
 
-  // 直線仮ルートを生成（fromCoord→normalPoints→toCoord を補間した点列）
-  // API不要。市区町村侵入ポイント計算の基準として使う
-  function buildLinearRoute(fromCoord,toCoord,normalPoints){
-    // 全ウェイポイントを結ぶ折れ線を100点程度に補間した[[lng,lat],...]を返す
-    const keyPoints=[[fromCoord[1],fromCoord[0]],...normalPoints.map(p=>[p.coord[1],p.coord[0]]),[toCoord[1],toCoord[0]]];
-    const result=[];
-    const totalSegments=keyPoints.length-1;
-    const stepsPerSeg=Math.max(10,Math.floor(200/totalSegments));
-    for(let s=0;s<totalSegments;s++){
-      const [lat0,lng0]=keyPoints[s];
-      const [lat1,lng1]=keyPoints[s+1];
-      for(let k=0;k<=stepsPerSeg;k++){
-        const t=k/stepsPerSeg;
-        result.push([lng0+(lng1-lng0)*t,lat0+(lat1-lat0)*t]);
-      }
-    }
-    return result;
-  }
-
-  // 仮ルート座標列から「進行方向に沿って最も自然な」市区町村侵入ポイントを計算（API不要）
+  // ── 侵入ポイント計算（道路座標列ベース）──
   //
-  // 考え方:
-  //   - 仮ルート（直線補間）上の各点について、市区町村境界までの距離を計算
-  //   - 「ルート上で境界に最も近い点のインデックス」= 進行方向上の最も通りやすい場所
-  //   - その点から重心方向へ200m入った点を侵入ポイントとする
-  //   - 折り返しが必要かどうかは「ルート上インデックス位置」で判定:
-  //     経由指定の originalIdx に対応するルート区間の中点付近にあるかをチェックし、
-  //     大幅に前後にはみ出す場合は「位置関係的に逆方向」とみなし、
-  //     それでも重心を侵入ポイントとして返す（Directions APIが自然なルートに調整する）
-  function findEntryPointGeometric(linearRouteCoords,cityCode,routeTotalLen){
+  // 【なぜ2回APIが必要か】
+  //   侵入ポイントとして渡す座標が「道路上の点」でないと、
+  //   Directions APIが境界外の最寄り道路にスナップし、市区町村に入れずに折り返す。
+  //   「道路上の点」は1回目のAPIが返す実際のルート座標列からしか得られないため、
+  //   必然的に2回の呼び出しが必要になる。
+  //
+  // findEntryOnRoadCoords:
+  //   roadCoords = 1回目APIが返した [[lng,lat],...] の道路座標列
+  //   cityCode   = 対象市区町村コード
+  //   戻り値     = [lat,lng] 形式の侵入ポイント、または null
+  //
+  // アルゴリズム:
+  //   ① 道路座標列を順に走査し、各点が境界内かどうか判定
+  //   ② 「境界外→境界内に初めて入るセグメント」の境界内側の端点を侵入ポイントとする
+  //      → これはすでに道路上の点なので APIスナップが境界内に落ちることが保証される
+  //   ③ ②が見つからない場合（ルートが境界をかすりもしない）:
+  //      道路座標列の各点から境界頂点への最短距離が最小の「道路上の点」を採用し、
+  //      そこから重心方向に少し入った点を返す
+  //      → 折り返しが必要な位置関係でも自然な迂回になる（APIが調整）
+  function findEntryOnRoadCoords(roadCoords,cityCode){
     const rings=getCityBoundaryRings(cityCode);
     const centroid=getCityCentroid(cityCode);
     if(!rings.length||!centroid) return null;
 
-    const n=linearRouteCoords.length;
-    // ステップ間引き（パフォーマンス）
-    const routeStep=Math.max(1,Math.floor(n/400));
-    const ringStep_fn=ring=>Math.max(1,Math.floor(ring.length/150));
+    const n=roadCoords.length;
 
-    // ① ルート上の各点→境界頂点の最短距離を求め、最小となるルートインデックスを特定
-    let bestRouteIdx=0,bestDist=Infinity,bestBoundaryPt=null;
+    // ① 境界内外の判定用ヘルパー
+    function isInsideCity(lnglatArr){
+      const pt={lat:lnglatArr[1],lng:lnglatArr[0]};
+      for(const ring of rings){ if(isPointInRing(pt,ring)) return true; }
+      return false;
+    }
+
+    // ② 「外→内」の遷移点（道路座標列の境界内側の最初の点）を探す
+    let prevInside=isInsideCity(roadCoords[0]);
+    for(let i=1;i<n;i++){
+      const inside=isInsideCity(roadCoords[i]);
+      if(!prevInside&&inside){
+        // roadCoords[i] は道路上かつ境界内 → そのままで返す
+        return [roadCoords[i][1],roadCoords[i][0]]; // [lat,lng]
+      }
+      prevInside=inside;
+    }
+
+    // ③ 遷移点なし（ルートが境界に近づくが入らない）:
+    //    道路座標列上で境界に最も近い点を採用し、重心方向へ少しオフセット
+    const routeStep=Math.max(1,Math.floor(n/500));
+    const ringStep_fn=ring=>Math.max(1,Math.floor(ring.length/200));
+    let bestRoadPt=null,bestBoundaryPt=null,bestDist=Infinity;
     for(let i=0;i<n;i+=routeStep){
-      const rlng=linearRouteCoords[i][0],rlat=linearRouteCoords[i][1];
+      const rlng=roadCoords[i][0],rlat=roadCoords[i][1];
       for(const ring of rings){
         const step=ringStep_fn(ring);
         for(let j=0;j<ring.length;j+=step){
-          const bp=ring[j]; // [lat,lng] 形式
+          const bp=ring[j]; // [lat,lng]
           const d=(rlat-bp[0])**2+(rlng-bp[1])**2;
-          if(d<bestDist){bestDist=d;bestRouteIdx=i;bestBoundaryPt=bp;}
+          if(d<bestDist){bestDist=d;bestRoadPt=[rlat,rlng];bestBoundaryPt=bp;}
         }
       }
     }
     if(!bestBoundaryPt) return null;
-
-    // ② 侵入ポイント = 境界点→重心方向に200m入った点
-    // （100mだと境界スレスレで判定漏れしやすいため余裕を持たせる）
-    const entryPt=moveToward(bestBoundaryPt,centroid,200);
-
-    // ③ 「折り返しが必要かどうか」の判定
-    // ルート全体に占めるbestRouteIdxの位置割合。0=出発地側、1=目的地側
-    const posRatio=bestRouteIdx/Math.max(1,n-1);
-
-    // 概念: posRatioが0〜1の範囲に収まっていれば順路上で自然に通れる
-    // 極端に0.0や1.0に張り付いている場合は「端でギリギリ引っかかる」ケース
-    // → いずれにせよentryPtを返し、Directions APIが最終的に自然なルートに調整する
-    // （逆方向に大きく迂回が必要なケースは、API呼び出し後の事後チェックで検出）
-    return entryPt;
-  }
-
-  // 後方互換ラッパー（旧 findEntryFromRouteCoords を置き換え）
-  // linearRouteCoords がない場合のフォールバックとしても使用
-  function findEntryFromRouteCoords(routeCoords,cityCode){
-    return findEntryPointGeometric(routeCoords,cityCode,routeCoords.length);
+    // 境界頂点から重心方向に300m入った点
+    // （道路座標そのものではなくなるが、この場合は折り返しが必要な地形なので
+    //   APIが最短の迂回路を見つける。300mで境界内に入れる可能性を上げる）
+    return moveToward(bestBoundaryPt,centroid,300);
   }
 
   $('route-go-btn').addEventListener('click',async()=>{
@@ -1681,49 +1675,78 @@
     const fromIsCity=routeFromCity.isCityWaypoint&&routeFromCity.cityCode;
     const toIsCity=routeToCity.isCityWaypoint&&routeToCity.cityCode;
 
-    // ── API呼び出しなし: 直線仮ルートで侵入ポイントを幾何計算 ──
-    // 出発地→通常経由地→目的地を直線補間した仮ルートを生成
-    const linearRoute=buildLinearRoute(routeFromCoord,routeToCoord,normalPoints);
+    // 市区町村経由の指定がない場合は1回のAPI呼び出しで完結
+    const needsCityProcessing=cityWpList.length>0||fromIsCity||toIsCity;
 
-    // 市区町村経由地: まず仮ルートが既に通過しているか確認
-    const additionalWaypoints=[]; // {coord, name, cityCode, originalIdx}
+    if(!needsCityProcessing){
+      // ── シンプルケース: 通常経由地のみ、API1回 ──
+      const pts=[routeFromCoord,...normalPoints.map(p=>p.coord),routeToCoord];
+      let route;
+      try{route=await fetchRoute(pts,{noAlternatives:pts.length>2});}
+      catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
+      if(!route){$('route-result').textContent='ルートが見つかりませんでした';return;}
+      const wmd=normalPoints.map(p=>({coord:p.coord,name:p.name,cityCode:null}));
+      renderFinalRoute(route,wmd,[]);
+      return;
+    }
+
+    // ── 市区町村経由あり: 2回API方式 ──
+    // 【理由】侵入ポイントが「道路上の点」でないとAPIが境界外にスナップして通過失敗する。
+    //         1回目APIで実際の道路座標列を得てから侵入ポイントを確定する必要がある。
+
+    // 【1回目API】通常経由地のみ → 実際の道路上の座標列を取得
+    $('route-result').textContent='ルートを計算中 (1/2)...';
+    const basePoints=[routeFromCoord,...normalPoints.map(p=>p.coord),routeToCoord];
+    let baseRoute;
+    try{baseRoute=await fetchRoute(basePoints,{noAlternatives:normalPoints.length>0});}
+    catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
+    if(!baseRoute){$('route-result').textContent='ルートが見つかりませんでした';return;}
+
+    // 【侵入ポイント計算】道路座標列の「外→内」遷移点を抽出
+    // → 道路上の実座標なのでAPIスナップが境界内に確実に落ちる
+    const additionalWaypoints=[];
     for(const cwp of cityWpList){
-      const passesLinear=checkRoutePassesCity(linearRoute,cwp.cityCode);
-      if(passesLinear){
-        // 直線上で既に通過 → 侵入ポイント不要（最終ルートでも通過見込み）
-        cityCheckResults.push({name:cwp.name,passes:true,needsCheck:true});
+      const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,cwp.cityCode);
+      if(passes){
+        cityCheckResults.push({name:cwp.name,passes:true});
       } else {
-        // 直線上では未通過 → 進行方向に沿った侵入ポイントを計算
-        const entryPt=findEntryPointGeometric(linearRoute,cwp.cityCode,linearRoute.length);
+        const entryPt=findEntryOnRoadCoords(baseRoute.geometry.coordinates,cwp.cityCode);
         if(entryPt){
           additionalWaypoints.push({coord:entryPt,name:cwp.name,cityCode:cwp.cityCode,originalIdx:cwp.originalIdx});
         }
-        cityCheckResults.push({name:cwp.name,passes:false,needsCheck:true});
+        cityCheckResults.push({name:cwp.name,passes:false});
       }
     }
 
-    // 出発地・目的地の市区町村: 仮ルートで確認し、未通過なら重心を使用
+    // 出発地・目的地の市区町村処理
     if(fromIsCity){
-      const passesLinear=checkRoutePassesCity(linearRoute,routeFromCity.cityCode);
-      if(!passesLinear){
-        const entryPt=findEntryPointGeometric(linearRoute,routeFromCity.cityCode,linearRoute.length);
+      const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeFromCity.cityCode);
+      if(!passes){
+        const entryPt=findEntryOnRoadCoords(baseRoute.geometry.coordinates,routeFromCity.cityCode);
         if(entryPt) routeFromCoord=entryPt;
       }
-      cityCheckResults.push({name:routeFromCity.name,passes:passesLinear,needsCheck:true});
+      cityCheckResults.push({name:routeFromCity.name,passes});
     }
     if(toIsCity){
-      const passesLinear=checkRoutePassesCity(linearRoute,routeToCity.cityCode);
-      if(!passesLinear){
-        const entryPt=findEntryPointGeometric(linearRoute,routeToCity.cityCode,linearRoute.length);
+      const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeToCity.cityCode);
+      if(!passes){
+        const entryPt=findEntryOnRoadCoords(baseRoute.geometry.coordinates,routeToCity.cityCode);
         if(entryPt) routeToCoord=entryPt;
       }
-      cityCheckResults.push({name:routeToCity.name,passes:passesLinear,needsCheck:true});
+      cityCheckResults.push({name:routeToCity.name,passes});
     }
 
-    // ── API呼び出し: 侵入ポイントを含めた全ウェイポイントで最終ルートを1回だけ取得 ──
-    // 通常経由地 + 市区町村侵入ポイントを originalIdx 順に並べて渡す
+    // 追加経由地がなければ（全市区町村がベースルートで通過済み）2回目不要
+    if(additionalWaypoints.length===0&&!fromIsCity&&!toIsCity){
+      const wmd=normalPoints.map(p=>({coord:p.coord,name:p.name,cityCode:null}));
+      renderFinalRoute(baseRoute,wmd,cityCheckResults);
+      return;
+    }
+
+    // 【2回目API】道路上の侵入ポイントを挿入して最終ルートを取得
+    $('route-result').textContent='ルートを計算中 (2/2)...';
     const allWpEntries=[
-      ...normalPoints.map(p=>({coord:p.coord,name:p.name,originalIdx:p.originalIdx})),
+      ...normalPoints.map(p=>({coord:p.coord,name:p.name,originalIdx:p.originalIdx,cityCode:null})),
       ...additionalWaypoints
     ];
     allWpEntries.sort((a,b)=>a.originalIdx-b.originalIdx);
@@ -1734,58 +1757,50 @@
     if(toIsCity) allCityCodes.push(routeToCity.cityCode);
 
     let finalRoute;
-    try{finalRoute=await fetchRoute(finalPoints,{cityCodes:allCityCodes,noAlternatives:finalPoints.length>2});}
-    catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
-    if(!finalRoute){$('route-result').textContent='ルートが見つかりませんでした';return;}
+    try{finalRoute=await fetchRoute(finalPoints,{cityCodes:allCityCodes,noAlternatives:true});}
+    catch(e){finalRoute=null;}
+    if(!finalRoute) finalRoute=baseRoute; // フォールバック
 
-    // wpMarkerData を構築（全ウェイポイント）
-    for(const w of allWpEntries) wpMarkerData.push({coord:w.coord,name:w.name,cityCode:w.cityCode||null});
-
-    // 事後チェック: 最終ルートで市区町村通過を確認（仮ルート判定を上書き）
+    // 事後チェック: 2回目ルートで通過を再確認
     for(const cr of cityCheckResults){
-      if(!cr.needsCheck) continue;
-      // 経由地指定の市区町村
-      const wd=additionalWaypoints.find(w=>w.name===cr.name);
-      if(wd){
-        cr.passes=checkRoutePassesCity(finalRoute.geometry.coordinates,wd.cityCode);
-      } else if(cr.passes){
-        // 直線で通過済みと判定した市区町村も最終ルートで再確認
-        const cwp=cityWpList.find(c=>c.name===cr.name);
-        if(cwp) cr.passes=checkRoutePassesCity(finalRoute.geometry.coordinates,cwp.cityCode);
+      if(!cr.passes){
+        const wd=additionalWaypoints.find(w=>w.name===cr.name);
+        if(wd) cr.passes=checkRoutePassesCity(finalRoute.geometry.coordinates,wd.cityCode);
       }
     }
 
-    // resolvedPointsをGoogleマップ連携用に構築
-    const resolvedPoints=[routeFromCoord,...wpMarkerData.map(w=>w.coord),routeToCoord];
+    const wmd=allWpEntries.map(w=>({coord:w.coord,name:w.name,cityCode:w.cityCode||null}));
+    renderFinalRoute(finalRoute,wmd,cityCheckResults);
+  });
 
-    // 描画
-    const dist=(finalRoute.distance/1000).toFixed(1);
-    const dur=Math.round(finalRoute.duration/60);
+  // ── 描画共通関数 ──
+  function renderFinalRoute(route,wpMarkerData,cityCheckResults){
+    const resolvedPoints=[routeFromCoord,...wpMarkerData.map(w=>w.coord),routeToCoord];
+    const dist=(route.distance/1000).toFixed(1);
+    const dur=Math.round(route.duration/60);
     const h=Math.floor(dur/60),m=dur%60;
     const durStr=h>0?`${h}時間${m}分`:`${m}分`;
     if(routeLayer){routeLayer.setMap(null);routeLayer=null;}
-    if(window._wpMarkers){window._wpMarkers.forEach(m=>m.setMap(null));window._wpMarkers=[];}
+    if(window._wpMarkers){window._wpMarkers.forEach(mk=>mk.setMap(null));window._wpMarkers=[];}
 
-    // GeoJSONルートラインをGoogle Maps Polylineに変換
-    const routePath=finalRoute.geometry.coordinates.map(c=>({lat:c[1],lng:c[0]}));
+    const routePath=route.geometry.coordinates.map(c=>({lat:c[1],lng:c[0]}));
     routeLayer=new google.maps.Polyline({path:routePath,strokeColor:'#f59e0b',strokeWeight:5,strokeOpacity:0.9,zIndex:10,map:map});
 
     window._wpMarkers=[];
     for(const wd of wpMarkerData){
       const marker=new google.maps.Marker({
         position:{lat:wd.coord[0],lng:wd.coord[1]},map,
-        icon:makeCircleIcon('#f59e0b',12),zIndex:11,
-        title:wd.name
+        icon:makeCircleIcon('#f59e0b',12),zIndex:11,title:wd.name
       });
       const iw=new google.maps.InfoWindow({content:`<strong>経由地</strong><br>${wd.name}`});
       marker.addListener('click',()=>iw.open(map,marker));
       window._wpMarkers.push(marker);
     }
 
-    // fitBounds
     const routeBounds=new google.maps.LatLngBounds();
     routePath.forEach(p=>routeBounds.extend(p));
     map.fitBounds(routeBounds,40);
+
     let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
     if(currentRouteMode==='walking') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(徒歩)</span>`;
     if(wpMarkerData.length) resultHTML+=`<br>経由地: <strong>${wpMarkerData.length}箇所</strong>`;
@@ -1794,13 +1809,8 @@
     }
     $('route-result').innerHTML=resultHTML;
     $('route-clear-btn').style.display='block';
-
-    // ── Googleマップ連携 ──
-    // resolvedPoints: [出発, ...経由地..., 目的地] の座標配列
-    // cityCheckResults: 通過済み判定結果（passes:trueは通過済み）
-    // Googleマップに渡す経由地を構築（通過済みの市区町村は慎重に扱う）
     buildGoogleMapsLinks(resolvedPoints,wpMarkerData,cityCheckResults);
-  });
+  }
 
   const GMAP_WP_LIMIT=9; // Googleマップ経由地上限
 

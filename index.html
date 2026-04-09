@@ -1766,6 +1766,45 @@
   });
 
   // ── 描画共通関数 ──
+  let _routePassedCodes=new Set(); // ルート通過中の市区町村コード（色付け復元用）
+
+  function clearRouteHighlight(){
+    for(const code of _routePassedCodes){
+      const features=_geoFeaturesByCode[code]||[];
+      for(const f of features){
+        geoDataLayer.forEach(gf=>{
+          if(gf.getProperty('N03_007')===code) geoDataLayer.revertStyle(gf);
+        });
+      }
+    }
+    _routePassedCodes=new Set();
+  }
+
+  function highlightRouteCities(routeCoords){
+    // ルート座標列をサンプリングして通過する市区町村を収集
+    clearRouteHighlight();
+    const passed=new Set();
+    const step=Math.max(1,Math.floor(routeCoords.length/300)); // 最大300ポイントチェック
+    for(let i=0;i<routeCoords.length;i+=step){
+      const lng=routeCoords[i][0],lat=routeCoords[i][1];
+      for(const[code,features] of Object.entries(_geoFeaturesByCode)){
+        if(passed.has(code)) continue;
+        for(const f of features){
+          if(isPointInFeature({lat,lng},f)){passed.add(code);break;}
+        }
+      }
+    }
+    // 通過市区町村をオレンジでハイライト
+    _routePassedCodes=passed;
+    geoDataLayer.forEach(gf=>{
+      const code=gf.getProperty('N03_007');
+      if(code&&passed.has(code)){
+        geoDataLayer.overrideStyle(gf,{fillColor:'#fb923c',fillOpacity:0.45,strokeColor:'#f97316',strokeWeight:1.8});
+      }
+    });
+    return passed;
+  }
+
   function renderFinalRoute(route,wpMarkerData,cityCheckResults){
     const resolvedPoints=[routeFromCoord,...wpMarkerData.map(w=>w.coord),routeToCoord];
     const dist=(route.distance/1000).toFixed(1);
@@ -1789,12 +1828,16 @@
       window._wpMarkers.push(marker);
     }
 
+    // ルート通過市区町村を色付け
+    const passedCities=highlightRouteCities(route.geometry.coordinates);
+
     const routeBounds=new google.maps.LatLngBounds();
     routePath.forEach(p=>routeBounds.extend(p));
     map.fitBounds(routeBounds,40);
 
     let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
     if(currentRouteMode==='walking') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(徒歩)</span>`;
+    resultHTML+=`<br>通過市区町村: <strong>${passedCities.size}箇所</strong>`;
     if(wpMarkerData.length) resultHTML+=`<br>経由地: <strong>${wpMarkerData.length}箇所</strong>`;
     for(const cr of cityCheckResults){
       resultHTML+=`<br>${cr.passes?'✅':'📌'} ${cr.name}${cr.passes?' — ルート上で通過済み':''}`;
@@ -1903,6 +1946,7 @@
   $('route-clear-btn').addEventListener('click',()=>{
     if(routeLayer){routeLayer.setMap(null);routeLayer=null;}
     if(window._wpMarkers){window._wpMarkers.forEach(m=>m.setMap(null));window._wpMarkers=[];}
+    clearRouteHighlight();
     routeFromCoord=null;routeToCoord=null;
     routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
     routeToCity={isCityWaypoint:false,cityCode:null,name:''};

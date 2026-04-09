@@ -1782,22 +1782,32 @@
     _routePassedCodes=new Set();
   }
 
-  // 市区町村のバウンディングボックスを事前計算（高速フィルタ用）
-  const _cityBBoxes={};
-  for(const[code,features] of Object.entries(_geoFeaturesByCode)){
-    let minLat=90,maxLat=-90,minLng=180,maxLng=-180;
-    for(const f of features){
-      const flat=flattenCoords(f.geometry.coordinates);
-      for(const c of flat){
-        if(c[1]<minLat)minLat=c[1];if(c[1]>maxLat)maxLat=c[1];
-        if(c[0]<minLng)minLng=c[0];if(c[0]>maxLng)maxLng=c[0];
+  // 市区町村BBox: ルート検索時に遅延初期化
+  let _cityBBoxes=null;
+  function ensureCityBBoxes(){
+    if(_cityBBoxes) return;
+    _cityBBoxes={};
+    for(const[code,features] of Object.entries(_geoFeaturesByCode)){
+      let minLat=90,maxLat=-90,minLng=180,maxLng=-180;
+      for(const f of features){
+        const geom=f.geometry;
+        // 外周リングだけでBBox計算（flattenCoords不使用で高速）
+        const rings=geom.type==='Polygon'?[geom.coordinates[0]]:
+                    geom.type==='MultiPolygon'?geom.coordinates.map(p=>p[0]):[];
+        for(const ring of rings){
+          for(const c of ring){
+            if(c[1]<minLat)minLat=c[1];if(c[1]>maxLat)maxLat=c[1];
+            if(c[0]<minLng)minLng=c[0];if(c[0]>maxLng)maxLng=c[0];
+          }
+        }
       }
+      _cityBBoxes[code]={minLat,maxLat,minLng,maxLng};
     }
-    _cityBBoxes[code]={minLat,maxLat,minLng,maxLng};
   }
 
   function highlightRouteCities(routeCoords){
     clearRouteHighlight();
+    ensureCityBBoxes();
     const passed=new Set();
     // ルートポイントをサンプリング（最大100ポイント）
     const step=Math.max(1,Math.floor(routeCoords.length/100));

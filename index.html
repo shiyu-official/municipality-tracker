@@ -496,6 +496,9 @@
   function applyGeoStyles(){
     geoDataLayer.setStyle(feature=>{
       const code=feature.getProperty('N03_007');
+      if(window._routeHighlightCodes&&window._routeHighlightCodes.has(code)){
+        return{fillColor:'#fde047',fillOpacity:0.55,strokeColor:'#ca8a04',strokeWeight:2,strokeOpacity:0.85,clickable:true,zIndex:3};
+      }
       const city=visitedData.cities[code];
       const lv=getLevel(city?city.visitDays:0);
       return{fillColor:FILL[lv],fillOpacity:0.7,strokeColor:STROKE[lv],strokeWeight:1.2,strokeOpacity:0.9,clickable:true,zIndex:1};
@@ -510,7 +513,12 @@
     geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:'#2563eb',fillOpacity:0.95});
   });
   geoDataLayer.addListener('mouseout',e=>{
-    geoDataLayer.revertStyle(e.feature);
+    const code=e.feature.getProperty('N03_007');
+    if(window._routeHighlightCodes&&window._routeHighlightCodes.has(code)){
+      geoDataLayer.overrideStyle(e.feature,{fillColor:'#a855f7',fillOpacity:0.7,strokeColor:'#7c3aed',strokeWeight:2,strokeOpacity:0.9});
+    } else {
+      geoDataLayer.revertStyle(e.feature);
+    }
     hoveredFeature=null;
   });
 
@@ -1835,24 +1843,9 @@
     }
 
     if(passedCodes.size>0){
-      const featureList=[];
-      for(const code of passedCodes){
-        const features=_geoFeaturesByCode[code]||[];
-        for(const f of features){
-          if(f&&f.geometry) featureList.push(f);
-        }
-      }
-      if(featureList.length>0){
-        _routeHighlightLayer=new google.maps.Data({zIndex:3});
-        _routeHighlightLayer.addGeoJson({type:'FeatureCollection',features:featureList});
-        _routeHighlightLayer.setStyle({
-          fillColor:'#f59e0b',fillOpacity:0.6,
-          strokeColor:'#f59e0b',strokeWeight:2,strokeOpacity:0.9,
-          clickable:false
-        });
-        // geoDataLayerより後にsetMapすることで描画順を上に確保
-        _routeHighlightLayer.setMap(map);
-      }
+      window._routeHighlightCodes=passedCodes;
+      // geoDataLayerのスタイル関数を再適用してハイライトを反映
+      applyGeoStyles();
       window._routeHighlightCodes=passedCodes;
     }
 
@@ -2013,6 +2006,7 @@
     if(routeLayer){routeLayer.setMap(null);routeLayer=null;}
     if(_routeHighlightLayer){_routeHighlightLayer.setMap(null);_routeHighlightLayer=null;}
     window._routeHighlightCodes=null;
+    applyGeoStyles();
     if(window._wpMarkers){window._wpMarkers.forEach(m=>m.setMap(null));window._wpMarkers=[];}
     routeFromCoord=null;routeToCoord=null;
     routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
@@ -2190,6 +2184,9 @@
         hlLayer.addGeoJson({type:'FeatureCollection',features:hlFeatures});
         hlLayer.setStyle({fillColor:r.color,fillOpacity:0.5,strokeColor:r.color,strokeWeight:1.5,strokeOpacity:0.7,clickable:false});
         hlLayer.setMap(map);
+        // geoDataLayerを再登録して保存ルートハイライトの上に描画
+        geoDataLayer.setMap(null);
+        geoDataLayer.setMap(map);
       }
     }
 

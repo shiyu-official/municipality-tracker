@@ -759,6 +759,7 @@
 
   // ── 検索・ルート機能 ──
   let searchMarker=null,routeLayer=null,routeFromCoord=null,routeToCoord=null,currentRouteMode='driving';
+  let _routeHighlightLayer=null;
   let routeWaypoints=[]; // [{coord,name,isCityWaypoint,cityCode}]
   let mapPickMode=false,mapPickTarget=null,mapPickHintEl=null;
   let activeRouteInput=null; // 'from'|'to'|'wp-0'|'wp-1'...
@@ -1810,6 +1811,44 @@
     renderFinalRoute(finalRoute,wmd,cityCheckResults);
   });
 
+  // ── ルート通過市区町村のハイライト ──
+  function highlightRouteCities(routeCoords){
+    // 既存のハイライトレイヤーをクリア
+    if(_routeHighlightLayer){_routeHighlightLayer.setMap(null);_routeHighlightLayer=null;}
+
+    const passedCodes=new Set();
+
+    // ルート座標点を一定間隔でサンプリングして通過市区町村を特定
+    for(let i=0;i<routeCoords.length;i+=2){
+      const lng=routeCoords[i][0],lat=routeCoords[i][1];
+      const latlng={lat,lng};
+      for(const[code,features] of Object.entries(_geoFeaturesByCode)){
+        if(passedCodes.has(code)) continue;
+        for(const f of features){
+          if(isPointInFeature(latlng,f)){passedCodes.add(code);break;}
+        }
+      }
+    }
+
+    // 通過市区町村をまとめて1つのDataレイヤーで色付け
+    if(passedCodes.size>0){
+      const featureList=[];
+      for(const code of passedCodes){
+        const features=_geoFeaturesByCode[code]||[];
+        featureList.push(...features);
+      }
+      _routeHighlightLayer=new google.maps.Data({map:map,zIndex:3});
+      _routeHighlightLayer.addGeoJson({type:'FeatureCollection',features:featureList});
+      _routeHighlightLayer.setStyle({
+        fillColor:'#f59e0b',fillOpacity:0.18,
+        strokeColor:'#f59e0b',strokeWeight:1.5,strokeOpacity:0.6,
+        clickable:false
+      });
+    }
+
+    return passedCodes;
+  }
+
   // ── 描画共通関数 ──
   function renderFinalRoute(route,wpMarkerData,cityCheckResults){
     const resolvedPoints=[routeFromCoord,...wpMarkerData.map(w=>w.coord),routeToCoord];
@@ -1962,6 +2001,7 @@
 
   $('route-clear-btn').addEventListener('click',()=>{
     if(routeLayer){routeLayer.setMap(null);routeLayer=null;}
+    if(_routeHighlightLayer){_routeHighlightLayer.setMap(null);_routeHighlightLayer=null;}
     if(window._wpMarkers){window._wpMarkers.forEach(m=>m.setMap(null));window._wpMarkers=[];}
     routeFromCoord=null;routeToCoord=null;
     routeFromCity={isCityWaypoint:false,cityCode:null,name:''};

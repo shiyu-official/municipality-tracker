@@ -248,6 +248,8 @@
   .sr-meta{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:1px;}
   .sr-delete{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;flex-shrink:0;}
   .sr-delete:hover{color:#ef4444;}
+  .sr-edit{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;flex-shrink:0;}
+  .sr-edit:hover{color:var(--accent);}
   .sr-empty{padding:20px;text-align:center;color:var(--text-dim);font-size:12px;}
   .sr-actions{display:flex;gap:4px;padding:8px 10px;border-top:1px solid var(--border-light);}
   .sr-actions button{flex:1;padding:5px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--text-dim);}
@@ -506,19 +508,14 @@
   }
   applyGeoStyles();
 
-  // Hover
+  // Hover（strokeのみ強調、fillは変えない）
   let hoveredFeature=null;
   geoDataLayer.addListener('mouseover',e=>{
     hoveredFeature=e.feature;
-    geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:'#2563eb',fillOpacity:0.95});
+    geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:'#2563eb'});
   });
   geoDataLayer.addListener('mouseout',e=>{
-    const code=e.feature.getProperty('N03_007');
-    if(window._routeHighlightCodes&&window._routeHighlightCodes.has(code)){
-      geoDataLayer.overrideStyle(e.feature,{fillColor:'#a855f7',fillOpacity:0.7,strokeColor:'#7c3aed',strokeWeight:2,strokeOpacity:0.9});
-    } else {
-      geoDataLayer.revertStyle(e.feature);
-    }
+    geoDataLayer.revertStyle(e.feature);
     hoveredFeature=null;
   });
 
@@ -2018,6 +2015,8 @@
     $('route-clear-btn').style.display='none';
     $('route-save-btn').style.display='none';
     window._lastRouteData=null;
+    _editingRouteId=null;
+    $('route-save-btn').textContent='ルートを保存';
     clearActiveInput();
     clearRoutePreview();
   });
@@ -2051,25 +2050,110 @@
     return ROUTE_COLORS[savedRoutes.length%ROUTE_COLORS.length];
   }
 
+  // ── 保存ルート編集 ──
+  let _editingRouteId=null; // 編集中のルートID（nullなら新規）
+
+  function loadRouteForEdit(id){
+    const r=savedRoutes.find(r=>r.id===id);
+    if(!r) return;
+    _editingRouteId=id;
+
+    // ルート検索フォームをクリア
+    $('route-clear-btn').click();
+
+    // 出発・ゴールをセット
+    $('route-from').value=r.from.name||'';
+    routeFromCoord=r.from.coord;
+    routeFromCity={isCityWaypoint:r.from.isCity||false,cityCode:r.from.cityCode||null,name:r.from.name||''};
+
+    $('route-to').value=r.to.name||'';
+    routeToCoord=r.to.coord;
+    routeToCity={isCityWaypoint:r.to.isCity||false,cityCode:r.to.cityCode||null,name:r.to.name||''};
+
+    // 経由地をセット
+    routeWaypoints=(r.waypoints||[]).map(w=>({
+      coord:w.coord,name:w.name,isCityWaypoint:!!w.cityCode,cityCode:w.cityCode||null
+    }));
+    renderWaypoints();
+
+    // 走行モードをセット
+    currentRouteMode=r.mode||'driving';
+    document.querySelectorAll('.route-mode-btn').forEach(b=>{
+      b.classList.toggle('active',b.dataset.mode===currentRouteMode);
+    });
+
+    // 保存ボタンのラベルを変更して編集モードを明示
+    $('route-save-btn').textContent='ルートを保存（編集中）';
+    $('route-save-btn').style.display='none'; // 再検索後に表示
+
+    // ルートタブからルート検索タブへ切り替え
+    document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.sidebar-tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelector('[data-tab="route"]').classList.add('active');
+    $('tab-route').classList.add('active');
+  }
+
   // ルート保存（ダウンロード）
   $('route-save-btn').addEventListener('click',()=>{
     if(!window._lastRouteData) return;
-    const name=prompt('ルート名を入力:','ルート '+(savedRoutes.length+1));
-    if(!name) return;
     const rd=window._lastRouteData;
-    const route={
-      id:'route_'+Date.now(),
-      name,
-      color:getNextColor(),
-      createdAt:new Date().toISOString(),
-      mode:rd.mode,
-      from:rd.from,to:rd.to,
-      waypoints:rd.waypoints,
-      geometry:rd.geometry,
-      distance:rd.distance,duration:rd.duration,
-      passedCities:rd.passedCities
-    };
-    savedRoutes.push(route);
+
+    if(_editingRouteId){
+      // 編集モード：上書きか新規かを選択
+      const choice=confirm('「OK」→元のルートに上書き保存\n「キャンセル」→新しいルートとして保存');
+      if(choice){
+        // 上書き
+        const idx=savedRoutes.findIndex(r=>r.id===_editingRouteId);
+        if(idx>=0){
+          const existing=savedRoutes[idx];
+          savedRoutes[idx]={
+            ...existing,
+            mode:rd.mode,
+            from:rd.from,to:rd.to,
+            waypoints:rd.waypoints,
+            geometry:rd.geometry,
+            distance:rd.distance,duration:rd.duration,
+            passedCities:rd.passedCities
+          };
+          if(displayedRoutes[_editingRouteId]){hideSavedRoute(_editingRouteId);showSavedRoute(_editingRouteId);}
+        }
+      } else {
+        // 新規
+        const name=prompt('ルート名を入力:',savedRoutes.find(r=>r.id===_editingRouteId)?.name+' (コピー)');
+        if(!name) return;
+        savedRoutes.push({
+          id:'route_'+Date.now(),
+          name,
+          color:getNextColor(),
+          createdAt:new Date().toISOString(),
+          mode:rd.mode,
+          from:rd.from,to:rd.to,
+          waypoints:rd.waypoints,
+          geometry:rd.geometry,
+          distance:rd.distance,duration:rd.duration,
+          passedCities:rd.passedCities
+        });
+      }
+      _editingRouteId=null;
+      $('route-save-btn').textContent='ルートを保存';
+    } else {
+      // 新規保存
+      const name=prompt('ルート名を入力:','ルート '+(savedRoutes.length+1));
+      if(!name) return;
+      savedRoutes.push({
+        id:'route_'+Date.now(),
+        name,
+        color:getNextColor(),
+        createdAt:new Date().toISOString(),
+        mode:rd.mode,
+        from:rd.from,to:rd.to,
+        waypoints:rd.waypoints,
+        geometry:rd.geometry,
+        distance:rd.distance,duration:rd.duration,
+        passedCities:rd.passedCities
+      });
+    }
+
     renderSavedRoutesList();
     downloadRoutesJson();
     // タブを保存ルートに切り替え
@@ -2109,6 +2193,7 @@
           <div class="sr-name">${r.name}</div>
           <div class="sr-meta">${dist}km / ${durStr} / ${r.passedCities?r.passedCities.length:0}市区町村</div>
         </div>
+        <button class="sr-edit" data-id="${r.id}" title="編集">✏️</button>
         <button class="sr-delete" data-id="${r.id}" title="削除">🗑</button>
       </div>`;
     }).join('');
@@ -2128,7 +2213,11 @@
         showColorPicker(el,el.dataset.id);
       });
     });
-    // 削除
+    // 編集
+    list.querySelectorAll('.sr-edit').forEach(btn=>{
+      btn.addEventListener('click',()=>loadRouteForEdit(btn.dataset.id));
+    });
+    // ルート削除
     list.querySelectorAll('.sr-delete').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const id=btn.dataset.id;

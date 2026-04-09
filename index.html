@@ -1729,8 +1729,10 @@
 
     // 追加経由地がなければ（全市区町村がベースルートで通過済み）2回目不要
     if(additionalWaypoints.length===0&&!fromIsCity&&!toIsCity){
+      $('route-result').textContent='通過市区町村を判定中...';
       const wmd=normalPoints.map(p=>({coord:p.coord,name:p.name,cityCode:null}));
-      renderFinalRoute(baseRoute,wmd,cityCheckResults);
+      try{renderFinalRoute(baseRoute,wmd,cityCheckResults);}
+      catch(e){console.error('renderFinalRoute error:',e);$('route-result').textContent='ルート表示に失敗しました';}
       return;
     }
 
@@ -1761,39 +1763,62 @@
       }
     }
 
+    $('route-result').textContent='通過市区町村を判定中...';
     const wmd=allWpEntries.map(w=>({coord:w.coord,name:w.name,cityCode:w.cityCode||null}));
-    renderFinalRoute(finalRoute,wmd,cityCheckResults);
+    try{renderFinalRoute(finalRoute,wmd,cityCheckResults);}
+    catch(e){console.error('renderFinalRoute error:',e);$('route-result').textContent='ルート表示に失敗しました';}
   });
 
   // ── 描画共通関数 ──
   let _routePassedCodes=new Set(); // ルート通過中の市区町村コード（色付け復元用）
 
   function clearRouteHighlight(){
-    for(const code of _routePassedCodes){
-      const features=_geoFeaturesByCode[code]||[];
-      for(const f of features){
-        geoDataLayer.forEach(gf=>{
-          if(gf.getProperty('N03_007')===code) geoDataLayer.revertStyle(gf);
-        });
-      }
-    }
+    if(_routePassedCodes.size===0) return;
+    // 該当コードのスタイルだけリバート
+    geoDataLayer.forEach(gf=>{
+      const code=gf.getProperty('N03_007');
+      if(code&&_routePassedCodes.has(code)) geoDataLayer.revertStyle(gf);
+    });
     _routePassedCodes=new Set();
   }
 
+  // 市区町村のバウンディングボックスを事前計算（高速フィルタ用）
+  const _cityBBoxes={};
+  for(const[code,features] of Object.entries(_geoFeaturesByCode)){
+    let minLat=90,maxLat=-90,minLng=180,maxLng=-180;
+    for(const f of features){
+      const flat=flattenCoords(f.geometry.coordinates);
+      for(const c of flat){
+        if(c[1]<minLat)minLat=c[1];if(c[1]>maxLat)maxLat=c[1];
+        if(c[0]<minLng)minLng=c[0];if(c[0]>maxLng)maxLng=c[0];
+      }
+    }
+    _cityBBoxes[code]={minLat,maxLat,minLng,maxLng};
+  }
+
   function highlightRouteCities(routeCoords){
-    // ルート座標列をサンプリングして通過する市区町村を収集
     clearRouteHighlight();
     const passed=new Set();
-    const step=Math.max(1,Math.floor(routeCoords.length/300)); // 最大300ポイントチェック
+    // ルートポイントをサンプリング（最大100ポイント）
+    const step=Math.max(1,Math.floor(routeCoords.length/100));
+    const samplePoints=[];
     for(let i=0;i<routeCoords.length;i+=step){
-      const lng=routeCoords[i][0],lat=routeCoords[i][1];
-      for(const[code,features] of Object.entries(_geoFeaturesByCode)){
+      samplePoints.push({lng:routeCoords[i][0],lat:routeCoords[i][1]});
+    }
+
+    // 各ポイントについて、BBoxが一致する市区町村のみ詳細判定
+    for(const pt of samplePoints){
+      for(const[code,bbox] of Object.entries(_cityBBoxes)){
         if(passed.has(code)) continue;
+        if(pt.lat<bbox.minLat||pt.lat>bbox.maxLat||pt.lng<bbox.minLng||pt.lng>bbox.maxLng) continue;
+        // BBox内→詳細判定
+        const features=_geoFeaturesByCode[code];
         for(const f of features){
-          if(isPointInFeature({lat,lng},f)){passed.add(code);break;}
+          if(isPointInFeature(pt,f)){passed.add(code);break;}
         }
       }
     }
+
     // 通過市区町村をオレンジでハイライト
     _routePassedCodes=passed;
     geoDataLayer.forEach(gf=>{

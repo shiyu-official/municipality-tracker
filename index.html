@@ -1773,15 +1773,11 @@
   });
 
   // ── 描画共通関数 ──
-  let _routePassedCodes=new Set(); // ルート通過中の市区町村コード（色付け復元用）
+  let _routePassedCodes=new Set();
+  let _routeHighlightLayer=null; // 通過市区町村ハイライト用の別レイヤー
 
   function clearRouteHighlight(){
-    if(_routePassedCodes.size===0) return;
-    // 該当コードのスタイルだけリバート
-    geoDataLayer.forEach(gf=>{
-      const code=gf.getProperty('N03_007');
-      if(code&&_routePassedCodes.has(code)) geoDataLayer.revertStyle(gf);
-    });
+    if(_routeHighlightLayer){_routeHighlightLayer.setMap(null);_routeHighlightLayer=null;}
     _routePassedCodes=new Set();
   }
 
@@ -1812,19 +1808,16 @@
     clearRouteHighlight();
     ensureCityBBoxes();
     const passed=new Set();
-    // ルートポイントをサンプリング（最大100ポイント）
     const step=Math.max(1,Math.floor(routeCoords.length/100));
     const samplePoints=[];
     for(let i=0;i<routeCoords.length;i+=step){
       samplePoints.push({lng:routeCoords[i][0],lat:routeCoords[i][1]});
     }
 
-    // 各ポイントについて、BBoxが一致する市区町村のみ詳細判定
     for(const pt of samplePoints){
       for(const[code,bbox] of Object.entries(_cityBBoxes)){
         if(passed.has(code)) continue;
         if(pt.lat<bbox.minLat||pt.lat>bbox.maxLat||pt.lng<bbox.minLng||pt.lng>bbox.maxLng) continue;
-        // BBox内→詳細判定
         const features=_geoFeaturesByCode[code];
         for(const f of features){
           if(isPointInFeature(pt,f)){passed.add(code);break;}
@@ -1832,14 +1825,22 @@
       }
     }
 
-    // 通過市区町村をオレンジでハイライト
+    // 通過市区町村を別レイヤーで描画（踏破レイヤーの上、ルート線の下）
     _routePassedCodes=passed;
-    geoDataLayer.forEach(gf=>{
-      const code=gf.getProperty('N03_007');
-      if(code&&passed.has(code)){
-        geoDataLayer.overrideStyle(gf,{fillColor:'#fb923c',fillOpacity:0.45,strokeColor:'#f97316',strokeWeight:1.8});
+    if(passed.size>0){
+      const hlFeatures=[];
+      for(const code of passed){
+        const features=_geoFeaturesByCode[code]||[];
+        for(const f of features){
+          if(f.geometry) hlFeatures.push(f);
+        }
       }
-    });
+      if(hlFeatures.length){
+        _routeHighlightLayer=new google.maps.Data({map:map});
+        _routeHighlightLayer.addGeoJson({type:'FeatureCollection',features:hlFeatures});
+        _routeHighlightLayer.setStyle({fillColor:'#fb923c',fillOpacity:0.5,strokeColor:'#f97316',strokeWeight:2,strokeOpacity:0.8,clickable:false,zIndex:5});
+      }
+    }
     return passed;
   }
 

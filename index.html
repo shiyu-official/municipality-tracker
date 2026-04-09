@@ -1064,6 +1064,7 @@
     const features=_geoFeaturesByCode[code]||[];
     for(const f of features){
       const geom=f.geometry;
+      if(!geom) continue;
       if(geom.type==='Polygon'){
         rings.push(geom.coordinates[0].map(c=>[c[1],c[0]]));
       } else if(geom.type==='MultiPolygon'){
@@ -1077,6 +1078,7 @@
     let sumLat=0,sumLng=0,count=0;
     const features=_geoFeaturesByCode[code]||[];
     for(const f of features){
+      if(!f.geometry) continue;
       const flat=flattenCoords(f.geometry.coordinates);
       for(const c of flat){sumLng+=c[0];sumLat+=c[1];count++;}
     }
@@ -1349,6 +1351,7 @@
     return null;
   }
   function isPointInFeature(latlng,feature){
+    if(!feature.geometry) return false;
     const t=feature.geometry.type,c=feature.geometry.coordinates;
     if(t==='Polygon') return isPointInPolygon(latlng,c);
     if(t==='MultiPolygon'){for(const p of c){if(isPointInPolygon(latlng,p)) return true;}}
@@ -1791,7 +1794,7 @@
       let minLat=90,maxLat=-90,minLng=180,maxLng=-180;
       for(const f of features){
         const geom=f.geometry;
-        // 外周リングだけでBBox計算（flattenCoords不使用で高速）
+        if(!geom) continue;
         const rings=geom.type==='Polygon'?[geom.coordinates[0]]:
                     geom.type==='MultiPolygon'?geom.coordinates.map(p=>p[0]):[];
         for(const ring of rings){

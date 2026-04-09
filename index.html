@@ -1560,73 +1560,37 @@
     return inside;
   }
 
-  // ── 侵入ポイント計算（道路座標列ベース）──
+  // ── 市区町村経由ポイントの決定 ──
   //
-  // 【なぜ2回APIが必要か】
-  //   侵入ポイントとして渡す座標が「道路上の点」でないと、
-  //   Directions APIが境界外の最寄り道路にスナップし、市区町村に入れずに折り返す。
-  //   「道路上の点」は1回目のAPIが返す実際のルート座標列からしか得られないため、
-  //   必然的に2回の呼び出しが必要になる。
+  // 【方針：重心（centroid）を経由地に使う】
+  //   重心は市区町村の中央付近にあり、Directions APIがスナップする最寄り道路も
+  //   高確率で境界内に存在する。境界遷移点を使う方式より安定している。
   //
-  // findEntryOnRoadCoords:
+  //   ベースルート（1回目API）との位置関係から「ルート上で最も重心に近いインデックス」を
+  //   特定し、それを additionalWaypoint の挿入位置ヒントとして routeIdx に持たせる。
+  //   → 複数の市区町村を経由する際に挿入順が自然になる。
+  //
+  // getCityWaypointCoord:
   //   roadCoords = 1回目APIが返した [[lng,lat],...] の道路座標列
   //   cityCode   = 対象市区町村コード
-  //   戻り値     = [lat,lng] 形式の侵入ポイント、または null
+  //   戻り値     = { coord:[lat,lng], routeIdx:number } または null
   //
-  // アルゴリズム:
-  //   ① 道路座標列を順に走査し、各点が境界内かどうか判定
-  //   ② 「境界外→境界内に初めて入るセグメント」の境界内側の端点を侵入ポイントとする
-  //      → これはすでに道路上の点なので APIスナップが境界内に落ちることが保証される
-  //   ③ ②が見つからない場合（ルートが境界をかすりもしない）:
-  //      道路座標列の各点から境界頂点への最短距離が最小の「道路上の点」を採用し、
-  //      そこから重心方向に少し入った点を返す
-  //      → 折り返しが必要な位置関係でも自然な迂回になる（APIが調整）
-  function findEntryOnRoadCoords(roadCoords,cityCode){
-    const rings=getCityBoundaryRings(cityCode);
+  function getCityWaypointCoord(roadCoords,cityCode){
     const centroid=getCityCentroid(cityCode);
-    if(!rings.length||!centroid) return null;
+    if(!centroid) return null;
 
+    // ベースルート上で重心に最も近い点のインデックスを求める（挿入順決定に使用）
     const n=roadCoords.length;
-
-    // ① 境界内外の判定用ヘルパー
-    function isInsideCity(lnglatArr){
-      const pt={lat:lnglatArr[1],lng:lnglatArr[0]};
-      for(const ring of rings){ if(isPointInRing(pt,ring)) return true; }
-      return false;
+    const step=Math.max(1,Math.floor(n/500));
+    let bestIdx=0,bestDist=Infinity;
+    for(let i=0;i<n;i+=step){
+      const d=(roadCoords[i][1]-centroid[0])**2+(roadCoords[i][0]-centroid[1])**2;
+      if(d<bestDist){bestDist=d;bestIdx=i;}
     }
 
-    // ② 「外→内」の遷移点（道路座標列の境界内側の最初の点）を探す
-    let prevInside=isInsideCity(roadCoords[0]);
-    for(let i=1;i<n;i++){
-      const inside=isInsideCity(roadCoords[i]);
-      if(!prevInside&&inside){
-        // roadCoords[i] は道路上かつ境界内 → そのままで返す
-        return [roadCoords[i][1],roadCoords[i][0]]; // [lat,lng]
-      }
-      prevInside=inside;
-    }
-
-    // ③ 遷移点なし（ルートが境界に近づくが入らない）:
-    //    道路座標列上で境界に最も近い点を採用し、重心方向へ少しオフセット
-    const routeStep=Math.max(1,Math.floor(n/500));
-    const ringStep_fn=ring=>Math.max(1,Math.floor(ring.length/200));
-    let bestRoadPt=null,bestBoundaryPt=null,bestDist=Infinity;
-    for(let i=0;i<n;i+=routeStep){
-      const rlng=roadCoords[i][0],rlat=roadCoords[i][1];
-      for(const ring of rings){
-        const step=ringStep_fn(ring);
-        for(let j=0;j<ring.length;j+=step){
-          const bp=ring[j]; // [lat,lng]
-          const d=(rlat-bp[0])**2+(rlng-bp[1])**2;
-          if(d<bestDist){bestDist=d;bestRoadPt=[rlat,rlng];bestBoundaryPt=bp;}
-        }
-      }
-    }
-    if(!bestBoundaryPt) return null;
-    // 境界頂点から重心方向に300m入った点
-    // （道路座標そのものではなくなるが、この場合は折り返しが必要な地形なので
-    //   APIが最短の迂回路を見つける。300mで境界内に入れる可能性を上げる）
-    return moveToward(bestBoundaryPt,centroid,300);
+    // 経由地座標は重心をそのまま返す
+    // → APIが最寄り道路にスナップするため、道路のある場所に自動的に落ちる
+    return {coord:centroid,routeIdx:bestIdx};
   }
 
   $('route-go-btn').addEventListener('click',async()=>{
@@ -1702,36 +1666,37 @@
     catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
     if(!baseRoute){$('route-result').textContent='ルートが見つかりませんでした';return;}
 
-    // 【侵入ポイント計算】道路座標列の「外→内」遷移点を抽出
-    // → 道路上の実座標なのでAPIスナップが境界内に確実に落ちる
+    // 【経由ポイント決定】重心を経由地として使用
+    // ベースルート上の位置（routeIdx）でソートし、進行方向に沿った自然な順序にする
     const additionalWaypoints=[];
     for(const cwp of cityWpList){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,cwp.cityCode);
       if(passes){
         cityCheckResults.push({name:cwp.name,passes:true});
       } else {
-        const entryPt=findEntryOnRoadCoords(baseRoute.geometry.coordinates,cwp.cityCode);
-        if(entryPt){
-          additionalWaypoints.push({coord:entryPt,name:cwp.name,cityCode:cwp.cityCode,originalIdx:cwp.originalIdx});
+        const wp=getCityWaypointCoord(baseRoute.geometry.coordinates,cwp.cityCode);
+        if(wp){
+          additionalWaypoints.push({coord:wp.coord,name:cwp.name,cityCode:cwp.cityCode,
+            originalIdx:cwp.originalIdx,routeIdx:wp.routeIdx});
         }
         cityCheckResults.push({name:cwp.name,passes:false});
       }
     }
 
-    // 出発地・目的地の市区町村処理
+    // 出発地・目的地の市区町村処理（重心を出発/目的座標として使用）
     if(fromIsCity){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeFromCity.cityCode);
       if(!passes){
-        const entryPt=findEntryOnRoadCoords(baseRoute.geometry.coordinates,routeFromCity.cityCode);
-        if(entryPt) routeFromCoord=entryPt;
+        const wp=getCityWaypointCoord(baseRoute.geometry.coordinates,routeFromCity.cityCode);
+        if(wp) routeFromCoord=wp.coord;
       }
       cityCheckResults.push({name:routeFromCity.name,passes});
     }
     if(toIsCity){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeToCity.cityCode);
       if(!passes){
-        const entryPt=findEntryOnRoadCoords(baseRoute.geometry.coordinates,routeToCity.cityCode);
-        if(entryPt) routeToCoord=entryPt;
+        const wp=getCityWaypointCoord(baseRoute.geometry.coordinates,routeToCity.cityCode);
+        if(wp) routeToCoord=wp.coord;
       }
       cityCheckResults.push({name:routeToCity.name,passes});
     }
@@ -1743,13 +1708,24 @@
       return;
     }
 
-    // 【2回目API】道路上の侵入ポイントを挿入して最終ルートを取得
+    // 【2回目API】重心経由地を挿入して最終ルートを取得
     $('route-result').textContent='ルートを計算中 (2/2)...';
     const allWpEntries=[
-      ...normalPoints.map(p=>({coord:p.coord,name:p.name,originalIdx:p.originalIdx,cityCode:null})),
+      ...normalPoints.map(p=>({coord:p.coord,name:p.name,originalIdx:p.originalIdx,routeIdx:-1,cityCode:null})),
       ...additionalWaypoints
     ];
-    allWpEntries.sort((a,b)=>a.originalIdx-b.originalIdx);
+    // routeIdx（ベースルート上の位置）でソート → 進行方向に沿った自然な挿入順
+    // normalPoints は originalIdx が routeIdx より優先（ユーザー指定順を尊重）
+    // 市区町村経由地は routeIdx でソートしてルートの流れに合わせる
+    const normalSet=new Set(normalPoints.map(p=>p.originalIdx));
+    allWpEntries.sort((a,b)=>{
+      const aIsNormal=normalSet.has(a.originalIdx)&&a.routeIdx<0;
+      const bIsNormal=normalSet.has(b.originalIdx)&&b.routeIdx<0;
+      if(aIsNormal&&bIsNormal) return a.originalIdx-b.originalIdx;
+      const aKey=aIsNormal?a.originalIdx*10000:a.routeIdx;
+      const bKey=bIsNormal?b.originalIdx*10000:b.routeIdx;
+      return aKey-bKey;
+    });
 
     const finalPoints=[routeFromCoord,...allWpEntries.map(w=>w.coord),routeToCoord];
     const allCityCodes=additionalWaypoints.map(w=>w.cityCode);

@@ -1838,8 +1838,12 @@
     routePath.forEach(p=>routeBounds.extend(p));
     map.fitBounds(routeBounds,40);
 
+    // ルート通過市区町村を色付け
+    const passedCities=highlightRouteCities(route.geometry.coordinates);
+
     let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
     if(currentRouteMode==='walking') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(徒歩)</span>`;
+    resultHTML+=`<br>通過市区町村: <strong>${passedCities.size}箇所</strong>`;
     if(wpMarkerData.length) resultHTML+=`<br>経由地: <strong>${wpMarkerData.length}箇所</strong>`;
     for(const cr of cityCheckResults){
       resultHTML+=`<br>${cr.passes?'✅':'📌'} ${cr.name}${cr.passes?' — ルート上で通過済み':''}`;

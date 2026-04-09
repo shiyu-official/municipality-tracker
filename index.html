@@ -1395,6 +1395,7 @@
     return null;
   }
   function isPointInFeature(latlng,feature){
+    if(!feature||!feature.geometry||!feature.geometry.type) return false;
     const t=feature.geometry.type,c=feature.geometry.coordinates;
     if(t==='Polygon') return isPointInPolygon(latlng,c);
     if(t==='MultiPolygon'){for(const p of c){if(isPointInPolygon(latlng,p)) return true;}}
@@ -1818,14 +1819,18 @@
 
     const passedCodes=new Set();
 
-    // ルート座標点を一定間隔でサンプリングして通過市区町村を特定
+    // 座標点ごとにどの市区町村ポリゴン内か調べる
+    // ※ nullや不正なfeatureをスキップしてエラーを防ぐ
     for(let i=0;i<routeCoords.length;i+=2){
       const lng=routeCoords[i][0],lat=routeCoords[i][1];
       const latlng={lat,lng};
       for(const[code,features] of Object.entries(_geoFeaturesByCode)){
         if(passedCodes.has(code)) continue;
         for(const f of features){
-          if(isPointInFeature(latlng,f)){passedCodes.add(code);break;}
+          if(!f||!f.geometry||!f.geometry.type) continue; // nullガード
+          try{
+            if(isPointInFeature(latlng,f)){passedCodes.add(code);break;}
+          }catch(e){/* 不正ジオメトリはスキップ */}
         }
       }
     }
@@ -1835,15 +1840,19 @@
       const featureList=[];
       for(const code of passedCodes){
         const features=_geoFeaturesByCode[code]||[];
-        featureList.push(...features);
+        for(const f of features){
+          if(f&&f.geometry) featureList.push(f); // nullガード
+        }
       }
-      _routeHighlightLayer=new google.maps.Data({map:map,zIndex:3});
-      _routeHighlightLayer.addGeoJson({type:'FeatureCollection',features:featureList});
-      _routeHighlightLayer.setStyle({
-        fillColor:'#f59e0b',fillOpacity:0.18,
-        strokeColor:'#f59e0b',strokeWeight:1.5,strokeOpacity:0.6,
-        clickable:false
-      });
+      if(featureList.length>0){
+        _routeHighlightLayer=new google.maps.Data({map:map,zIndex:3});
+        _routeHighlightLayer.addGeoJson({type:'FeatureCollection',features:featureList});
+        _routeHighlightLayer.setStyle({
+          fillColor:'#f59e0b',fillOpacity:0.18,
+          strokeColor:'#f59e0b',strokeWeight:1.5,strokeOpacity:0.6,
+          clickable:false
+        });
+      }
     }
 
     return passedCodes;

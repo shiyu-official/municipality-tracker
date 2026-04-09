@@ -1562,35 +1562,62 @@
 
   // ── 市区町村経由ポイントの決定 ──
   //
-  // 【方針：重心（centroid）を経由地に使う】
-  //   重心は市区町村の中央付近にあり、Directions APIがスナップする最寄り道路も
-  //   高確率で境界内に存在する。境界遷移点を使う方式より安定している。
+  // 【方針】Places API で「市区町村名 役場」「道の駅」等を検索し、
+  //         道路上の実在スポット座標を経由地に使う。
+  //         スポットが見つからない場合は重心（centroid）にフォールバック。
   //
-  //   ベースルート（1回目API）との位置関係から「ルート上で最も重心に近いインデックス」を
-  //   特定し、それを additionalWaypoint の挿入位置ヒントとして routeIdx に持たせる。
-  //   → 複数の市区町村を経由する際に挿入順が自然になる。
+  // getCityRoadPoint(cityName, cityCode, centroid):
+  //   cityName  = 表示用の市区町村名（例：「鶴居村」）
+  //   cityCode  = 市区町村コード
+  //   centroid  = [lat,lng] フォールバック用重心
+  //   戻り値    = Promise<[lat,lng]>
   //
-  // getCityWaypointCoord:
-  //   roadCoords = 1回目APIが返した [[lng,lat],...] の道路座標列
-  //   cityCode   = 対象市区町村コード
-  //   戻り値     = { coord:[lat,lng], routeIdx:number } または null
-  //
-  function getCityWaypointCoord(roadCoords,cityCode){
-    const centroid=getCityCentroid(cityCode);
-    if(!centroid) return null;
+  // 検索クエリ優先順: 役場 > 道の駅 > 駅 > 重心フォールバック
+  // 取得した座標が市区町村境界内に収まっているかを確認してから採用する。
+  async function getCityRoadPoint(cityName,cityCode,centroid){
+    const rings=getCityBoundaryRings(cityCode);
 
-    // ベースルート上で重心に最も近い点のインデックスを求める（挿入順決定に使用）
-    const n=roadCoords.length;
-    const step=Math.max(1,Math.floor(n/500));
-    let bestIdx=0,bestDist=Infinity;
-    for(let i=0;i<n;i+=step){
-      const d=(roadCoords[i][1]-centroid[0])**2+(roadCoords[i][0]-centroid[1])**2;
-      if(d<bestDist){bestDist=d;bestIdx=i;}
+    function isInside(lat,lng){
+      if(!rings.length) return true; // 境界データなければ制限しない
+      const pt={lat,lng};
+      for(const ring of rings){ if(isPointInRing(pt,ring)) return true; }
+      return false;
     }
 
-    // 経由地座標は重心をそのまま返す
-    // → APIが最寄り道路にスナップするため、道路のある場所に自動的に落ちる
-    return {coord:centroid,routeIdx:bestIdx};
+    // Places textSearch で候補を1件取得
+    async function searchPlace(query){
+      return new Promise(resolve=>{
+        placesService.textSearch({
+          query,
+          location:new google.maps.LatLng(centroid[0],centroid[1]),
+          radius:50000,
+          language:'ja'
+        },(results,status)=>{
+          if(status===google.maps.places.PlacesServiceStatus.OK&&results&&results.length){
+            const r=results[0];
+            const lat=r.geometry.location.lat();
+            const lng=r.geometry.location.lng();
+            resolve({lat,lng,name:r.name});
+          } else resolve(null);
+        });
+      });
+    }
+
+    // 優先順に検索
+    const queries=[
+      `${cityName} 役場`,
+      `${cityName} 道の駅`,
+      `${cityName} 駅`,
+    ];
+    for(const q of queries){
+      const r=await searchPlace(q);
+      if(r&&isInside(r.lat,r.lng)){
+        return [r.lat,r.lng];
+      }
+    }
+
+    // フォールバック: 重心
+    return centroid;
   }
 
   $('route-go-btn').addEventListener('click',async()=>{
@@ -1666,37 +1693,36 @@
     catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}
     if(!baseRoute){$('route-result').textContent='ルートが見つかりませんでした';return;}
 
-    // 【経由ポイント決定】重心を経由地として使用
-    // ベースルート上の位置（routeIdx）でソートし、進行方向に沿った自然な順序にする
+    // 【経由ポイント決定】Places APIで道路上スポット座標を取得（役場・道の駅・駅の優先順）
+    // ユーザー指定順（originalIdx）を厳守してソートする
+    $('route-result').textContent='経由地を検索中...';
     const additionalWaypoints=[];
     for(const cwp of cityWpList){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,cwp.cityCode);
       if(passes){
         cityCheckResults.push({name:cwp.name,passes:true});
       } else {
-        const wp=getCityWaypointCoord(baseRoute.geometry.coordinates,cwp.cityCode);
-        if(wp){
-          additionalWaypoints.push({coord:wp.coord,name:cwp.name,cityCode:cwp.cityCode,
-            originalIdx:cwp.originalIdx,routeIdx:wp.routeIdx});
-        }
+        const centroid=getCityCentroid(cwp.cityCode)||[0,0];
+        const coord=await getCityRoadPoint(cwp.name,cwp.cityCode,centroid);
+        additionalWaypoints.push({coord,name:cwp.name,cityCode:cwp.cityCode,originalIdx:cwp.originalIdx});
         cityCheckResults.push({name:cwp.name,passes:false});
       }
     }
 
-    // 出発地・目的地の市区町村処理（重心を出発/目的座標として使用）
+    // 出発地・目的地の市区町村処理
     if(fromIsCity){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeFromCity.cityCode);
       if(!passes){
-        const wp=getCityWaypointCoord(baseRoute.geometry.coordinates,routeFromCity.cityCode);
-        if(wp) routeFromCoord=wp.coord;
+        const centroid=getCityCentroid(routeFromCity.cityCode)||[0,0];
+        routeFromCoord=await getCityRoadPoint(routeFromCity.name,routeFromCity.cityCode,centroid);
       }
       cityCheckResults.push({name:routeFromCity.name,passes});
     }
     if(toIsCity){
       const passes=checkRoutePassesCity(baseRoute.geometry.coordinates,routeToCity.cityCode);
       if(!passes){
-        const wp=getCityWaypointCoord(baseRoute.geometry.coordinates,routeToCity.cityCode);
-        if(wp) routeToCoord=wp.coord;
+        const centroid=getCityCentroid(routeToCity.cityCode)||[0,0];
+        routeToCoord=await getCityRoadPoint(routeToCity.name,routeToCity.cityCode,centroid);
       }
       cityCheckResults.push({name:routeToCity.name,passes});
     }
@@ -1708,24 +1734,14 @@
       return;
     }
 
-    // 【2回目API】重心経由地を挿入して最終ルートを取得
+    // 【2回目API】道路上スポット経由地を挿入して最終ルートを取得
+    // ユーザー指定の originalIdx 順を厳守
     $('route-result').textContent='ルートを計算中 (2/2)...';
     const allWpEntries=[
-      ...normalPoints.map(p=>({coord:p.coord,name:p.name,originalIdx:p.originalIdx,routeIdx:-1,cityCode:null})),
+      ...normalPoints.map(p=>({coord:p.coord,name:p.name,originalIdx:p.originalIdx,cityCode:null})),
       ...additionalWaypoints
     ];
-    // routeIdx（ベースルート上の位置）でソート → 進行方向に沿った自然な挿入順
-    // normalPoints は originalIdx が routeIdx より優先（ユーザー指定順を尊重）
-    // 市区町村経由地は routeIdx でソートしてルートの流れに合わせる
-    const normalSet=new Set(normalPoints.map(p=>p.originalIdx));
-    allWpEntries.sort((a,b)=>{
-      const aIsNormal=normalSet.has(a.originalIdx)&&a.routeIdx<0;
-      const bIsNormal=normalSet.has(b.originalIdx)&&b.routeIdx<0;
-      if(aIsNormal&&bIsNormal) return a.originalIdx-b.originalIdx;
-      const aKey=aIsNormal?a.originalIdx*10000:a.routeIdx;
-      const bKey=bIsNormal?b.originalIdx*10000:b.routeIdx;
-      return aKey-bKey;
-    });
+    allWpEntries.sort((a,b)=>a.originalIdx-b.originalIdx);
 
     const finalPoints=[routeFromCoord,...allWpEntries.map(w=>w.coord),routeToCoord];
     const allCityCodes=additionalWaypoints.map(w=>w.cityCode);

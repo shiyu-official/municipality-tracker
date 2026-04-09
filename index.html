@@ -498,8 +498,16 @@
   function applyGeoStyles(){
     geoDataLayer.setStyle(feature=>{
       const code=feature.getProperty('N03_007');
+      // 一時ルートハイライト（最優先）
       if(window._routeHighlightCodes&&window._routeHighlightCodes.has(code)){
         return{fillColor:'#fde047',fillOpacity:0.55,strokeColor:'#ca8a04',strokeWeight:2,strokeOpacity:0.85,clickable:true,zIndex:3};
+      }
+      // 保存ルートハイライト（表示中のもの）
+      for(const id of Object.keys(displayedRoutes)){
+        const rd=displayedRoutes[id];
+        if(rd.passedCodes&&rd.passedCodes.has(code)){
+          return{fillColor:rd.color,fillOpacity:0.5,strokeColor:rd.color,strokeWeight:1.8,strokeOpacity:0.75,clickable:true,zIndex:2};
+        }
       }
       const city=visitedData.cities[code];
       const lv=getLevel(city?city.visitDays:0);
@@ -988,6 +996,14 @@
   }
   setupRouteSuggest('route-from','route-from-suggest',c=>routeFromCoord=c);
   setupRouteSuggest('route-to','route-to-suggest',c=>routeToCoord=c);
+
+  // 入力があればクリアボタンを表示
+  function updateClearBtnVisibility(){
+    const hasInput=$('route-from').value.trim()||$('route-to').value.trim()||routeWaypoints.length>0;
+    if(hasInput) $('route-clear-btn').style.display='block';
+  }
+  $('route-from').addEventListener('input',updateClearBtnVisibility);
+  $('route-to').addEventListener('input',updateClearBtnVisibility);
 
   // 現在地ボタン（ルート用）
   function setLocateToRoute(inputId,coordSetter,activeTarget){
@@ -2032,7 +2048,7 @@
   });
 
   // ── 保存ルート管理 ──
-  const ROUTE_COLORS=['#ef4444','#3b82f6','#22c55e','#a855f7','#f97316','#06b6d4','#ec4899','#84cc16','#6366f1','#14b8a6'];
+  const ROUTE_COLORS=['#fde047','#fb923c','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9','#f472b6','#4ade80','#2dd4bf'];
   let savedRoutes=[]; // [{id,name,color,mode,from,to,waypoints,geometry,distance,duration,passedCities}]
   let displayedRoutes={}; // id -> {polyline, highlightLayer, markers[]}
 
@@ -2244,7 +2260,15 @@
       if(route&&route.color===c) sw.style.borderColor='var(--text)';
       sw.addEventListener('click',()=>{
         const r=savedRoutes.find(r=>r.id===routeId);
-        if(r){r.color=c;renderSavedRoutesList();if(displayedRoutes[routeId]) {hideSavedRoute(routeId);showSavedRoute(routeId);}}
+        if(r){
+          r.color=c;
+          if(displayedRoutes[routeId]){
+            displayedRoutes[routeId].color=c;
+            displayedRoutes[routeId].polyline.setOptions({strokeColor:c});
+            applyGeoStyles();
+          }
+          renderSavedRoutesList();
+        }
         popup.remove();
       });
       popup.appendChild(sw);
@@ -2259,36 +2283,18 @@
     if(!r||displayedRoutes[id]) return;
     const path=r.geometry.map(c=>({lat:c[1],lng:c[0]}));
     const polyline=new google.maps.Polyline({path,strokeColor:r.color,strokeWeight:4,strokeOpacity:0.8,zIndex:8,map});
-
-    // 通過市区町村ハイライト
-    let hlLayer=null;
-    if(r.passedCities&&r.passedCities.length){
-      const hlFeatures=[];
-      for(const code of r.passedCities){
-        const features=_geoFeaturesByCode[code]||[];
-        for(const f of features){if(f.geometry) hlFeatures.push(f);}
-      }
-      if(hlFeatures.length){
-        hlLayer=new google.maps.Data({zIndex:4});
-        hlLayer.addGeoJson({type:'FeatureCollection',features:hlFeatures});
-        hlLayer.setStyle({fillColor:r.color,fillOpacity:0.5,strokeColor:r.color,strokeWeight:1.5,strokeOpacity:0.7,clickable:false});
-        hlLayer.setMap(map);
-        // geoDataLayerを再登録して保存ルートハイライトの上に描画
-        geoDataLayer.setMap(null);
-        geoDataLayer.setMap(map);
-      }
-    }
-
-    displayedRoutes[id]={polyline,highlightLayer:hlLayer,markers:[]};
+    const passedCodes=new Set(r.passedCities||[]);
+    displayedRoutes[id]={polyline,passedCodes,color:r.color,markers:[]};
+    applyGeoStyles();
   }
 
   function hideSavedRoute(id){
     const d=displayedRoutes[id];
     if(!d) return;
     d.polyline.setMap(null);
-    if(d.highlightLayer) d.highlightLayer.setMap(null);
     d.markers.forEach(m=>m.setMap(null));
     delete displayedRoutes[id];
+    applyGeoStyles();
   }
 
   // 全表示/全非表示

@@ -1816,17 +1816,6 @@
   function highlightRouteCities(routeCoords){
     // 既存のハイライトレイヤーをクリア
     if(_routeHighlightLayer){_routeHighlightLayer.setMap(null);_routeHighlightLayer=null;}
-    // 前回の上書きスタイルをリセット
-    if(window._routeHighlightCodes){
-      for(const code of window._routeHighlightCodes){
-        const features=_geoFeaturesByCode[code]||[];
-        for(const f of features){
-          geoDataLayer.forEach(gf=>{
-            if(gf.getProperty('N03_007')===code) geoDataLayer.revertStyle(gf);
-          });
-        }
-      }
-    }
     window._routeHighlightCodes=new Set();
 
     const passedCodes=new Set();
@@ -1845,18 +1834,23 @@
       }
     }
 
-    // geoDataLayer上の該当featureを直接オレンジで上書き
     if(passedCodes.size>0){
-      geoDataLayer.forEach(gf=>{
-        const code=gf.getProperty('N03_007');
-        if(passedCodes.has(code)){
-          geoDataLayer.overrideStyle(gf,{
-            fillColor:'#f59e0b',fillOpacity:0.55,
-            strokeColor:'#f59e0b',strokeWeight:2,strokeOpacity:0.85,
-            clickable:true,zIndex:3
-          });
+      const featureList=[];
+      for(const code of passedCodes){
+        const features=_geoFeaturesByCode[code]||[];
+        for(const f of features){
+          if(f&&f.geometry) featureList.push(f);
         }
-      });
+      }
+      if(featureList.length>0){
+        _routeHighlightLayer=new google.maps.Data({map:map,zIndex:3});
+        _routeHighlightLayer.addGeoJson({type:'FeatureCollection',features:featureList});
+        _routeHighlightLayer.setStyle({
+          fillColor:'#f59e0b',fillOpacity:0.7,
+          strokeColor:'#f59e0b',strokeWeight:2,strokeOpacity:0.9,
+          clickable:false
+        });
+      }
       window._routeHighlightCodes=passedCodes;
     }
 
@@ -2016,12 +2010,7 @@
   $('route-clear-btn').addEventListener('click',()=>{
     if(routeLayer){routeLayer.setMap(null);routeLayer=null;}
     if(_routeHighlightLayer){_routeHighlightLayer.setMap(null);_routeHighlightLayer=null;}
-    if(window._routeHighlightCodes){
-      geoDataLayer.forEach(gf=>{
-        if(window._routeHighlightCodes.has(gf.getProperty('N03_007'))) geoDataLayer.revertStyle(gf);
-      });
-      window._routeHighlightCodes=null;
-    }
+    window._routeHighlightCodes=null;
     if(window._wpMarkers){window._wpMarkers.forEach(m=>m.setMap(null));window._wpMarkers=[];}
     routeFromCoord=null;routeToCoord=null;
     routeFromCity={isCityWaypoint:false,cityCode:null,name:''};

@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated": "2026-04-10T21:03:36.932538",
+    "generated": "2026-04-10T21:29:31.216055",
     "totalMunicipalities": 1905,
-    "visitedCount": 1591,
-    "coverageRate": 83.52,
+    "visitedCount": 1612,
+    "coverageRate": 84.62,
     "gpxFileCount": 989,
     "dateRange": [
       "2023-07-29",
@@ -14,8 +14,8 @@
     "01": {
       "name": "北海道",
       "total": 194,
-      "visited": 152,
-      "rate": 78.35
+      "visited": 156,
+      "rate": 80.41
     },
     "02": {
       "name": "青森県",
@@ -26,8 +26,8 @@
     "03": {
       "name": "岩手県",
       "total": 33,
-      "visited": 32,
-      "rate": 96.97
+      "visited": 33,
+      "rate": 100.0
     },
     "04": {
       "name": "宮城県",
@@ -68,8 +68,8 @@
     "10": {
       "name": "群馬県",
       "total": 35,
-      "visited": 34,
-      "rate": 97.14
+      "visited": 35,
+      "rate": 100.0
     },
     "11": {
       "name": "埼玉県",
@@ -170,8 +170,8 @@
     "27": {
       "name": "大阪府",
       "total": 72,
-      "visited": 69,
-      "rate": 95.83
+      "visited": 70,
+      "rate": 97.22
     },
     "28": {
       "name": "兵庫県",
@@ -206,8 +206,8 @@
     "33": {
       "name": "岡山県",
       "total": 30,
-      "visited": 23,
-      "rate": 76.67
+      "visited": 24,
+      "rate": 80.0
     },
     "34": {
       "name": "広島県",
@@ -224,8 +224,8 @@
     "36": {
       "name": "徳島県",
       "total": 24,
-      "visited": 19,
-      "rate": 79.17
+      "visited": 20,
+      "rate": 83.33
     },
     "37": {
       "name": "香川県",
@@ -236,20 +236,20 @@
     "38": {
       "name": "愛媛県",
       "total": 20,
-      "visited": 4,
-      "rate": 20.0
+      "visited": 8,
+      "rate": 40.0
     },
     "39": {
       "name": "高知県",
       "total": 34,
-      "visited": 18,
-      "rate": 52.94
+      "visited": 21,
+      "rate": 61.76
     },
     "40": {
       "name": "福岡県",
       "total": 73,
-      "visited": 44,
-      "rate": 60.27
+      "visited": 46,
+      "rate": 63.01
     },
     "41": {
       "name": "佐賀県",
@@ -266,8 +266,8 @@
     "43": {
       "name": "熊本県",
       "total": 49,
-      "visited": 21,
-      "rate": 42.86
+      "visited": 24,
+      "rate": 48.98
     },
     "44": {
       "name": "大分県",
@@ -1167,6 +1167,14 @@
       "lastVisit": "2024-10-05",
       "visitDays": 1
     },
+    "01544": {
+      "name": "津別町",
+      "pref": "北海道",
+      "prefCode": "01",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "01545": {
       "name": "斜里町",
       "pref": "北海道",
@@ -1445,6 +1453,30 @@
       "prefCode": "01",
       "firstVisit": "2024-10-03",
       "lastVisit": "2024-10-03",
+      "visitDays": 1
+    },
+    "01646": {
+      "name": "本別町",
+      "pref": "北海道",
+      "prefCode": "01",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "01647": {
+      "name": "足寄町",
+      "pref": "北海道",
+      "prefCode": "01",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "01648": {
+      "name": "陸別町",
+      "pref": "北海道",
+      "prefCode": "01",
+      "firstVisit": null,
+      "lastVisit": null,
       "visitDays": 1
     },
     "01649": {
@@ -2030,6 +2062,14 @@
       "firstVisit": "2025-07-06",
       "lastVisit": "2025-11-16",
       "visitDays": 3
+    },
+    "03483": {
+      "name": "岩泉町",
+      "pref": "岩手県",
+      "prefCode": "03",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
     },
     "03484": {
       "name": "田野畑村",
@@ -3997,6 +4037,14 @@
       "prefCode": "10",
       "firstVisit": "2024-04-20",
       "lastVisit": "2024-04-20",
+      "visitDays": 1
+    },
+    "10344": {
+      "name": "榛東村",
+      "pref": "群馬県",
+      "prefCode": "10",
+      "firstVisit": null,
+      "lastVisit": null,
       "visitDays": 1
     },
     "10345": {
@@ -9839,6 +9887,14 @@
       "lastVisit": "2026-02-08",
       "visitDays": 2
     },
+    "27383": {
+      "name": "千早赤阪村",
+      "pref": "大阪府",
+      "prefCode": "27",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "28101": {
       "name": "神戸市東灘区",
       "pref": "兵庫県",
@@ -11207,6 +11263,14 @@
       "lastVisit": "2024-08-25",
       "visitDays": 1
     },
+    "33681": {
+      "name": "吉備中央町",
+      "pref": "岡山県",
+      "prefCode": "33",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "34101": {
       "name": "広島市中区",
       "pref": "広島県",
@@ -11599,6 +11663,14 @@
       "lastVisit": "2025-01-05",
       "visitDays": 2
     },
+    "36342": {
+      "name": "神山町",
+      "pref": "徳島県",
+      "prefCode": "36",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "36383": {
       "name": "牟岐町",
       "pref": "徳島県",
@@ -11791,6 +11863,38 @@
       "lastVisit": "2024-06-30",
       "visitDays": 1
     },
+    "38207": {
+      "name": "大洲市",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "38214": {
+      "name": "西予市",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "38386": {
+      "name": "久万高原町",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "38422": {
+      "name": "内子町",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "38484": {
       "name": "松野町",
       "pref": "愛媛県",
@@ -11887,6 +11991,14 @@
       "lastVisit": "2024-06-15",
       "visitDays": 1
     },
+    "39341": {
+      "name": "本山町",
+      "pref": "高知県",
+      "prefCode": "39",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "39344": {
       "name": "大豊町",
       "pref": "高知県",
@@ -11895,6 +12007,14 @@
       "lastVisit": "2024-06-30",
       "visitDays": 2
     },
+    "39363": {
+      "name": "土佐町",
+      "pref": "高知県",
+      "prefCode": "39",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "39386": {
       "name": "いの町",
       "pref": "高知県",
@@ -11902,6 +12022,14 @@
       "firstVisit": "2024-06-29",
       "lastVisit": "2024-06-30",
       "visitDays": 2
+    },
+    "39387": {
+      "name": "仁淀川町",
+      "pref": "高知県",
+      "prefCode": "39",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
     },
     "39401": {
       "name": "中土佐町",
@@ -12085,6 +12213,14 @@
       "prefCode": "40",
       "firstVisit": "2025-12-28",
       "lastVisit": "2025-12-28",
+      "visitDays": 1
+    },
+    "40210": {
+      "name": "八女市",
+      "pref": "福岡県",
+      "prefCode": "40",
+      "firstVisit": null,
+      "lastVisit": null,
       "visitDays": 1
     },
     "40211": {
@@ -12285,6 +12421,14 @@
       "prefCode": "40",
       "firstVisit": "2025-12-28",
       "lastVisit": "2025-12-28",
+      "visitDays": 1
+    },
+    "40544": {
+      "name": "広川町",
+      "pref": "福岡県",
+      "prefCode": "40",
+      "firstVisit": null,
+      "lastVisit": null,
       "visitDays": 1
     },
     "40621": {
@@ -12543,6 +12687,14 @@
       "lastVisit": "2025-12-28",
       "visitDays": 5
     },
+    "43208": {
+      "name": "山鹿市",
+      "pref": "熊本県",
+      "prefCode": "43",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "43211": {
       "name": "宇土市",
       "pref": "熊本県",
@@ -12591,6 +12743,14 @@
       "lastVisit": "2025-12-28",
       "visitDays": 1
     },
+    "43369": {
+      "name": "和水町",
+      "pref": "熊本県",
+      "prefCode": "43",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "43403": {
       "name": "大津町",
       "pref": "熊本県",
@@ -12605,6 +12765,14 @@
       "prefCode": "43",
       "firstVisit": "2024-12-30",
       "lastVisit": "2024-12-30",
+      "visitDays": 1
+    },
+    "43425": {
+      "name": "産山村",
+      "pref": "熊本県",
+      "prefCode": "43",
+      "firstVisit": null,
+      "lastVisit": null,
       "visitDays": 1
     },
     "43433": {

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-04-10T19:57:11.090962",
+    "generated": "2026-04-10T20:48:26.713884",
     "totalMunicipalities": 1905,
     "visitedCount": 1655,
     "coverageRate": 86.88,
@@ -1173,7 +1173,7 @@
       "prefCode": "01",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "01545": {
       "name": "斜里町",
@@ -1205,7 +1205,7 @@
       "prefCode": "01",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "01550": {
       "name": "置戸町",
@@ -1213,7 +1213,7 @@
       "prefCode": "01",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "01552": {
       "name": "佐呂間町",
@@ -1397,7 +1397,7 @@
       "prefCode": "01",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "01635": {
       "name": "新得町",
@@ -1485,7 +1485,7 @@
       "prefCode": "01",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "01647": {
       "name": "足寄町",
@@ -1493,7 +1493,7 @@
       "prefCode": "01",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "01648": {
       "name": "陸別町",
@@ -1501,7 +1501,7 @@
       "prefCode": "01",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "01649": {
       "name": "浦幌町",
@@ -2093,7 +2093,7 @@
       "prefCode": "03",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "03484": {
       "name": "田野畑村",
@@ -4069,7 +4069,7 @@
       "prefCode": "10",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "10345": {
       "name": "吉岡町",
@@ -4829,7 +4829,7 @@
       "prefCode": "12",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "12101": {
       "name": "千葉市中央区",
@@ -7229,7 +7229,7 @@
       "prefCode": "20",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "20361": {
       "name": "下諏訪町",
@@ -7325,7 +7325,7 @@
       "prefCode": "20",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "20409": {
       "name": "平谷村",
@@ -7333,7 +7333,7 @@
       "prefCode": "20",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "20410": {
       "name": "根羽村",
@@ -7341,7 +7341,7 @@
       "prefCode": "20",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "20412": {
       "name": "売木村",
@@ -7349,7 +7349,7 @@
       "prefCode": "20",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "20413": {
       "name": "天龍村",
@@ -8149,7 +8149,7 @@
       "prefCode": "22",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "22342": {
       "name": "長泉町",
@@ -8381,7 +8381,7 @@
       "prefCode": "23",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "23209": {
       "name": "碧南市",
@@ -9085,7 +9085,7 @@
       "prefCode": "25",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "25384": {
       "name": "竜王町",
@@ -9093,7 +9093,7 @@
       "prefCode": "25",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "25425": {
       "name": "愛荘町",
@@ -9973,7 +9973,7 @@
       "prefCode": "27",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "28101": {
       "name": "神戸市東灘区",
@@ -10637,7 +10637,7 @@
       "prefCode": "29",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "29451": {
       "name": "上北山村",
@@ -10645,7 +10645,7 @@
       "prefCode": "29",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "29452": {
       "name": "川上村",
@@ -10997,7 +10997,7 @@
       "prefCode": "31",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "31390": {
       "name": "伯耆町",
@@ -11165,7 +11165,7 @@
       "prefCode": "32",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "32527": {
       "name": "知夫村",
@@ -11173,7 +11173,7 @@
       "prefCode": "32",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "32528": {
       "name": "隠岐の島町",
@@ -11237,7 +11237,7 @@
       "prefCode": "33",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "33205": {
       "name": "笠岡市",
@@ -11349,7 +11349,7 @@
       "prefCode": "33",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "33622": {
       "name": "勝央町",
@@ -11365,7 +11365,7 @@
       "prefCode": "33",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "33643": {
       "name": "西粟倉村",
@@ -11397,7 +11397,7 @@
       "prefCode": "33",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "34101": {
       "name": "広島市中区",
@@ -11701,7 +11701,7 @@
       "prefCode": "35",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "35321": {
       "name": "和木町",
@@ -11717,7 +11717,7 @@
       "prefCode": "35",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "35343": {
       "name": "田布施町",
@@ -11805,7 +11805,7 @@
       "prefCode": "36",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "36321": {
       "name": "佐那河内村",
@@ -11813,7 +11813,7 @@
       "prefCode": "36",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "36341": {
       "name": "石井町",
@@ -11829,7 +11829,7 @@
       "prefCode": "36",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "36368": {
       "name": "那賀町",
@@ -11837,7 +11837,7 @@
       "prefCode": "36",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "36383": {
       "name": "牟岐町",
@@ -11981,7 +11981,7 @@
       "prefCode": "37",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "37341": {
       "name": "三木町",
@@ -12037,7 +12037,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38203": {
       "name": "宇和島市",
@@ -12053,7 +12053,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38206": {
       "name": "西条市",
@@ -12061,7 +12061,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38207": {
       "name": "大洲市",
@@ -12069,7 +12069,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38213": {
       "name": "四国中央市",
@@ -12077,7 +12077,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38214": {
       "name": "西予市",
@@ -12085,7 +12085,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38215": {
       "name": "東温市",
@@ -12093,7 +12093,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38386": {
       "name": "久万高原町",
@@ -12101,7 +12101,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38422": {
       "name": "内子町",
@@ -12109,7 +12109,7 @@
       "prefCode": "38",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "38484": {
       "name": "松野町",
@@ -12213,7 +12213,7 @@
       "prefCode": "39",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "39344": {
       "name": "大豊町",
@@ -12229,7 +12229,7 @@
       "prefCode": "39",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "39386": {
       "name": "いの町",
@@ -12245,7 +12245,7 @@
       "prefCode": "39",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "39401": {
       "name": "中土佐町",
@@ -12397,7 +12397,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40137": {
       "name": "福岡市早良区",
@@ -12445,7 +12445,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40207": {
       "name": "柳川市",
@@ -12453,7 +12453,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40210": {
       "name": "八女市",
@@ -12461,7 +12461,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40211": {
       "name": "筑後市",
@@ -12597,7 +12597,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40343": {
       "name": "志免町",
@@ -12605,7 +12605,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40344": {
       "name": "須恵町",
@@ -12613,7 +12613,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40345": {
       "name": "新宮町",
@@ -12637,7 +12637,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40382": {
       "name": "水巻町",
@@ -12701,7 +12701,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40544": {
       "name": "広川町",
@@ -12709,7 +12709,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40601": {
       "name": "香春町",
@@ -12717,7 +12717,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40608": {
       "name": "大任町",
@@ -12725,7 +12725,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40609": {
       "name": "赤村",
@@ -12733,7 +12733,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40621": {
       "name": "苅田町",
@@ -12749,7 +12749,7 @@
       "prefCode": "40",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "40642": {
       "name": "吉富町",
@@ -12901,7 +12901,7 @@
       "prefCode": "41",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "42202": {
       "name": "佐世保市",
@@ -12933,7 +12933,7 @@
       "prefCode": "42",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "42391": {
       "name": "佐々町",
@@ -13021,7 +13021,7 @@
       "prefCode": "43",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "43211": {
       "name": "宇土市",
@@ -13077,7 +13077,7 @@
       "prefCode": "43",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "43403": {
       "name": "大津町",
@@ -13101,7 +13101,7 @@
       "prefCode": "43",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "43433": {
       "name": "南阿蘇村",
@@ -13477,7 +13477,7 @@
       "prefCode": "46",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "46225": {
       "name": "姶良市",
@@ -13493,7 +13493,7 @@
       "prefCode": "46",
       "firstVisit": null,
       "lastVisit": null,
-      "visitDays": 0
+      "visitDays": 1
     },
     "46468": {
       "name": "大崎町",

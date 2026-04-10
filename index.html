@@ -505,14 +505,14 @@
     const num=parseInt(code.substring(2),10);
     return num>=101&&num<=199;
   }
-  // topojsonのN03_003（gun/市名）とN03_004（city/区名）から表示名を生成
-  function buildFullName(code,gun,city){
-    if(isSeireiKu(code)){
+  // topojsonのN03_004（市区町村名）とN03_005（政令区名）から表示名を生成
+  function buildFullName(code,gun,city,ward){
+    if(ward){
       // 政令区: 「市名+区名」（例: 札幌市中央区）
-      return (gun||'')+( city||'');
+      return (city||'')+ward;
     }
-    // 通常の市区町村: 郡名がある場合は「郡名+市区町村名」（旧来の挙動を維持）
-    return gun&&city&&city.endsWith('区')?gun+city:city||'';
+    // 通常の市区町村
+    return city||'';
   }
 
   // ── Build per-prefecture city index ──
@@ -523,6 +523,7 @@
       pref:f.properties.N03_001||'',
       gun:f.properties.N03_003||'',
       city:f.properties.N03_004||'',
+      ward:f.properties.N03_005||'',
     };
   }
   // All city codes grouped by pref
@@ -540,7 +541,7 @@
     const vc=visitedData.cities[code];
     const vd=vc?vc.visitDays:0;
     // [変更1] buildFullName を使用
-    const fullName=buildFullName(code,fp.gun,fp.city);
+    const fullName=buildFullName(code,fp.gun,fp.city,fp.ward);
     prefCities[pc].push({
       code, name:fullName||code, gun:fp.gun,
       visitDays:vd, level:getLevel(vd), score:Math.min(vd,3),
@@ -644,7 +645,7 @@
   function popupHTMLFromFeature(feature){
     const code=feature.getProperty('N03_007');
     const fp=featureProps[code]||{};
-    const fullName=buildFullName(code,fp.gun,fp.city)||'不明';
+    const fullName=buildFullName(code,fp.gun,fp.city,fp.ward)||'不明';
     const city=visitedData.cities[code];
     const lv=getLevel(city?city.visitDays:0);
     const score=city?Math.min(city.visitDays,3):0;
@@ -1524,7 +1525,7 @@
 
     const code=feature?feature.properties.N03_007:null;
     const fp=code?featureProps[code]:null;
-    const cityName=fp?buildFullName(code,fp.gun,fp.city):'不明';
+    const cityName=fp?buildFullName(code,fp.gun,fp.city,fp.ward):'不明';
     const prefName=fp?fp.pref:'';
     const vc=code?visitedData.cities[code]:null;
     const isVisited=vc&&vc.visitDays>0;

@@ -263,22 +263,105 @@
   .color-picker-swatch:hover{border-color:var(--text);}
 
   @media(max-width:768px){
+    /* ── ヘッダー ── */
     #header{padding:0 10px;gap:8px;height:48px;}
     #header h1{font-size:14px;}
+    .stat-chips{gap:5px;}
     .stat-chip{padding:3px 8px;font-size:10px;}
     .stat-chip .value.large{font-size:12px;}
-    #sidebar{width:280px;top:48px;}
-    #sidebar-toggle{left:280px;top:58px;}
-    #sidebar.collapsed + #sidebar-toggle{left:0;}
-    #map-container{left:0;top:48px;}
-    #sidebar:not(.collapsed) ~ #map-container{left:280px;}
-    .legend{bottom:10px;right:10px;padding:10px 12px;}
+
+    /* ── サイドバー: スマホではフルスクリーンオーバーレイ ── */
+    #sidebar{
+      width:100%;
+      max-width:100%;
+      top:48px;
+      bottom:0;
+      left:0;
+      transform:translateX(-100%);
+      z-index:1200;
+      box-shadow:2px 0 16px rgba(0,0,0,0.18);
+    }
+    #sidebar.collapsed{transform:translateX(-100%);}
+    #sidebar:not(.collapsed){transform:translateX(0);}
+
+    /* トグルボタン: 常に左端に固定 */
+    #sidebar-toggle{
+      left:0 !important;
+      top:58px;
+      width:32px;
+      height:48px;
+      font-size:14px;
+      z-index:1300;
+    }
+    #sidebar:not(.collapsed) + #sidebar-toggle{
+      left:0 !important;
+    }
+
+    /* 地図は常にフル幅 */
+    #map-container{left:0 !important;top:48px;}
+
+    /* 検索パネル: トグルボタンの右側から始める */
+    #search-panel{
+      top:58px;
+      left:40px;
+      right:8px;
+      width:auto;
+      max-width:none;
+      transform:none;
+    }
+    #search-box-wrap{height:38px;}
+    #search-input{font-size:13px;}
+
+    /* レジェンド: 左下に移動してルートUIと干渉しないように */
+    .legend{
+      bottom:10px;
+      right:auto;
+      left:8px;
+      padding:8px 12px;
+      font-size:10px;
+    }
+    .legend-title{font-size:10px;margin-bottom:6px;}
+    .legend-label{font-size:10px;}
+    .legend-color{width:14px;height:10px;}
+    .legend-item{gap:6px;margin-bottom:3px;}
+
+    /* map-pick-hint: スマホで下部に十分なスペース確保 */
+    .map-pick-hint{bottom:80px;}
+
+    /* モーダル: スマホ幅に合わせる */
+    .csm-inner{width:calc(100vw - 32px);max-width:380px;}
+    .map-click-modal{width:calc(100vw - 48px);max-width:320px;}
   }
+
   @media(max-width:480px){
-    #sidebar{width:260px;}
-    #sidebar-toggle{left:260px;}
-    #sidebar.collapsed + #sidebar-toggle{left:0;}
     .stat-chip .label{display:none;}
+    .stat-chip{padding:3px 6px;}
+
+    /* サイドバー内のフォント・余白を少し詰める */
+    .pref-name{font-size:12px;}
+    .pref-item{padding:6px 8px;}
+    .city-name{font-size:11px;}
+
+    /* ルートパネル: 入力欄をコンパクトに */
+    .route-input{font-size:12px;padding:6px 8px;}
+    #route-go-btn{font-size:12px;padding:7px;}
+    .route-type-btn{font-size:10px;padding:4px 2px;}
+
+    /* 検索結果 */
+    .search-result-item{font-size:12px;padding:8px 12px;}
+  }
+
+  /* サイドバー開放時に地図をタップして閉じられるオーバーレイ */
+  #sidebar-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    top:48px;
+    background:rgba(0,0,0,0.35);
+    z-index:1100;
+  }
+  @media(max-width:768px){
+    #sidebar:not(.collapsed) ~ #sidebar-overlay{display:block;}
   }
 </style>
 </head>
@@ -327,6 +410,7 @@
   </div>
 </div>
 <button id="sidebar-toggle">◀</button>
+<div id="sidebar-overlay"></div>
 
 <div id="map-container">
   <div id="map"></div>
@@ -2328,12 +2412,21 @@
 
   // Sidebar toggle
   const sidebar=$('sidebar');
+  function updateToggleBtn(){
+    $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
+  }
   $('sidebar-toggle').addEventListener('click',()=>{
     sidebar.classList.toggle('collapsed');
-    $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
+    updateToggleBtn();
     setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
   });
-  if(window.innerWidth<=768){sidebar.classList.add('collapsed');$('sidebar-toggle').textContent='▶';}
+  // オーバーレイタップでサイドバーを閉じる（スマホ）
+  $('sidebar-overlay').addEventListener('click',()=>{
+    sidebar.classList.add('collapsed');
+    updateToggleBtn();
+    setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
+  });
+  if(window.innerWidth<=768){sidebar.classList.add('collapsed');updateToggleBtn();}
 
   $('loading').classList.add('hidden');
   setTimeout(()=>$('loading').remove(),500);

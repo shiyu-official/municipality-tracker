@@ -348,8 +348,12 @@
       max-width:none;
       transform:none;
     }
-    #search-box-wrap{height:38px;}
-    #search-input{font-size:13px;}
+    /* 検索バー: ボタンが押しやすいよう最小幅を確保 */
+    #search-box-wrap{height:42px;padding:0 8px;gap:4px;}
+    #search-input{font-size:13px;min-width:0;}
+    #search-btn{font-size:15px;padding:4px 3px;flex-shrink:0;}
+    #locate-btn{font-size:15px;padding:4px 3px;flex-shrink:0;}
+    #route-toggle-btn{font-size:15px;padding:4px 6px;flex-shrink:0;border-left:1px solid var(--border-light);}
 
     /* ルートパネル: スマホでは高さ上限を低めに */
     #route-inputs-scroll.scrollable{max-height:200px;}
@@ -374,16 +378,21 @@
     .csm-inner{width:calc(100vw - 32px);max-width:380px;}
     .map-click-modal{width:calc(100vw - 48px);max-width:320px;}
 
-    /* ルートパネル: 下部コントロール（レイヤートグル約80px + 余白）を避けて上半分に収める */
+    /* ルートパネル: 下部のレイヤートグル（約90px）＋検索パネル上部(58+42px)を除いた高さに収める */
     #route-panel{
-      max-height:calc(100dvh - 170px);
+      max-height:calc(100dvh - 200px);
       overflow-y:auto;
       -webkit-overflow-scrolling:touch;
     }
 
-    /* スマホ時のレイヤートグル: 右下に置くのでレジェンドと被らないよう右に寄せる */
+    /* スマホ時のレイヤートグル: 右下に固定、レジェンドと被らないよう右に配置 */
     .layer-toggles{
       margin:0 8px 8px 0 !important;
+    }
+
+    /* ルートパネル開放中: レイヤートグルをルートパネル下端より上に逃がす */
+    body.route-panel-open .layer-toggles{
+      margin-bottom:calc(100dvh - 195px) !important;
     }
   }
 
@@ -1050,6 +1059,8 @@
     const open=routePanel.style.display==='block';
     routePanel.style.display=open?'none':'block';
     $('route-toggle-btn').classList.toggle('active',!open);
+    // スマホ時: ルートパネル開放中はbodyにクラス付与 → レイヤートグルを上に逃がすCSSと連動
+    document.body.classList.toggle('route-panel-open',!open);
     searchResults.style.display='none';
     if(!open) setActiveInput('from');
   });

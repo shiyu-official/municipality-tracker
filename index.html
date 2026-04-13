@@ -113,11 +113,13 @@
   #loading-status{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;}
 
   .layer-toggles{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
-  /* スマホ時: DOM固定要素として右下に配置 */
+  /* スマホ時: ズームボタン(RIGHT_BOTTOM)の左隣に固定配置 */
   .layer-toggles-mobile{
     position:fixed;
-    /* RIGHT_BOTTOMのズームボタン高さ(約88px) + Googleクレジット(約20px) + 余白 */
-    bottom:116px;right:8px;
+    /* RIGHT_BOTTOMズームボタン中央に高さを合わせる: bottom約30px + ボタン高さ88pxの中心 */
+    bottom:50px;
+    /* ズームボタン幅(約40px) + 右端余白(8px) + 隙間(6px) = 54px */
+    right:54px;
     z-index:999;
     margin-top:0 !important;
     background:var(--bg-panel);
@@ -125,7 +127,6 @@
     border-radius:8px;
     padding:6px 10px;
     box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    transition:bottom 0.25s ease;
   }
   /* ルートパネル開放中: ルートパネル下端の上に逃がす */
   body.route-panel-open .layer-toggles-mobile{
@@ -136,7 +137,7 @@
   .toggle-line{display:inline-block;width:16px;height:3px;background:#ef4444;border-radius:2px;}
   .toggle-fill{display:inline-block;width:14px;height:10px;background:var(--visit-2-fill);border:1px solid var(--visit-2-stroke);border-radius:2px;}
 
-  .legend{position:fixed;bottom:16px;right:16px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:0 2px 12px rgba(0,0,0,0.05);}
+  .legend{position:fixed;bottom:16px;left:336px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:left 0.3s ease;}
   .legend-title{font-weight:700;color:var(--text-bright);margin-bottom:8px;font-size:11px;}
   .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
   .legend-color{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid rgba(0,0,0,0.08);}
@@ -396,18 +397,6 @@
     .legend-label{font-size:10px;}
     .legend-color{width:14px;height:10px;}
     .legend-item{gap:5px;margin-bottom:3px;}
-
-    /* ── レイヤートグル: Google Maps BOTTOM_RIGHT コントロールとして右下 ──
-       凡例が左下にあるので右下は空いている
-       margin で Google Maps ネイティブUIとの隙間を確保 */
-    .layer-toggles{
-      margin:0 8px 8px 0 !important;
-      padding:6px 10px !important;
-    }
-    /* ルートパネル開放中: レイヤートグルを上に逃がして被りを防ぐ */
-    body.route-panel-open .layer-toggles{
-      margin-bottom:calc(100dvh - 186px) !important;
-    }
 
     /* モーダル */
     .csm-inner{width:calc(100vw - 32px);max-width:380px;}
@@ -2574,13 +2563,19 @@
 
   // Sidebar toggle
   const sidebar=$('sidebar');
+  const legendEl=document.querySelector('.legend');
   function updateToggleBtn(){
     $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
+  }
+  function updateLegendPosition(){
+    if(window.innerWidth<=768) return; // スマホはメディアクエリで制御
+    const collapsed=sidebar.classList.contains('collapsed');
+    legendEl.style.left=collapsed?'16px':'336px';
   }
   $('sidebar-toggle').addEventListener('click',()=>{
     sidebar.classList.toggle('collapsed');
     updateToggleBtn();
-    setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
+    setTimeout(()=>{google.maps.event.trigger(map,'resize');updateLegendPosition();},350);
   });
   // オーバーレイタップでサイドバーを閉じる（スマホ）
   $('sidebar-overlay').addEventListener('click',()=>{
@@ -2589,6 +2584,7 @@
     setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
   });
   if(window.innerWidth<=768){sidebar.classList.add('collapsed');updateToggleBtn();}
+  updateLegendPosition();
 
   $('loading').classList.add('hidden');
   setTimeout(()=>$('loading').remove(),500);

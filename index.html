@@ -116,7 +116,8 @@
   /* スマホ時: DOM固定要素として右下に配置 */
   .layer-toggles-mobile{
     position:fixed;
-    bottom:10px;right:8px;
+    /* RIGHT_BOTTOMのズームボタン高さ(約88px) + Googleクレジット(約20px) + 余白 */
+    bottom:116px;right:8px;
     z-index:999;
     margin-top:0 !important;
     background:var(--bg-panel);
@@ -126,7 +127,7 @@
     box-shadow:0 2px 8px rgba(0,0,0,0.08);
     transition:bottom 0.25s ease;
   }
-  /* ルートパネル開放中: 右下に十分な余白を確保（レジェンドと被らない右側） */
+  /* ルートパネル開放中: ルートパネル下端の上に逃がす */
   body.route-panel-open .layer-toggles-mobile{
     bottom:calc(100dvh - 186px);
   }
@@ -386,9 +387,9 @@
     #route-reset-btn{font-size:11px;padding:7px 10px;}
     .route-result{font-size:11px;}
 
-    /* ── 凡例(legend): 左下・コンパクト ── */
+    /* ── 凡例(legend): 左下・Googleクレジット(約20px)の上に配置 ── */
     .legend{
-      bottom:10px;right:auto;left:8px;
+      bottom:28px;right:auto;left:8px;
       padding:7px 10px;
     }
     .legend-title{font-size:10px;font-weight:700;margin-bottom:5px;}
@@ -651,7 +652,10 @@
     center:{lat:36.5,lng:137.5},zoom:6,
     mapTypeControl:window.innerWidth>768,
     mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT},
-    zoomControl:true,zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_TOP},
+    zoomControl:true,
+    zoomControlOptions:{position:window.innerWidth>768
+      ?google.maps.ControlPosition.RIGHT_TOP
+      :google.maps.ControlPosition.RIGHT_BOTTOM},
     streetViewControl:false,fullscreenControl:false,
     styles:[{featureType:'water',stylers:[{color:'#dce6f0'}]}]
   });

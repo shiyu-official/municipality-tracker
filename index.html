@@ -162,7 +162,7 @@
   .route-type-row{display:flex;gap:4px;margin-bottom:10px;}
   .route-type-btn{flex:1;padding:5px 4px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--text-dim);text-align:center;}
   .route-type-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:600;}
-  #route-go-btn{width:100%;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:10px;}
+  #route-go-btn{width:100%;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:600;font-family:'Noto Sans JP',sans-serif;cursor:pointer;}
   #route-go-btn:hover{background:#1d4ed8;}
   #route-result{margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:7px;font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;display:none;line-height:1.8;}
   #route-clear-btn{width:100%;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text-dim);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;display:none;}
@@ -262,12 +262,51 @@
   .color-picker-swatch{width:20px;height:20px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color 0.1s;}
   .color-picker-swatch:hover{border-color:var(--text);}
 
+  /* ── ルートパネル: 経由地が増えた時にスクロール可能な入力エリア ── */
+  #route-inputs-scroll{
+    /* 経由地が少ない間はautoで高さが伸び、5個以上でスクロール */
+    max-height:none;
+    overflow-y:visible;
+    transition:max-height 0.2s ease;
+  }
+  #route-inputs-scroll.scrollable{
+    max-height:260px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    /* スクロール中に提案ドロップダウンが見えるよう overflow-x は visible にしたいが
+       overflow-y を auto にすると overflow-x:visible は効かないので
+       ドロップダウンは z-index で対応 */
+    padding-right:2px;
+  }
+  #route-inputs-scroll.scrollable::-webkit-scrollbar{width:3px;}
+  #route-inputs-scroll.scrollable::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+  /* 全クリアボタン */
+  #route-reset-btn{
+    padding:8px 14px;
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:7px;
+    color:var(--text-dim);
+    font-size:12px;
+    font-family:'Noto Sans JP',sans-serif;
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  #route-reset-btn:hover{background:#fff0f0;border-color:#ef4444;color:#ef4444;}
+
+  /* 検索ボタン行 */
+  .route-action-row{display:flex;gap:6px;align-items:stretch;margin-top:10px;}
+  .route-action-row #route-go-btn{flex:1;margin-top:0;}
+
   @media(max-width:768px){
     /* ── ヘッダー ── */
     #header{padding:0 10px;gap:8px;height:48px;}
     #header h1{font-size:14px;}
-    .stat-chips{gap:5px;}
-    .stat-chip{padding:3px 8px;font-size:10px;}
+    .stat-chips{gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .stat-chip{padding:3px 8px;font-size:10px;flex-shrink:0;}
     .stat-chip .value.large{font-size:12px;}
 
     /* ── サイドバー: スマホではフルスクリーンオーバーレイ ── */
@@ -312,6 +351,9 @@
     #search-box-wrap{height:38px;}
     #search-input{font-size:13px;}
 
+    /* ルートパネル: スマホでは高さ上限を低めに */
+    #route-inputs-scroll.scrollable{max-height:200px;}
+
     /* レジェンド: 左下に移動してルートUIと干渉しないように */
     .legend{
       bottom:10px;
@@ -331,6 +373,13 @@
     /* モーダル: スマホ幅に合わせる */
     .csm-inner{width:calc(100vw - 32px);max-width:380px;}
     .map-click-modal{width:calc(100vw - 48px);max-width:320px;}
+
+    /* ルートパネル全体の最大高さを制限してスクロール */
+    #route-panel{
+      max-height:calc(100dvh - 120px);
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+    }
   }
 
   @media(max-width:480px){
@@ -346,9 +395,14 @@
     .route-input{font-size:12px;padding:6px 8px;}
     #route-go-btn{font-size:12px;padding:7px;}
     .route-type-btn{font-size:10px;padding:4px 2px;}
+    #route-reset-btn{font-size:11px;padding:7px 10px;}
 
     /* 検索結果 */
     .search-result-item{font-size:12px;padding:8px 12px;}
+
+    /* ルートアイコンボタンを少し大きく（タップしやすく） */
+    .route-icon-btn{font-size:14px;padding:4px 5px;}
+    .wp-remove-btn{font-size:13px;padding:3px 6px;}
   }
 
   /* サイドバー開放時に地図をタップして閉じられるオーバーレイ */
@@ -427,27 +481,32 @@
         <button class="route-type-btn active" data-mode="driving">🚗 車</button>
         <button class="route-type-btn" data-mode="walking">🚶 徒歩</button>
       </div>
-      <div class="route-row">
-        <div class="route-dot start"></div>
-        <div class="route-input-wrap">
-          <input class="route-input" id="route-from" type="text" placeholder="出発地（入力 or 地図クリック）" autocomplete="off">
-          <div class="route-suggest" id="route-from-suggest"></div>
+      <div id="route-inputs-scroll">
+        <div class="route-row">
+          <div class="route-dot start"></div>
+          <div class="route-input-wrap">
+            <input class="route-input" id="route-from" type="text" placeholder="出発地（入力 or 地図クリック）" autocomplete="off">
+            <div class="route-suggest" id="route-from-suggest"></div>
+          </div>
+          <button class="route-icon-btn" id="from-city-btn" title="都市から選択">🗺</button>
+          <button class="route-icon-btn" id="from-locate-btn" title="現在地">📍</button>
         </div>
-        <button class="route-icon-btn" id="from-city-btn" title="都市から選択">🗺</button>
-        <button class="route-icon-btn" id="from-locate-btn" title="現在地">📍</button>
-      </div>
-      <div class="route-waypoints" id="route-waypoints"></div>
-      <button id="add-waypoint-btn">＋ 経由地を追加</button>
-      <div class="route-row">
-        <div class="route-dot end"></div>
-        <div class="route-input-wrap">
-          <input class="route-input" id="route-to" type="text" placeholder="目的地（入力 or 地図クリック）" autocomplete="off">
-          <div class="route-suggest" id="route-to-suggest"></div>
+        <div class="route-waypoints" id="route-waypoints"></div>
+        <button id="add-waypoint-btn">＋ 経由地を追加</button>
+        <div class="route-row">
+          <div class="route-dot end"></div>
+          <div class="route-input-wrap">
+            <input class="route-input" id="route-to" type="text" placeholder="目的地（入力 or 地図クリック）" autocomplete="off">
+            <div class="route-suggest" id="route-to-suggest"></div>
+          </div>
+          <button class="route-icon-btn" id="to-city-btn" title="都市から選択">🗺</button>
+          <button class="route-icon-btn" id="to-locate-btn" title="現在地">📍</button>
         </div>
-        <button class="route-icon-btn" id="to-city-btn" title="都市から選択">🗺</button>
-        <button class="route-icon-btn" id="to-locate-btn" title="現在地">📍</button>
       </div>
-      <button id="route-go-btn">ルートを検索</button>
+      <div class="route-action-row">
+        <button id="route-go-btn">ルートを検索</button>
+        <button id="route-reset-btn" title="入力をすべてクリア">✕ クリア</button>
+      </div>
       <div id="route-result"></div>
       <button id="route-clear-btn">ルートをクリア</button>
       <button id="route-save-btn">📥 ルートを保存</button>
@@ -1477,14 +1536,20 @@
       });
     });
     updateRoutePreview();
+    updateRouteInputsScroll();
   }
-
-  $('add-waypoint-btn').addEventListener('click',()=>{
     routeWaypoints.push({coord:null,name:'',isCityWaypoint:false,cityCode:null});
     renderWaypoints();
     const inputs=$('route-waypoints').querySelectorAll('.wp-input');
     if(inputs.length) inputs[inputs.length-1].focus();
   });
+
+  // 経由地5個以上でスクロール可能に切り替え
+  function updateRouteInputsScroll(){
+    const el=$('route-inputs-scroll');
+    if(routeWaypoints.length>=5) el.classList.add('scrollable');
+    else el.classList.remove('scrollable');
+  }
 
   // ── 地図クリックでの地点追加 ──
   function findMunicipalityAtLatLng(latLng){
@@ -2026,14 +2091,15 @@
 
     if(waypoints.length<=GMAP_WP_LIMIT){
       // 制限内: 1つのURLで完結
-      const url=buildGmapUrl(origin,dest,waypoints,gmapMode);
-      showGmapLinks([{url,label:'Googleマップで開く',sub:null}]);
+      const {url,device}=buildMapUrl(origin,dest,waypoints,gmapMode);
+      showGmapLinks([{url,label:getMapLinkLabel(device,null),sub:null}]);
     } else {
-      // 制限超過: 最小分割
+      // 制限超過: 最小分割（iOS Apple Maps は経由地制限が緩いが安全のため同じ分割を適用）
       const segments=splitForGmap(origin,dest,waypoints);
       const links=segments.map((seg,i)=>{
-        const url=buildGmapUrl(seg.origin,seg.dest,seg.waypoints,gmapMode);
-        const label=segments.length>1?`区間${i+1}/${segments.length}をGoogleマップで開く`:'Googleマップで開く';
+        const {url,device}=buildMapUrl(seg.origin,seg.dest,seg.waypoints,gmapMode);
+        const segLabel=segments.length>1?`区間${i+1}/${segments.length}`:null;
+        const label=getMapLinkLabel(device,segLabel);
         const sub=`${seg.originName} → ${seg.destName}`;
         return {url,label,sub};
       });
@@ -2041,6 +2107,35 @@
     }
   }
 
+  // ── デバイス判定 ──
+  function detectDevice(){
+    const ua=navigator.userAgent||'';
+    if(/iPad|iPhone|iPod/.test(ua)&&!window.MSStream) return 'ios';
+    if(/Android/.test(ua)) return 'android';
+    return 'desktop';
+  }
+
+  // iOS: Apple Maps URL
+  // saddr/daddr は "lat,lng" 形式、経由地は waypoints パラメータ（Apple Maps はネイティブのみ対応）
+  // 実用上 Apple Maps は多経由地を URL で渡せないため出発→目的のみ渡し、
+  // 経由地は waypoints パラメータ(カンマ区切り lat,lng)で試みる
+  function buildAppleMapsUrl(origin,dest,waypoints,mode){
+    const dirflg=mode==='walking'?'w':'d';
+    const saddr=`${origin[0]},${origin[1]}`;
+    const daddr=`${dest[0]},${dest[1]}`;
+    let url=`https://maps.apple.com/?saddr=${saddr}&daddr=${daddr}&dirflg=${dirflg}`;
+    // Apple Maps は waypoints パラメータを実験的にサポート
+    if(waypoints.length>0){
+      // 中継点を daddr に +to: 形式で繋ぐ（Apple Maps URL scheme の書き方）
+      // 複数経由地は "daddr=A+to:B+to:C+to:DEST" 形式
+      const allDest=[...waypoints,dest];
+      const daddrChain=allDest.map(w=>`${w[0]},${w[1]}`).join('+to:');
+      url=`https://maps.apple.com/?saddr=${saddr}&daddr=${daddrChain}&dirflg=${dirflg}`;
+    }
+    return url;
+  }
+
+  // Android/Desktop: Google Maps URL
   function buildGmapUrl(origin,dest,waypoints,mode){
     const o=`${origin[0]},${origin[1]}`;
     const d=`${dest[0]},${dest[1]}`;
@@ -2050,6 +2145,17 @@
       url+=`&waypoints=${encodeURIComponent(wpStr)}`;
     }
     return url;
+  }
+
+  function buildMapUrl(origin,dest,waypoints,mode){
+    const device=detectDevice();
+    if(device==='ios') return {url:buildAppleMapsUrl(origin,dest,waypoints,mode),device};
+    return {url:buildGmapUrl(origin,dest,waypoints,mode),device};
+  }
+
+  function getMapLinkLabel(device,segLabel){
+    const appName=device==='ios'?'マップ（Apple）':'Googleマップ';
+    return segLabel?`${segLabel} — ${appName}で開く`:`${appName}で開く`;
   }
 
   function splitForGmap(origin,dest,waypoints){
@@ -2085,7 +2191,9 @@
   }
 
   function showGmapLinks(links){
-    // route-result内にGoogleマップリンクを追加
+    // route-result内にマップリンクを追加
+    const device=detectDevice();
+    const icon=device==='ios'?'🍎':'🗺';
     const container=document.createElement('div');
     container.className='gmap-links';
     for(const link of links){
@@ -2094,11 +2202,23 @@
       a.href=link.url;
       a.target='_blank';
       a.rel='noopener';
-      a.innerHTML=`<span class="gmap-icon">🗺</span><span class="gmap-label">${link.label}${link.sub?`<br><span class="gmap-sub">${link.sub}</span>`:''}</span><span style="font-size:13px;">↗</span>`;
+      a.innerHTML=`<span class="gmap-icon">${icon}</span><span class="gmap-label">${link.label}${link.sub?`<br><span class="gmap-sub">${link.sub}</span>`:''}</span><span style="font-size:13px;">↗</span>`;
       container.appendChild(a);
     }
     $('route-result').appendChild(container);
   }
+
+  // ── 入力全クリアボタン（ルート描画はそのまま、入力欄のみリセット） ──
+  $('route-reset-btn').addEventListener('click',()=>{
+    routeFromCoord=null;routeToCoord=null;
+    routeFromCity={isCityWaypoint:false,cityCode:null,name:''};
+    routeToCity={isCityWaypoint:false,cityCode:null,name:''};
+    routeWaypoints=[];
+    renderWaypoints();
+    $('route-from').value='';$('route-to').value='';
+    clearActiveInput();
+    clearRoutePreview();
+  });
 
   $('route-clear-btn').addEventListener('click',()=>{
     if(routeLayer){routeLayer.setMap(null);routeLayer=null;}

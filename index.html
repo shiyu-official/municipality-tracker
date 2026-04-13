@@ -374,11 +374,16 @@
     .csm-inner{width:calc(100vw - 32px);max-width:380px;}
     .map-click-modal{width:calc(100vw - 48px);max-width:320px;}
 
-    /* ルートパネル全体の最大高さを制限してスクロール */
+    /* ルートパネル: 下部コントロール（レイヤートグル約80px + 余白）を避けて上半分に収める */
     #route-panel{
-      max-height:calc(100dvh - 120px);
+      max-height:calc(100dvh - 170px);
       overflow-y:auto;
       -webkit-overflow-scrolling:touch;
+    }
+
+    /* スマホ時のレイヤートグル: 右下に置くのでレジェンドと被らないよう右に寄せる */
+    .layer-toggles{
+      margin:0 8px 8px 0 !important;
     }
   }
 
@@ -749,7 +754,12 @@
 　lblPolygons.append(chkPolygons, Object.assign(document.createElement('span'),{className:'toggle-fill'}), Object.assign(document.createElement('span'),{textContent:'市区町村'}));
 
 　toggleDiv.append(lblTracks, lblPolygons);
-　map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
+　// スマホでは右下、PCでは右上に配置（検索パネルとの重なりを防ぐ）
+　const isMobile=window.innerWidth<=768;
+　const togglePos=isMobile
+　  ?google.maps.ControlPosition.BOTTOM_RIGHT
+　  :google.maps.ControlPosition.TOP_RIGHT;
+　map.controls[togglePos].push(toggleDiv);
 
 　chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
 　chkPolygons.addEventListener('change', function(){ geoDataLayer.setMap(this.checked?map:null); });

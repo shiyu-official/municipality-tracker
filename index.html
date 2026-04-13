@@ -2819,8 +2819,7 @@
       const pname = prefNames[pc] || `都道府県${pc}`;
       lines.push(`【${pname}】計${cities.length}市区町村 / 訪問済み${visited.length}（${visited.map(c=>`${c.name}(${c.visitDays}日)`).join('、')}）/ 未訪問${unvisited.length}（${unvisited.slice(0,20).map(c=>c.name).join('、')}${unvisited.length>20?`…他${unvisited.length-20}件`:''}）`);
     }
-    return lines.join('
-');
+    return lines.join('');
   }
 
   // エリア名から都道府県コードを推定

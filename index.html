@@ -1538,6 +1538,8 @@
     updateRoutePreview();
     updateRouteInputsScroll();
   }
+
+  $('add-waypoint-btn').addEventListener('click',()=>{
     routeWaypoints.push({coord:null,name:'',isCityWaypoint:false,cityCode:null});
     renderWaypoints();
     const inputs=$('route-waypoints').querySelectorAll('.wp-input');

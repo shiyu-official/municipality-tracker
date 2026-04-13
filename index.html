@@ -113,6 +113,23 @@
   #loading-status{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;}
 
   .layer-toggles{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+  /* スマホ時: DOM固定要素として右下に配置 */
+  .layer-toggles-mobile{
+    position:fixed;
+    bottom:10px;right:8px;
+    z-index:999;
+    margin-top:0 !important;
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:6px 10px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    transition:bottom 0.25s ease;
+  }
+  /* ルートパネル開放中: 右下に十分な余白を確保（レジェンドと被らない右側） */
+  body.route-panel-open .layer-toggles-mobile{
+    bottom:calc(100dvh - 186px);
+  }
   .toggle-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text);cursor:pointer;user-select:none;}
   .toggle-item input{margin:0;accent-color:var(--accent);cursor:pointer;}
   .toggle-line{display:inline-block;width:16px;height:3px;background:#ef4444;border-radius:2px;}
@@ -301,21 +318,22 @@
   .route-action-row{display:flex;gap:6px;align-items:stretch;margin-top:10px;}
   .route-action-row #route-go-btn{flex:1;margin-top:0;}
 
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+     スマホ縦画面（iPhone標準 390px 想定）
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   @media(max-width:768px){
-    /* ── ヘッダー ── */
-    #header{padding:0 10px;gap:8px;height:48px;}
-    #header h1{font-size:14px;}
-    .stat-chips{gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-    .stat-chip{padding:3px 8px;font-size:10px;flex-shrink:0;}
+
+    /* ── ヘッダー: タイトルを省略してstat-chipsに幅を渡す ── */
+    #header{padding:0 8px;gap:6px;height:48px;}
+    #header h1{display:none;} /* 縦画面では省略 */
+    .stat-chips{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;}
+    .stat-chip{padding:3px 7px;font-size:10px;flex-shrink:0;}
     .stat-chip .value.large{font-size:12px;}
 
-    /* ── サイドバー: スマホではフルスクリーンオーバーレイ ── */
+    /* ── サイドバー: フルスクリーンオーバーレイ ── */
     #sidebar{
-      width:100%;
-      max-width:100%;
-      top:48px;
-      bottom:0;
-      left:0;
+      width:100%;max-width:100%;
+      top:48px;bottom:0;left:0;
       transform:translateX(-100%);
       z-index:1200;
       box-shadow:2px 0 16px rgba(0,0,0,0.18);
@@ -323,100 +341,105 @@
     #sidebar.collapsed{transform:translateX(-100%);}
     #sidebar:not(.collapsed){transform:translateX(0);}
 
-    /* トグルボタン: 常に左端に固定 */
+    /* サイドバートグルボタン: ヘッダー下・左端に固定 */
     #sidebar-toggle{
-      left:0 !important;
-      top:58px;
-      width:32px;
-      height:48px;
-      font-size:14px;
-      z-index:1300;
+      top:56px;left:0 !important;
+      width:32px;height:44px;
+      font-size:14px;z-index:1300;
     }
-    #sidebar:not(.collapsed) + #sidebar-toggle{
-      left:0 !important;
-    }
+    #sidebar:not(.collapsed) + #sidebar-toggle{left:0 !important;}
 
-    /* 地図は常にフル幅 */
+    /* 地図: 常にフル幅、ヘッダー直下から */
     #map-container{left:0 !important;top:48px;}
 
-    /* 検索パネル: トグルボタンの右側から始める */
+    /* ── 検索パネル: トグルボタン右から右端まで ──
+       iPhone SE(375px)でも ↔ が見えるよう left を最小限に */
     #search-panel{
-      top:58px;
-      left:40px;
-      right:8px;
-      width:auto;
-      max-width:none;
+      top:56px;
+      left:36px;   /* トグルボタン(32px) + 4px隙間 */
+      right:6px;
+      width:auto;max-width:none;
       transform:none;
     }
-    /* 検索バー: ボタンが押しやすいよう最小幅を確保 */
-    #search-box-wrap{height:42px;padding:0 8px;gap:4px;}
-    #search-input{font-size:13px;min-width:0;}
-    #search-btn{font-size:15px;padding:4px 3px;flex-shrink:0;}
-    #locate-btn{font-size:15px;padding:4px 3px;flex-shrink:0;}
-    #route-toggle-btn{font-size:15px;padding:4px 6px;flex-shrink:0;border-left:1px solid var(--border-light);}
 
-    /* ルートパネル: スマホでは高さ上限を低めに */
-    #route-inputs-scroll.scrollable{max-height:200px;}
-
-    /* レジェンド: 左下に移動してルートUIと干渉しないように */
-    .legend{
-      bottom:10px;
-      right:auto;
-      left:8px;
-      padding:8px 12px;
-      font-size:10px;
+    /* 検索バー本体: 全ボタンを flex-shrink:0 で確保 */
+    #search-box-wrap{
+      height:40px;
+      padding:0 6px;
+      gap:0;        /* gapをゼロにして各ボタンのpaddingで調節 */
     }
-    .legend-title{font-size:10px;margin-bottom:6px;}
-    .legend-label{font-size:10px;}
-    .legend-color{width:14px;height:10px;}
-    .legend-item{gap:6px;margin-bottom:3px;}
+    #search-btn{
+      font-size:16px;padding:4px 5px;
+      flex-shrink:0;
+    }
+    #search-input{
+      flex:1;min-width:0;
+      font-size:13px;
+      padding:0 4px;
+    }
+    #locate-btn{
+      font-size:15px;padding:4px 4px;
+      flex-shrink:0;
+    }
+    /* ルート検索ボタン: 左border + 十分なタップ領域 */
+    #route-toggle-btn{
+      font-size:15px;
+      padding:4px 8px;
+      flex-shrink:0;
+      border-left:1px solid var(--border-light);
+      margin-left:2px;
+    }
 
-    /* map-pick-hint: スマホで下部に十分なスペース確保 */
-    .map-pick-hint{bottom:80px;}
-
-    /* モーダル: スマホ幅に合わせる */
-    .csm-inner{width:calc(100vw - 32px);max-width:380px;}
-    .map-click-modal{width:calc(100vw - 48px);max-width:320px;}
-
-    /* ルートパネル: 下部のレイヤートグル（約90px）＋検索パネル上部(58+42px)を除いた高さに収める */
+    /* ルート入力パネル: 画面高さ - ヘッダー(48) - 検索バー(40+8) - 下部余白(110) */
     #route-panel{
-      max-height:calc(100dvh - 200px);
+      max-height:calc(100dvh - 206px);
       overflow-y:auto;
       -webkit-overflow-scrolling:touch;
     }
-
-    /* スマホ時のレイヤートグル: 右下に固定、レジェンドと被らないよう右に配置 */
-    .layer-toggles{
-      margin:0 8px 8px 0 !important;
-    }
-
-    /* ルートパネル開放中: レイヤートグルをルートパネル下端より上に逃がす */
-    body.route-panel-open .layer-toggles{
-      margin-bottom:calc(100dvh - 195px) !important;
-    }
-  }
-
-  @media(max-width:480px){
-    .stat-chip .label{display:none;}
-    .stat-chip{padding:3px 6px;}
-
-    /* サイドバー内のフォント・余白を少し詰める */
-    .pref-name{font-size:12px;}
-    .pref-item{padding:6px 8px;}
-    .city-name{font-size:11px;}
-
-    /* ルートパネル: 入力欄をコンパクトに */
+    #route-inputs-scroll.scrollable{max-height:180px;}
     .route-input{font-size:12px;padding:6px 8px;}
     #route-go-btn{font-size:12px;padding:7px;}
     .route-type-btn{font-size:10px;padding:4px 2px;}
     #route-reset-btn{font-size:11px;padding:7px 10px;}
+    .route-result{font-size:11px;}
+
+    /* ── 凡例(legend): 左下・コンパクト ── */
+    .legend{
+      bottom:10px;right:auto;left:8px;
+      padding:7px 10px;
+    }
+    .legend-title{font-size:10px;font-weight:700;margin-bottom:5px;}
+    .legend-label{font-size:10px;}
+    .legend-color{width:14px;height:10px;}
+    .legend-item{gap:5px;margin-bottom:3px;}
+
+    /* ── レイヤートグル: Google Maps BOTTOM_RIGHT コントロールとして右下 ──
+       凡例が左下にあるので右下は空いている
+       margin で Google Maps ネイティブUIとの隙間を確保 */
+    .layer-toggles{
+      margin:0 8px 8px 0 !important;
+      padding:6px 10px !important;
+    }
+    /* ルートパネル開放中: レイヤートグルを上に逃がして被りを防ぐ */
+    body.route-panel-open .layer-toggles{
+      margin-bottom:calc(100dvh - 186px) !important;
+    }
+
+    /* モーダル */
+    .csm-inner{width:calc(100vw - 32px);max-width:380px;}
+    .map-click-modal{width:calc(100vw - 48px);max-width:320px;}
+    .map-pick-hint{bottom:80px;}
 
     /* 検索結果 */
     .search-result-item{font-size:12px;padding:8px 12px;}
-
-    /* ルートアイコンボタンを少し大きく（タップしやすく） */
     .route-icon-btn{font-size:14px;padding:4px 5px;}
     .wp-remove-btn{font-size:13px;padding:3px 6px;}
+
+    /* サイドバー内 */
+    .pref-name{font-size:12px;}
+    .pref-item{padding:6px 8px;}
+    .city-name{font-size:11px;}
+    .stat-chip .label{display:none;}
   }
 
   /* サイドバー開放時に地図をタップして閉じられるオーバーレイ */
@@ -763,12 +786,15 @@
 　lblPolygons.append(chkPolygons, Object.assign(document.createElement('span'),{className:'toggle-fill'}), Object.assign(document.createElement('span'),{textContent:'市区町村'}));
 
 　toggleDiv.append(lblTracks, lblPolygons);
-　// スマホでは右下、PCでは右上に配置（検索パネルとの重なりを防ぐ）
+　// スマホ縦画面: DOM固定要素として右下配置（Google Mapsコントロールより確実に位置制御可能）
+　// PC・横画面: Google Maps TOP_RIGHT コントロールとして配置
 　const isMobile=window.innerWidth<=768;
-　const togglePos=isMobile
-　  ?google.maps.ControlPosition.BOTTOM_RIGHT
-　  :google.maps.ControlPosition.TOP_RIGHT;
-　map.controls[togglePos].push(toggleDiv);
+　if(isMobile){
+　  toggleDiv.classList.add('layer-toggles-mobile');
+　  document.body.appendChild(toggleDiv);
+　} else {
+　  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
+　}
 
 　chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
 　chkPolygons.addEventListener('change', function(){ geoDataLayer.setMap(this.checked?map:null); });

@@ -116,9 +116,7 @@
   /* スマホ時: ズームボタン(RIGHT_BOTTOM)の左隣に固定配置 */
   .layer-toggles-mobile{
     position:fixed;
-    /* RIGHT_BOTTOMズームボタン中央に高さを合わせる: bottom約30px + ボタン高さ88pxの中心 */
     bottom:50px;
-    /* ズームボタン幅(約40px) + 右端余白(8px) + 隙間(6px) = 54px */
     right:54px;
     z-index:999;
     margin-top:0 !important;
@@ -690,7 +688,9 @@
   });
 
   // Click → InfoWindow or mapPick
+  let _lastFeatureClickTime=0;
   geoDataLayer.addListener('click',e=>{
+    _lastFeatureClickTime=Date.now();
     if(typeof mapPickMode!=='undefined'&&mapPickMode){
       const cx=e.domEvent?e.domEvent.clientX:null;
       const cy=e.domEvent?e.domEvent.clientY:null;
@@ -703,6 +703,8 @@
   });
 
   map.addListener('click',e=>{
+    // ポリゴンクリックのイベント伝播でinfoWindowが即閉じしないよう無視
+    if(Date.now()-_lastFeatureClickTime<100) return;
     if(typeof mapPickMode!=='undefined'&&mapPickMode){
       const feat=findMunicipalityAtLatLng(e.latLng);
       const cx=e.domEvent?e.domEvent.clientX:null;
@@ -2568,9 +2570,8 @@
     $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
   }
   function updateLegendPosition(){
-    if(window.innerWidth<=768) return; // スマホはメディアクエリで制御
-    const collapsed=sidebar.classList.contains('collapsed');
-    legendEl.style.left=collapsed?'16px':'336px';
+    if(window.innerWidth<=768) return;
+    legendEl.style.left=sidebar.classList.contains('collapsed')?'16px':'336px';
   }
   $('sidebar-toggle').addEventListener('click',()=>{
     sidebar.classList.toggle('collapsed');

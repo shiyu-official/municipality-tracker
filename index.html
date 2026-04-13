@@ -161,7 +161,11 @@
   .sri-name{font-weight:500;color:var(--text-bright);}
   .sri-addr{font-size:11px;color:var(--text-dim);margin-top:2px;}
 
-  #route-panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.10);margin-top:6px;padding:12px 14px;display:none;}
+  #route-panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.10);margin-top:6px;display:none;flex-direction:column;max-height:50vh;overflow:hidden;}
+  #route-panel .route-type-row{flex-shrink:0;padding:10px 14px 0;margin-bottom:0;}
+  #route-panel-inner{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:8px 14px 12px;}
+  #route-panel-inner::-webkit-scrollbar{width:3px;}
+  #route-panel-inner::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
   .route-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
   .route-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
   .route-dot.start{background:#22c55e;}
@@ -279,25 +283,8 @@
   .color-picker-swatch{width:20px;height:20px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color 0.1s;}
   .color-picker-swatch:hover{border-color:var(--text);}
 
-  /* ── ルートパネル: 経由地が増えた時にスクロール可能な入力エリア ── */
-  #route-inputs-scroll{
-    /* 経由地が少ない間はautoで高さが伸び、5個以上でスクロール */
-    max-height:none;
-    overflow-y:visible;
-    transition:max-height 0.2s ease;
-  }
-  #route-inputs-scroll.scrollable{
-    max-height:260px;
-    overflow-y:auto;
-    -webkit-overflow-scrolling:touch;
-    overscroll-behavior:contain;
-    /* スクロール中に提案ドロップダウンが見えるよう overflow-x は visible にしたいが
-       overflow-y を auto にすると overflow-x:visible は効かないので
-       ドロップダウンは z-index で対応 */
-    padding-right:2px;
-  }
-  #route-inputs-scroll.scrollable::-webkit-scrollbar{width:3px;}
-  #route-inputs-scroll.scrollable::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+  /* #route-inputs-scroll: パネル全体スクロール方式に変更したため独立スクロール無効 */
+  #route-inputs-scroll{max-height:none;overflow-y:visible;}
 
   /* 全クリアボタン */
   #route-reset-btn{
@@ -390,13 +377,9 @@
       margin-left:2px;
     }
 
-    /* ルート入力パネル: 画面高さ - ヘッダー(48) - 検索バー(40+8) - 下部余白(110) */
-    #route-panel{
-      max-height:calc(100dvh - 206px);
-      overflow-y:auto;
-      -webkit-overflow-scrolling:touch;
-    }
-    #route-inputs-scroll.scrollable{max-height:180px;}
+    /* ルートパネル: スマホでは50vhのグローバル設定はそのまま有効 */
+    /* #route-panel-inner: スクロールコンテナはグローバルCSSで定義済み */
+    /* #route-inputs-scroll: 独立スクロール無効のまま */
     .route-input{font-size:12px;padding:6px 8px;}
     #route-go-btn{font-size:12px;padding:7px;}
     .route-type-btn{font-size:10px;padding:4px 2px;}
@@ -514,39 +497,43 @@
     </div>
     <div id="search-results"></div>
     <div id="route-panel">
+      <!-- 車/徒歩は常に上部固定表示 -->
       <div class="route-type-row">
         <button class="route-type-btn active" data-mode="driving">🚗 車</button>
         <button class="route-type-btn" data-mode="walking">🚶 徒歩</button>
       </div>
-      <div id="route-inputs-scroll">
-        <div class="route-row">
-          <div class="route-dot start"></div>
-          <div class="route-input-wrap">
-            <input class="route-input" id="route-from" type="text" placeholder="出発地（入力 or 地図クリック）" autocomplete="off">
-            <div class="route-suggest" id="route-from-suggest"></div>
+      <!-- 入力欄〜結果〜保存ボタンまで全体をスクロール対象にする -->
+      <div id="route-panel-inner">
+        <div id="route-inputs-scroll">
+          <div class="route-row">
+            <div class="route-dot start"></div>
+            <div class="route-input-wrap">
+              <input class="route-input" id="route-from" type="text" placeholder="出発地（入力 or 地図クリック）" autocomplete="off">
+              <div class="route-suggest" id="route-from-suggest"></div>
+            </div>
+            <button class="route-icon-btn" id="from-city-btn" title="都市から選択">🗺</button>
+            <button class="route-icon-btn" id="from-locate-btn" title="現在地">📍</button>
           </div>
-          <button class="route-icon-btn" id="from-city-btn" title="都市から選択">🗺</button>
-          <button class="route-icon-btn" id="from-locate-btn" title="現在地">📍</button>
-        </div>
-        <div class="route-waypoints" id="route-waypoints"></div>
-        <button id="add-waypoint-btn">＋ 経由地を追加</button>
-        <div class="route-row">
-          <div class="route-dot end"></div>
-          <div class="route-input-wrap">
-            <input class="route-input" id="route-to" type="text" placeholder="目的地（入力 or 地図クリック）" autocomplete="off">
-            <div class="route-suggest" id="route-to-suggest"></div>
+          <div class="route-waypoints" id="route-waypoints"></div>
+          <button id="add-waypoint-btn">＋ 経由地を追加</button>
+          <div class="route-row">
+            <div class="route-dot end"></div>
+            <div class="route-input-wrap">
+              <input class="route-input" id="route-to" type="text" placeholder="目的地（入力 or 地図クリック）" autocomplete="off">
+              <div class="route-suggest" id="route-to-suggest"></div>
+            </div>
+            <button class="route-icon-btn" id="to-city-btn" title="都市から選択">🗺</button>
+            <button class="route-icon-btn" id="to-locate-btn" title="現在地">📍</button>
           </div>
-          <button class="route-icon-btn" id="to-city-btn" title="都市から選択">🗺</button>
-          <button class="route-icon-btn" id="to-locate-btn" title="現在地">📍</button>
         </div>
+        <div class="route-action-row">
+          <button id="route-go-btn">ルートを検索</button>
+          <button id="route-reset-btn" title="入力をすべてクリア">✕ クリア</button>
+        </div>
+        <div id="route-result"></div>
+        <button id="route-clear-btn">ルートをクリア</button>
+        <button id="route-save-btn">📥 ルートを保存</button>
       </div>
-      <div class="route-action-row">
-        <button id="route-go-btn">ルートを検索</button>
-        <button id="route-reset-btn" title="入力をすべてクリア">✕ クリア</button>
-      </div>
-      <div id="route-result"></div>
-      <button id="route-clear-btn">ルートをクリア</button>
-      <button id="route-save-btn">📥 ルートを保存</button>
     </div>
   </div>
 </div>
@@ -1082,8 +1069,8 @@
   // ルートパネル開閉
   const routePanel=$('route-panel');
   $('route-toggle-btn').addEventListener('click',()=>{
-    const open=routePanel.style.display==='block';
-    routePanel.style.display=open?'none':'block';
+    const open=routePanel.style.display==='flex';
+    routePanel.style.display=open?'none':'flex';
     $('route-toggle-btn').classList.toggle('active',!open);
     // スマホ時: ルートパネル開放中はbodyにクラス付与 → レイヤートグルを上に逃がすCSSと連動
     document.body.classList.toggle('route-panel-open',!open);

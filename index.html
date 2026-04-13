@@ -649,7 +649,8 @@
   $('loading-status').textContent='地図を描画中...';
   const map=new google.maps.Map($('map'),{
     center:{lat:36.5,lng:137.5},zoom:6,
-    mapTypeControl:true,mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT},
+    mapTypeControl:window.innerWidth>768,
+    mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT},
     zoomControl:true,zoomControlOptions:{position:google.maps.ControlPosition.RIGHT_TOP},
     streetViewControl:false,fullscreenControl:false,
     styles:[{featureType:'water',stylers:[{color:'#dce6f0'}]}]

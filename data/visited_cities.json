@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated": "2026-04-14T11:05:19.269870",
+    "generated": "2026-04-14T11:25:24.346471",
     "totalMunicipalities": 1905,
-    "visitedCount": 1605,
-    "coverageRate": 84.25,
+    "visitedCount": 1615,
+    "coverageRate": 84.78,
     "gpxFileCount": 969,
     "dateRange": [
       "2023-07-29",
@@ -236,14 +236,14 @@
     "38": {
       "name": "愛媛県",
       "total": 20,
-      "visited": 5,
-      "rate": 25.0
+      "visited": 10,
+      "rate": 50.0
     },
     "39": {
       "name": "高知県",
       "total": 34,
-      "visited": 18,
-      "rate": 52.94
+      "visited": 21,
+      "rate": 61.76
     },
     "40": {
       "name": "福岡県",
@@ -272,8 +272,8 @@
     "44": {
       "name": "大分県",
       "total": 18,
-      "visited": 15,
-      "rate": 83.33
+      "visited": 17,
+      "rate": 94.44
     },
     "45": {
       "name": "宮崎県",
@@ -11677,7 +11677,7 @@
       "prefCode": "36",
       "firstVisit": "2024-06-14",
       "lastVisit": "2025-01-05",
-      "visitDays": 3
+      "visitDays": 4
     },
     "36208": {
       "name": "三好市",
@@ -11773,7 +11773,7 @@
       "prefCode": "36",
       "firstVisit": "2024-06-15",
       "lastVisit": "2025-01-05",
-      "visitDays": 4
+      "visitDays": 5
     },
     "37201": {
       "name": "高松市",
@@ -11879,6 +11879,14 @@
       "lastVisit": "2025-01-05",
       "visitDays": 4
     },
+    "38201": {
+      "name": "松山市",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": "2026-01-24",
+      "lastVisit": "2026-01-24",
+      "visitDays": 1
+    },
     "38203": {
       "name": "宇和島市",
       "pref": "愛媛県",
@@ -11887,12 +11895,44 @@
       "lastVisit": "2024-06-30",
       "visitDays": 1
     },
-    "38213": {
-      "name": "四国中央市",
+    "38206": {
+      "name": "西条市",
       "pref": "愛媛県",
       "prefCode": "38",
       "firstVisit": "2024-12-31",
       "lastVisit": "2024-12-31",
+      "visitDays": 1
+    },
+    "38210": {
+      "name": "伊予市",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": "2024-12-31",
+      "lastVisit": "2024-12-31",
+      "visitDays": 1
+    },
+    "38215": {
+      "name": "東温市",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "38386": {
+      "name": "久万高原町",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "38402": {
+      "name": "砥部町",
+      "pref": "愛媛県",
+      "prefCode": "38",
+      "firstVisit": null,
+      "lastVisit": null,
       "visitDays": 1
     },
     "38484": {
@@ -11991,6 +12031,14 @@
       "lastVisit": "2024-06-15",
       "visitDays": 1
     },
+    "39341": {
+      "name": "本山町",
+      "pref": "高知県",
+      "prefCode": "39",
+      "firstVisit": "2024-12-31",
+      "lastVisit": "2024-12-31",
+      "visitDays": 1
+    },
     "39344": {
       "name": "大豊町",
       "pref": "高知県",
@@ -11999,13 +12047,29 @@
       "lastVisit": "2024-06-30",
       "visitDays": 2
     },
+    "39363": {
+      "name": "土佐町",
+      "pref": "高知県",
+      "prefCode": "39",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "39364": {
+      "name": "大川村",
+      "pref": "高知県",
+      "prefCode": "39",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
     "39386": {
       "name": "いの町",
       "pref": "高知県",
       "prefCode": "39",
       "firstVisit": "2024-06-29",
-      "lastVisit": "2024-06-30",
-      "visitDays": 2
+      "lastVisit": "2024-12-31",
+      "visitDays": 3
     },
     "39401": {
       "name": "中土佐町",
@@ -12815,6 +12879,14 @@
       "lastVisit": "2024-12-30",
       "visitDays": 1
     },
+    "44209": {
+      "name": "豊後高田市",
+      "pref": "大分県",
+      "prefCode": "44",
+      "firstVisit": "2024-12-31",
+      "lastVisit": "2024-12-31",
+      "visitDays": 1
+    },
     "44210": {
       "name": "杵築市",
       "pref": "大分県",
@@ -12846,6 +12918,14 @@
       "firstVisit": "2024-01-06",
       "lastVisit": "2024-12-30",
       "visitDays": 2
+    },
+    "44214": {
+      "name": "国東市",
+      "pref": "大分県",
+      "prefCode": "44",
+      "firstVisit": "2024-12-31",
+      "lastVisit": "2024-12-31",
+      "visitDays": 1
     },
     "44341": {
       "name": "日出町",

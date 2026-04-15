@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-04-15T13:44:37.386956",
+    "generated": "2026-04-15T13:58:07.283031",
     "totalMunicipalities": 1905,
     "visitedCount": 1603,
     "coverageRate": 84.15,
@@ -468,8 +468,8 @@
       "pref": "北海道",
       "prefCode": "01",
       "firstVisit": "2024-11-05",
-      "lastVisit": "2026-04-12",
-      "visitDays": 7
+      "lastVisit": "2026-03-21",
+      "visitDays": 6
     },
     "01214": {
       "name": "稚内市",
@@ -1452,24 +1452,24 @@
       "pref": "北海道",
       "prefCode": "01",
       "firstVisit": "2025-11-08",
-      "lastVisit": "2026-04-11",
-      "visitDays": 2
+      "lastVisit": "2025-11-08",
+      "visitDays": 1
     },
     "01639": {
       "name": "更別村",
       "pref": "北海道",
       "prefCode": "01",
       "firstVisit": "2025-11-08",
-      "lastVisit": "2026-04-11",
-      "visitDays": 2
+      "lastVisit": "2025-11-08",
+      "visitDays": 1
     },
     "01641": {
       "name": "大樹町",
       "pref": "北海道",
       "prefCode": "01",
       "firstVisit": "2025-11-08",
-      "lastVisit": "2026-04-11",
-      "visitDays": 2
+      "lastVisit": "2025-11-08",
+      "visitDays": 1
     },
     "01642": {
       "name": "広尾町",
@@ -1484,8 +1484,8 @@
       "pref": "北海道",
       "prefCode": "01",
       "firstVisit": "2024-10-03",
-      "lastVisit": "2026-04-11",
-      "visitDays": 3
+      "lastVisit": "2025-11-08",
+      "visitDays": 2
     },
     "01644": {
       "name": "池田町",
@@ -1964,16 +1964,16 @@
       "pref": "岩手県",
       "prefCode": "03",
       "firstVisit": "2023-12-09",
-      "lastVisit": "2026-04-12",
-      "visitDays": 28
+      "lastVisit": "2026-03-19",
+      "visitDays": 27
     },
     "03206": {
       "name": "北上市",
       "pref": "岩手県",
       "prefCode": "03",
       "firstVisit": "2023-12-09",
-      "lastVisit": "2026-04-12",
-      "visitDays": 28
+      "lastVisit": "2026-03-19",
+      "visitDays": 27
     },
     "03207": {
       "name": "久慈市",
@@ -2388,8 +2388,8 @@
       "pref": "宮城県",
       "prefCode": "04",
       "firstVisit": "2024-07-14",
-      "lastVisit": "2026-04-12",
-      "visitDays": 2
+      "lastVisit": "2024-07-14",
+      "visitDays": 1
     },
     "04341": {
       "name": "丸森町",
@@ -3012,8 +3012,8 @@
       "pref": "福島県",
       "prefCode": "07",
       "firstVisit": "2023-10-14",
-      "lastVisit": "2026-04-12",
-      "visitDays": 43
+      "lastVisit": "2026-03-19",
+      "visitDays": 42
     },
     "07204": {
       "name": "いわき市",
@@ -3204,8 +3204,8 @@
       "pref": "福島県",
       "prefCode": "07",
       "firstVisit": "2024-05-12",
-      "lastVisit": "2026-04-12",
-      "visitDays": 5
+      "lastVisit": "2024-11-10",
+      "visitDays": 3
     },
     "07421": {
       "name": "会津坂下町",
@@ -4876,8 +4876,8 @@
       "pref": "千葉県",
       "prefCode": "12",
       "firstVisit": "2023-09-02",
-      "lastVisit": "2026-04-12",
-      "visitDays": 16
+      "lastVisit": "2026-03-19",
+      "visitDays": 15
     },
     "12102": {
       "name": "千葉市花見川区",
@@ -5412,8 +5412,8 @@
       "pref": "東京都",
       "prefCode": "13",
       "firstVisit": "2023-07-30",
-      "lastVisit": "2026-04-10",
-      "visitDays": 33
+      "lastVisit": "2026-03-19",
+      "visitDays": 32
     },
     "13109": {
       "name": "品川区",
@@ -5516,16 +5516,16 @@
       "pref": "東京都",
       "prefCode": "13",
       "firstVisit": "2023-08-20",
-      "lastVisit": "2026-04-10",
-      "visitDays": 47
+      "lastVisit": "2026-04-04",
+      "visitDays": 46
     },
     "13122": {
       "name": "葛飾区",
       "pref": "東京都",
       "prefCode": "13",
       "firstVisit": "2023-08-20",
-      "lastVisit": "2026-04-10",
-      "visitDays": 39
+      "lastVisit": "2026-03-19",
+      "visitDays": 38
     },
     "13123": {
       "name": "江戸川区",

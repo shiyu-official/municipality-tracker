@@ -512,7 +512,7 @@
 
 <div class="legend">
   <div class="legend-title">訪問回数</div>
-  <div class="legend-item"><div class="legend-color" style="background:transparent;border:1.5px solid #c0c5d0;"></div><span class="legend-label">未訪問</span></div>
+  <div class="legend-item"><div class="legend-color" style="background:transparent;border:1.5px solid rgba(37,99,235,0.4);"></div><span class="legend-label">未訪問</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></div>
@@ -528,7 +528,7 @@
   await __gmapPromise;
 
   const FILL=['transparent','#bfdbfe','#60a5fa','#2563eb'];
-  const STROKE=['#c0c5d0','#93c5fd','#3b82f6','#1d4ed8'];
+  const STROKE_COLOR='#2563eb'; // 全レベル共通の境界線色
 
   function getLevel(d){if(!d||d===0)return 0;if(d===1)return 1;if(d===2)return 2;return 3;}
   function getLevelLabel(l){return['未訪問','1回','2回','3回以上'][l];}
@@ -656,7 +656,7 @@
       const city=visitedData.cities[code];
       const lv=getLevel(city?city.visitDays:0);
       const fillOpacity=lv===0?0:0.7;
-      return{fillColor:FILL[lv],fillOpacity:fillOpacity,strokeColor:STROKE[lv],strokeWeight:lv===0?0.8:1.2,strokeOpacity:lv===0?0.6:0.9,clickable:true,zIndex:1};
+      return{fillColor:FILL[lv],fillOpacity:fillOpacity,strokeColor:STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
     });
   }
   applyGeoStyles();
@@ -665,7 +665,7 @@
   let hoveredFeature=null;
   geoDataLayer.addListener('mouseover',e=>{
     hoveredFeature=e.feature;
-    geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:'#2563eb'});
+    geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:'#2563eb',strokeOpacity:1.0});
   });
   geoDataLayer.addListener('mouseout',e=>{
     geoDataLayer.revertStyle(e.feature);

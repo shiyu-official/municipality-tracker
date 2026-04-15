@@ -1,0 +1,402 @@
+{
+  "meta": {
+    "generated": "2026-04-15T17:51:04.721605",
+    "totalSpots": 24,
+    "visitedSpots": 12,
+    "spotsVersion": 1
+  },
+  "categories": [
+    {
+      "id": "sanmeisen",
+      "name": "日本三名泉",
+      "description": "林羅山が選んだ日本を代表する三つの名湯",
+      "icon": "♨️",
+      "spots": [
+        {
+          "id": "sanmeisen_kusatsu",
+          "name": "草津温泉",
+          "pref": "群馬県",
+          "lat": 36.6218,
+          "lon": 138.596,
+          "radiusM": 800,
+          "landmark": "湯畑",
+          "autoDetected": true,
+          "firstVisit": "2024-05-11",
+          "lastVisit": "2024-05-11",
+          "visitDays": 1
+        },
+        {
+          "id": "sanmeisen_arima",
+          "name": "有馬温泉",
+          "pref": "兵庫県",
+          "lat": 34.7971,
+          "lon": 135.2474,
+          "radiusM": 600,
+          "landmark": "金の湯",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "sanmeisen_gero",
+          "name": "下呂温泉",
+          "pref": "岐阜県",
+          "lat": 35.8048,
+          "lon": 137.2443,
+          "radiusM": 700,
+          "landmark": "下呂温泉街",
+          "autoDetected": true,
+          "firstVisit": "2023-09-09",
+          "lastVisit": "2024-03-26",
+          "visitDays": 3
+        }
+      ],
+      "completed": 2,
+      "total": 3
+    },
+    {
+      "id": "sankotou",
+      "name": "日本三古湯",
+      "description": "日本書紀・風土記に登場する日本最古の温泉",
+      "icon": "🏛️",
+      "spots": [
+        {
+          "id": "sankotou_dogo",
+          "name": "道後温泉",
+          "pref": "愛媛県",
+          "lat": 33.8496,
+          "lon": 132.7859,
+          "radiusM": 500,
+          "landmark": "道後温泉本館",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "sankotou_arima",
+          "name": "有馬温泉",
+          "pref": "兵庫県",
+          "lat": 34.7971,
+          "lon": 135.2474,
+          "radiusM": 600,
+          "landmark": "金の湯",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "sankotou_shirahama",
+          "name": "白浜温泉",
+          "pref": "和歌山県",
+          "lat": 33.6827,
+          "lon": 135.3465,
+          "radiusM": 800,
+          "landmark": "崎の湯",
+          "autoDetected": true,
+          "firstVisit": "2023-11-23",
+          "lastVisit": "2023-11-23",
+          "visitDays": 1
+        }
+      ],
+      "completed": 1,
+      "total": 3
+    },
+    {
+      "id": "sandai_bijinnoyu",
+      "name": "日本三大美人の湯",
+      "description": "肌に良い泉質で知られる美人の湯",
+      "icon": "💎",
+      "spots": [
+        {
+          "id": "bijin_kawanaka",
+          "name": "川中温泉",
+          "pref": "群馬県",
+          "lat": 36.5583,
+          "lon": 138.7962,
+          "radiusM": 500,
+          "landmark": "かど半旅館",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "bijin_ryujin",
+          "name": "龍神温泉",
+          "pref": "和歌山県",
+          "lat": 33.9672,
+          "lon": 135.5095,
+          "radiusM": 500,
+          "landmark": "龍神温泉元湯",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "bijin_yunokawa",
+          "name": "湯の川温泉",
+          "pref": "島根県",
+          "lat": 35.3903,
+          "lon": 132.8218,
+          "radiusM": 500,
+          "landmark": "湯の川温泉街",
+          "autoDetected": true,
+          "firstVisit": "2023-11-04",
+          "lastVisit": "2026-02-07",
+          "visitDays": 4
+        }
+      ],
+      "completed": 1,
+      "total": 3
+    },
+    {
+      "id": "sandai_yakusen",
+      "name": "日本三大薬泉",
+      "description": "療養効果が高い温泉として知られる三湯",
+      "icon": "💊",
+      "spots": [
+        {
+          "id": "yakusen_kusatsu",
+          "name": "草津温泉",
+          "pref": "群馬県",
+          "lat": 36.6218,
+          "lon": 138.596,
+          "radiusM": 800,
+          "landmark": "湯畑",
+          "autoDetected": true,
+          "firstVisit": "2024-05-11",
+          "lastVisit": "2024-05-11",
+          "visitDays": 1
+        },
+        {
+          "id": "yakusen_arima",
+          "name": "有馬温泉",
+          "pref": "兵庫県",
+          "lat": 34.7971,
+          "lon": 135.2474,
+          "radiusM": 600,
+          "landmark": "金の湯",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "yakusen_matsunoyama",
+          "name": "松之山温泉",
+          "pref": "新潟県",
+          "lat": 36.9768,
+          "lon": 138.6652,
+          "radiusM": 600,
+          "landmark": "鷹の湯",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        }
+      ],
+      "completed": 1,
+      "total": 3
+    },
+    {
+      "id": "sankei",
+      "name": "日本三景",
+      "description": "林春斎が選んだ日本を代表する三つの景観",
+      "icon": "🏔️",
+      "spots": [
+        {
+          "id": "sankei_matsushima",
+          "name": "松島",
+          "pref": "宮城県",
+          "lat": 38.3689,
+          "lon": 141.0614,
+          "radiusM": 1000,
+          "landmark": "松島湾",
+          "autoDetected": true,
+          "firstVisit": "2024-07-15",
+          "lastVisit": "2025-10-11",
+          "visitDays": 3
+        },
+        {
+          "id": "sankei_amanohashidate",
+          "name": "天橋立",
+          "pref": "京都府",
+          "lat": 35.572,
+          "lon": 135.1881,
+          "radiusM": 1000,
+          "landmark": "天橋立ビューランド",
+          "autoDetected": true,
+          "firstVisit": "2025-09-06",
+          "lastVisit": "2025-09-07",
+          "visitDays": 2
+        },
+        {
+          "id": "sankei_miyajima",
+          "name": "宮島",
+          "pref": "広島県",
+          "lat": 34.2961,
+          "lon": 132.3196,
+          "radiusM": 1500,
+          "landmark": "厳島神社",
+          "autoDetected": true,
+          "firstVisit": "2024-12-29",
+          "lastVisit": "2024-12-29",
+          "visitDays": 1
+        }
+      ],
+      "completed": 3,
+      "total": 3
+    },
+    {
+      "id": "sanmeien",
+      "name": "日本三名園",
+      "description": "日本を代表する三つの庭園",
+      "icon": "🌿",
+      "spots": [
+        {
+          "id": "sanmeien_kenroku",
+          "name": "兼六園",
+          "pref": "石川県",
+          "lat": 36.5624,
+          "lon": 136.6625,
+          "radiusM": 500,
+          "landmark": "兼六園",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "sanmeien_koraku",
+          "name": "後楽園",
+          "pref": "岡山県",
+          "lat": 34.6694,
+          "lon": 133.9371,
+          "radiusM": 500,
+          "landmark": "岡山後楽園",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "sanmeien_kairaku",
+          "name": "偕楽園",
+          "pref": "茨城県",
+          "lat": 36.3815,
+          "lon": 140.453,
+          "radiusM": 600,
+          "landmark": "偕楽園",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        }
+      ],
+      "completed": 0,
+      "total": 3
+    },
+    {
+      "id": "sandai_yakei",
+      "name": "日本三大夜景",
+      "description": "日本を代表する三大夜景スポット",
+      "icon": "🌃",
+      "spots": [
+        {
+          "id": "yakei_hakodate",
+          "name": "函館山",
+          "pref": "北海道",
+          "lat": 41.7588,
+          "lon": 140.7028,
+          "radiusM": 800,
+          "landmark": "函館山展望台",
+          "autoDetected": true,
+          "firstVisit": "2024-02-18",
+          "lastVisit": "2024-11-05",
+          "visitDays": 2
+        },
+        {
+          "id": "yakei_maya",
+          "name": "摩耶山",
+          "pref": "兵庫県",
+          "lat": 34.731,
+          "lon": 135.2113,
+          "radiusM": 600,
+          "landmark": "掬星台",
+          "autoDetected": true,
+          "firstVisit": "2025-11-24",
+          "lastVisit": "2025-11-24",
+          "visitDays": 1
+        },
+        {
+          "id": "yakei_inasa",
+          "name": "稲佐山",
+          "pref": "長崎県",
+          "lat": 32.7582,
+          "lon": 129.8566,
+          "radiusM": 600,
+          "landmark": "稲佐山展望台",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        }
+      ],
+      "completed": 2,
+      "total": 3
+    },
+    {
+      "id": "sandai_matsuri",
+      "name": "日本三大祭",
+      "description": "日本を代表する三つの祭り",
+      "icon": "🏮",
+      "spots": [
+        {
+          "id": "matsuri_gion",
+          "name": "祇園祭",
+          "pref": "京都府",
+          "lat": 35.0039,
+          "lon": 135.7785,
+          "radiusM": 500,
+          "landmark": "八坂神社",
+          "autoDetected": true,
+          "firstVisit": "2024-03-31",
+          "lastVisit": "2024-03-31",
+          "visitDays": 1
+        },
+        {
+          "id": "matsuri_tenjin",
+          "name": "天神祭",
+          "pref": "大阪府",
+          "lat": 34.6948,
+          "lon": 135.5134,
+          "radiusM": 500,
+          "landmark": "大阪天満宮",
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
+        },
+        {
+          "id": "matsuri_kanda",
+          "name": "神田祭",
+          "pref": "東京都",
+          "lat": 35.6999,
+          "lon": 139.768,
+          "radiusM": 500,
+          "landmark": "神田明神",
+          "autoDetected": true,
+          "firstVisit": "2023-07-30",
+          "lastVisit": "2026-04-12",
+          "visitDays": 197
+        }
+      ],
+      "completed": 2,
+      "total": 3
+    }
+  ]
+}

@@ -2455,7 +2455,7 @@
         <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${isManual?'利用確認済み':isAuto?'自動検出（近くを通過）':'未訪問'}">${statusIcon}</div>
         <div class="spot-info">
           <div class="spot-name">${s.name}</div>
-          <div class="spot-pref">${s.pref}${s.landmark?' · '+s.landmark:''}</div>
+          <div class="spot-pref">${s.pref}</div>
           ${dateStr?`<div class="spot-dates">${dateStr}${s.visitDays?' ('+s.visitDays+'日)':''}</div>`:''}
           <div class="spot-actions">
             <button class="spot-act-btn ${isManual?'checked':''}" data-spot-id="${s.id}" data-action="manual">${isManual?'✓ 利用確認済':'利用を確認'}</button>

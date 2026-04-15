@@ -23,7 +23,7 @@
     --border:#dde1e8; --border-light:#e8ebf0;
     --text:#2c2c2c; --text-dim:#7a8494; --text-bright:#1a1a1a;
     --accent:#2563eb; --accent-light:rgba(37,99,235,0.08);
-    --unvisited-fill:#d5d8e0; --unvisited-stroke:#b0b5c3;
+    --unvisited-fill:transparent; --unvisited-stroke:#c0c5d0;
     --visit-1-fill:#bfdbfe; --visit-1-stroke:#93c5fd;
     --visit-2-fill:#60a5fa; --visit-2-stroke:#3b82f6;
     --visit-3-fill:#2563eb; --visit-3-stroke:#1d4ed8;
@@ -310,86 +310,71 @@
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
   @media(max-width:768px){
 
-    /* ── ヘッダー: タイトルを省略してstat-chipsに幅を渡す ── */
-    #header{padding:0 8px;gap:6px;height:48px;}
-    #header h1{display:none;} /* 縦画面では省略 */
-    .stat-chips{gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;}
-    .stat-chip{padding:3px 7px;font-size:10px;flex-shrink:0;}
-    .stat-chip .value.large{font-size:12px;}
+    /* ── ヘッダー ── */
+    #header{padding:0 8px;gap:5px;height:50px;}
+    #header h1{display:none;}
+    .stat-chips{gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;scrollbar-width:none;}
+    .stat-chips::-webkit-scrollbar{display:none;}
+    .stat-chip{padding:5px 10px;font-size:11px;flex-shrink:0;border-radius:20px;gap:3px;}
+    .stat-chip .label{font-size:10px;display:inline;}
+    .stat-chip .value.large{font-size:13px;}
 
-    /* ── サイドバー: フルスクリーンオーバーレイ ── */
+    /* ── サイドバー: 左からスライド（画面幅の92%、右端に地図見える） ── */
     #sidebar{
-      width:100%;max-width:100%;
-      top:48px;bottom:0;left:0;
+      width:92%;max-width:360px;
+      top:50px;bottom:0;left:0;
       transform:translateX(-100%);
       z-index:1200;
-      box-shadow:2px 0 16px rgba(0,0,0,0.18);
+      box-shadow:4px 0 20px rgba(0,0,0,0.15);
     }
     #sidebar.collapsed{transform:translateX(-100%);}
     #sidebar:not(.collapsed){transform:translateX(0);}
 
-    /* サイドバートグルボタン: ヘッダー下・左端に固定 */
+    /* サイドバートグルボタン */
     #sidebar-toggle{
-      top:56px;left:0 !important;
-      width:32px;height:44px;
+      top:60px;left:0 !important;
+      width:34px;height:46px;
       font-size:14px;z-index:1300;
+      border-radius:0 8px 8px 0;
     }
     #sidebar:not(.collapsed) + #sidebar-toggle{left:0 !important;}
 
-    /* 地図: 常にフル幅、ヘッダー直下から */
-    #map-container{left:0 !important;top:48px;}
+    /* 地図 */
+    #map-container{left:0 !important;top:50px;}
 
-    /* ── 検索パネル: トグルボタン右から右端まで ──
-       iPhone SE(375px)でも ↔ が見えるよう left を最小限に */
+    /* ── 検索パネル ── */
     #search-panel{
-      top:56px;
-      left:36px;   /* トグルボタン(32px) + 4px隙間 */
-      right:6px;
+      top:62px;
+      left:38px;
+      right:8px;
       width:auto;max-width:none;
       transform:none;
     }
-
-    /* 検索バー本体: 全ボタンを flex-shrink:0 で確保 */
     #search-box-wrap{
-      height:40px;
-      padding:0 6px;
-      gap:0;        /* gapをゼロにして各ボタンのpaddingで調節 */
+      height:42px;
+      padding:0 8px;
+      gap:2px;
+      border-radius:12px;
+      box-shadow:0 2px 16px rgba(0,0,0,0.12);
     }
-    #search-btn{
-      font-size:16px;padding:4px 5px;
-      flex-shrink:0;
-    }
-    #search-input{
-      flex:1;min-width:0;
-      font-size:13px;
-      padding:0 4px;
-    }
-    #locate-btn{
-      font-size:15px;padding:4px 4px;
-      flex-shrink:0;
-    }
-    /* ルート検索ボタン: 左border + 十分なタップ領域 */
+    #search-btn{font-size:17px;padding:4px 5px;flex-shrink:0;}
+    #search-input{flex:1;min-width:0;font-size:14px;padding:0 5px;}
+    #locate-btn{font-size:16px;padding:4px 5px;flex-shrink:0;}
     #route-toggle-btn{
-      font-size:15px;
-      padding:4px 8px;
-      flex-shrink:0;
-      border-left:1px solid var(--border-light);
-      margin-left:2px;
+      font-size:16px;padding:4px 8px;flex-shrink:0;
+      border-left:1px solid var(--border-light);margin-left:2px;
     }
 
-    /* ルートパネル: スマホでは50vhのグローバル設定はそのまま有効 */
-    /* #route-panel-inner: スクロールコンテナはグローバルCSSで定義済み */
-    /* #route-inputs-scroll: 独立スクロール無効のまま */
-    .route-input{font-size:12px;padding:6px 8px;}
-    #route-go-btn{font-size:12px;padding:7px;}
-    .route-type-btn{font-size:10px;padding:4px 2px;}
-    #route-reset-btn{font-size:11px;padding:7px 10px;}
-    .route-result{font-size:11px;}
+    /* ルートパネル */
+    .route-input{font-size:13px;padding:8px 10px;}
+    #route-go-btn{font-size:13px;padding:9px;}
+    .route-type-btn{font-size:11px;padding:6px 4px;}
+    #route-reset-btn{font-size:12px;padding:8px 12px;}
 
-    /* ── 凡例(legend): 左下・Googleクレジット(約20px)の上に配置 ── */
+    /* ── 凡例: 右下（Googleロゴと被らないよう余白確保） ── */
     .legend{
-      bottom:28px;right:auto;left:8px;
-      padding:7px 10px;
+      bottom:36px;right:8px;left:auto;
+      padding:8px 12px;border-radius:10px;
     }
     .legend-title{font-size:10px;font-weight:700;margin-bottom:5px;}
     .legend-label{font-size:10px;}
@@ -401,16 +386,15 @@
     .map-click-modal{width:calc(100vw - 48px);max-width:320px;}
     .map-pick-hint{bottom:80px;}
 
-    /* 検索結果 */
-    .search-result-item{font-size:12px;padding:8px 12px;}
-    .route-icon-btn{font-size:14px;padding:4px 5px;}
+    /* 検索結果・ルート入力 */
+    .search-result-item{font-size:13px;padding:10px 14px;}
+    .route-icon-btn{font-size:15px;padding:5px 6px;}
     .wp-remove-btn{font-size:13px;padding:3px 6px;}
 
-    /* サイドバー内 */
-    .pref-name{font-size:12px;}
-    .pref-item{padding:6px 8px;}
-    .city-name{font-size:11px;}
-    .stat-chip .label{display:none;}
+    /* サイドバー内: 少し大きめに */
+    .pref-name{font-size:13px;}
+    .pref-item{padding:8px 10px;}
+    .city-name{font-size:12px;}
   }
 
   /* サイドバー開放時に地図をタップして閉じられるオーバーレイ */
@@ -418,7 +402,7 @@
     display:none;
     position:fixed;
     inset:0;
-    top:48px;
+    top:50px;
     background:rgba(0,0,0,0.35);
     z-index:1100;
   }
@@ -528,7 +512,7 @@
 
 <div class="legend">
   <div class="legend-title">訪問回数</div>
-  <div class="legend-item"><div class="legend-color" style="background:#d5d8e0;"></div><span class="legend-label">未訪問</span></div>
+  <div class="legend-item"><div class="legend-color" style="background:transparent;border:1.5px solid #c0c5d0;"></div><span class="legend-label">未訪問</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></div>
   <div class="legend-item"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></div>
@@ -543,8 +527,8 @@
   $('loading-status').textContent='Google Maps APIを初期化中...';
   await __gmapPromise;
 
-  const FILL=['#d5d8e0','#bfdbfe','#60a5fa','#2563eb'];
-  const STROKE=['#b0b5c3','#93c5fd','#3b82f6','#1d4ed8'];
+  const FILL=['transparent','#bfdbfe','#60a5fa','#2563eb'];
+  const STROKE=['#c0c5d0','#93c5fd','#3b82f6','#1d4ed8'];
 
   function getLevel(d){if(!d||d===0)return 0;if(d===1)return 1;if(d===2)return 2;return 3;}
   function getLevelLabel(l){return['未訪問','1回','2回','3回以上'][l];}
@@ -671,7 +655,8 @@
       }
       const city=visitedData.cities[code];
       const lv=getLevel(city?city.visitDays:0);
-      return{fillColor:FILL[lv],fillOpacity:0.7,strokeColor:STROKE[lv],strokeWeight:1.2,strokeOpacity:0.9,clickable:true,zIndex:1};
+      const fillOpacity=lv===0?0:0.7;
+      return{fillColor:FILL[lv],fillOpacity:fillOpacity,strokeColor:STROKE[lv],strokeWeight:lv===0?0.8:1.2,strokeOpacity:lv===0?0.6:0.9,clickable:true,zIndex:1};
     });
   }
   applyGeoStyles();

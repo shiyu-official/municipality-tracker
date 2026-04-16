@@ -2327,16 +2327,37 @@
     return u?u.status:undefined;
   }
   function setManualStatus(spotId,status){
-    if(!spotUserData[spotId]) spotUserData[spotId]={};
-    if(status) spotUserData[spotId].status=status;
-    else delete spotUserData[spotId].status;
-    // 空なら消す
-    if(Object.keys(spotUserData[spotId]).length===0) delete spotUserData[spotId];
+    // 対象スポットのgroupを取得
+    let group=null;
+    if(spotData){
+      for(const c of spotData.categories){
+        for(const sp of c.spots){
+          if(sp.id===spotId&&sp.group){group=sp.group;break;}
+        }
+        if(group) break;
+      }
+    }
+    // 同groupの全スポットIDを収集
+    const targets=[spotId];
+    if(group&&spotData){
+      for(const c of spotData.categories){
+        for(const sp of c.spots){
+          if(sp.group===group&&sp.id!==spotId) targets.push(sp.id);
+        }
+      }
+    }
+    // 全対象にstatusをセット
+    for(const sid of targets){
+      if(!spotUserData[sid]) spotUserData[sid]={};
+      if(status) spotUserData[sid].status=status;
+      else delete spotUserData[sid].status;
+      if(Object.keys(spotUserData[sid]).length===0) delete spotUserData[sid];
+    }
     // spotData側にも反映
     if(spotData){
       for(const c of spotData.categories){
         for(const sp of c.spots){
-          if(sp.id===spotId) sp._manualStatus=status;
+          if(targets.includes(sp.id)) sp._manualStatus=status;
         }
       }
     }
@@ -2485,11 +2506,23 @@
       const dateStr=s.firstVisit?`${s.firstVisit} ~ ${s.lastVisit||s.firstVisit}`:'';
       // 自動検出マーク（手動で上書きしている場合に小さく表示）
       const autoTag=(isAuto&&ms)?'<span style="font-size:9px;color:var(--text-dim);margin-left:4px;" title="自動検出あり">🛰</span>':'';
+      // 所属カテゴリバッジ（他カテゴリにも属している場合）
+      let otherCats='';
+      if(s.group){
+        const others=[];
+        for(const oc of spotData.categories){
+          if(oc.id===cat.id) continue;
+          for(const os of oc.spots){
+            if(os.group===s.group) others.push(oc);
+          }
+        }
+        if(others.length) otherCats=others.map(oc=>`<span style="font-size:9px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1px 5px;color:var(--text-dim);white-space:nowrap;">${oc.icon||''} ${oc.name}</span>`).join(' ');
+      }
       h+=`<div class="spot-item" data-spot-id="${s.id}">
         <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${statusTitle}">${statusIcon}</div>
         <div class="spot-info">
           <div class="spot-name">${s.name}${autoTag}</div>
-          <div class="spot-pref">${s.pref}</div>
+          <div class="spot-pref">${s.pref}${otherCats?' '+otherCats:''}</div>
           ${dateStr?`<div class="spot-dates">${dateStr}${s.visitDays?' ('+s.visitDays+'日)':''}</div>`:''}
           <div class="spot-actions">
             <button class="spot-act-btn ${isManualV?'checked':''}" data-spot-id="${s.id}" data-action="visited">${isManualV?'✓ 利用した':'利用した'}</button>

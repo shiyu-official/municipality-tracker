@@ -96,8 +96,8 @@
   .gm-style .gm-style-iw-c{border-radius:10px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;}
   /* .gm-style-iw-d には標準paddingを残す（Googleネイティブスポット表示用）*/
   .gm-style .gm-style-iw-d{overflow:auto!important;padding:14px 14px!important;}
-  /* 閉じるボタン行を完全に消す（外クリックで閉じる方式にする）*/
-  .gm-style .gm-style-iw-chr{display:none!important;}
+  /* 閉じるボタン(×)のみ非表示。スポット名など他の要素は残す */
+  .gm-style .gm-style-iw-chr > button{display:none!important;}
   /* アプリ独自のpopup本文。左余白を少し広めに */
   .iw-body{padding:0 6px 4px 6px;text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:13px;}
   .pop-pref{font-size:11px;color:var(--text-dim);text-align:left;}

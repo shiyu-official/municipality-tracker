@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated": "2026-04-15T23:52:12.450440",
+    "generated": "2026-04-16T09:13:34.437682",
     "totalSpots": 21,
-    "visitedSpots": 13,
+    "visitedSpots": 17,
     "spotsVersion": 3
   },
   "categories": [
@@ -18,7 +18,7 @@
           "pref": "群馬県",
           "lat": 36.6229647,
           "lon": 138.5967231,
-          "radiusM": 800,
+          "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2024-05-11",
           "lastVisit": "2024-05-11",
@@ -30,11 +30,11 @@
           "pref": "兵庫県",
           "lat": 34.7978083,
           "lon": 135.2476961,
-          "radiusM": 600,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
+          "radiusM": 1500,
+          "autoDetected": true,
+          "firstVisit": "2024-06-14",
+          "lastVisit": "2024-06-14",
+          "visitDays": 1
         },
         {
           "id": "sanmeisen_gero",
@@ -42,14 +42,14 @@
           "pref": "岐阜県",
           "lat": 35.8065452,
           "lon": 137.239409,
-          "radiusM": 700,
+          "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2023-09-09",
           "lastVisit": "2024-03-26",
           "visitDays": 3
         }
       ],
-      "completed": 2,
+      "completed": 3,
       "total": 3
     },
     {
@@ -64,7 +64,7 @@
           "pref": "愛媛県",
           "lat": 33.8520748,
           "lon": 132.7864098,
-          "radiusM": 500,
+          "radiusM": 1500,
           "autoDetected": false,
           "firstVisit": null,
           "lastVisit": null,
@@ -76,11 +76,11 @@
           "pref": "兵庫県",
           "lat": 34.7978083,
           "lon": 135.2476961,
-          "radiusM": 600,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
+          "radiusM": 1500,
+          "autoDetected": true,
+          "firstVisit": "2024-06-14",
+          "lastVisit": "2024-06-14",
+          "visitDays": 1
         },
         {
           "id": "sankotou_shirahama",
@@ -88,14 +88,14 @@
           "pref": "和歌山県",
           "lat": 33.679595,
           "lon": 135.345551,
-          "radiusM": 800,
+          "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2023-11-23",
           "lastVisit": "2023-11-23",
           "visitDays": 1
         }
       ],
-      "completed": 1,
+      "completed": 2,
       "total": 3
     },
     {
@@ -110,7 +110,7 @@
           "pref": "群馬県",
           "lat": 36.5785097,
           "lon": 138.7253603,
-          "radiusM": 400,
+          "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2025-02-15",
           "lastVisit": "2025-02-16",
@@ -122,7 +122,7 @@
           "pref": "和歌山県",
           "lat": 33.9562765,
           "lon": 135.5621255,
-          "radiusM": 500,
+          "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2025-04-25",
           "lastVisit": "2025-04-25",
@@ -134,11 +134,11 @@
           "pref": "島根県",
           "lat": 35.390328,
           "lon": 132.8719826,
-          "radiusM": 500,
+          "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2023-11-04",
           "lastVisit": "2026-02-07",
-          "visitDays": 4
+          "visitDays": 5
         }
       ],
       "completed": 3,
@@ -156,7 +156,7 @@
           "pref": "群馬県",
           "lat": 36.6229647,
           "lon": 138.5967231,
-          "radiusM": 800,
+          "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2024-05-11",
           "lastVisit": "2024-05-11",
@@ -168,11 +168,11 @@
           "pref": "兵庫県",
           "lat": 34.7978083,
           "lon": 135.2476961,
-          "radiusM": 600,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
+          "radiusM": 1500,
+          "autoDetected": true,
+          "firstVisit": "2024-06-14",
+          "lastVisit": "2024-06-14",
+          "visitDays": 1
         },
         {
           "id": "yakusen_matsunoyama",
@@ -180,14 +180,14 @@
           "pref": "新潟県",
           "lat": 37.0646726,
           "lon": 138.599093,
-          "radiusM": 500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
+          "radiusM": 1500,
+          "autoDetected": true,
+          "firstVisit": "2025-03-15",
+          "lastVisit": "2025-03-15",
+          "visitDays": 1
         }
       ],
-      "completed": 1,
+      "completed": 3,
       "total": 3
     },
     {

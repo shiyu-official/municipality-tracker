@@ -2321,20 +2321,38 @@
   function getSpotUser(spotId){
     return spotUserData[spotId]||{};
   }
-  function isManualChecked(spotId){
-    return !!(spotUserData[spotId]&&spotUserData[spotId].manualChecked);
+  // status: "visited"=利用した, "passed"=通過のみ, undefined=未設定
+  function getManualStatus(spotId){
+    const u=spotUserData[spotId];
+    return u?u.status:undefined;
   }
-  function setManualChecked(spotId,val){
+  function setManualStatus(spotId,status){
     if(!spotUserData[spotId]) spotUserData[spotId]={};
-    spotUserData[spotId].manualChecked=val;
+    if(status) spotUserData[spotId].status=status;
+    else delete spotUserData[spotId].status;
+    // 空なら消す
+    if(Object.keys(spotUserData[spotId]).length===0) delete spotUserData[spotId];
     // spotData側にも反映
     if(spotData){
       for(const c of spotData.categories){
         for(const sp of c.spots){
-          if(sp.id===spotId) sp._manualChecked=val;
+          if(sp.id===spotId) sp._manualStatus=status;
         }
       }
     }
+  }
+  // 実効的に「訪問した」扱いか
+  function isEffectiveVisited(spot){
+    const ms=spot._manualStatus||getManualStatus(spot.id);
+    if(ms==='visited') return true;
+    if(ms==='passed') return false;
+    // 未設定なら自動検出をそのまま使う
+    return !!spot.autoDetected;
+  }
+  // 実効的に「利用した」（手動で明示）か
+  function isManualVisited(spot){
+    const ms=spot._manualStatus||getManualStatus(spot.id);
+    return ms==='visited';
   }
 
   // spot_user.json を JSONダウンロードで書き出し
@@ -2342,7 +2360,7 @@
     // 空エントリを除外して整形
     const clean={};
     for(const[k,v] of Object.entries(spotUserData)){
-      if(v&&v.manualChecked) clean[k]={manualChecked:true};
+      if(v&&v.status) clean[k]={status:v.status};
     }
     const json=JSON.stringify(clean,null,2);
     const blob=new Blob([json],{type:'application/json'});
@@ -2364,14 +2382,20 @@
       return;
     }
     // spot_user.json を読み込み（なくてもOK）
+    // 旧形式(manualChecked:true)との互換: statusに変換
     try{
       const res2=await fetch('data/spot_user.json');
-      if(res2.ok) spotUserData=await res2.json();
+      if(res2.ok){
+        spotUserData=await res2.json();
+        for(const[k,v] of Object.entries(spotUserData)){
+          if(v.manualChecked===true&&!v.status){v.status='visited';delete v.manualChecked;}
+        }
+      }
     }catch(e){}
     // マージ
     for(const cat of spotData.categories){
       for(const s of cat.spots){
-        s._manualChecked=isManualChecked(s.id);
+        s._manualStatus=getManualStatus(s.id);
       }
     }
     renderSpotHeaderStats();
@@ -2381,31 +2405,31 @@
   }
 
   function countSpotStats(){
-    if(!spotData) return {total:0,autoVisited:0,manualChecked:0};
-    let total=0,autoVisited=0,manualChecked=0;
+    if(!spotData) return {total:0,autoVisited:0,visited:0};
+    let total=0,autoVisited=0,visited=0;
     for(const cat of spotData.categories){
       for(const s of cat.spots){
         total++;
         if(s.autoDetected) autoVisited++;
-        if(s._manualChecked||isManualChecked(s.id)) manualChecked++;
+        if(isEffectiveVisited(s)) visited++;
       }
     }
-    return {total,autoVisited,manualChecked};
+    return {total,autoVisited,visited};
   }
 
   function renderSpotHeaderStats(){
     const stats=countSpotStats();
     $('spot-header-stats').innerHTML=`
       <div class="spot-stat-chip"><span>総スポット</span><span class="sv">${stats.total}</span></div>
+      <div class="spot-stat-chip"><span>訪問</span><span class="sv">${stats.visited}</span></div>
       <div class="spot-stat-chip"><span>自動検出</span><span class="sv">${stats.autoVisited}</span></div>
-      <div class="spot-stat-chip"><span>利用した</span><span class="sv">${stats.manualChecked}</span></div>
     `;
   }
 
   function getEffectiveCompleted(cat){
     let n=0;
     for(const s of cat.spots){
-      if(s.autoDetected||s._manualChecked||isManualChecked(s.id)) n++;
+      if(isEffectiveVisited(s)) n++;
     }
     return n;
   }
@@ -2450,18 +2474,26 @@
     h+=`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${cat.description||''}</div></div>`;
     for(const s of cat.spots){
       const isAuto=s.autoDetected;
-      const isManual=s._manualChecked||isManualChecked(s.id);
-      const statusClass=isManual?'manual':isAuto?'auto':'';
-      const statusIcon=isManual?'✔':isAuto?'~':'';
+      const ms=s._manualStatus||getManualStatus(s.id);
+      const effVisited=isEffectiveVisited(s);
+      const isManualV=ms==='visited';
+      const isPassed=ms==='passed';
+      // ステータス表示: 手動優先
+      const statusClass=isManualV?'manual':effVisited?'auto':'';
+      const statusIcon=isManualV?'✔':effVisited?'~':'';
+      const statusTitle=isManualV?'利用した':isPassed?'通過のみ（自動検出あり）':isAuto?'自動検出（近くを通過）':'未訪問';
       const dateStr=s.firstVisit?`${s.firstVisit} ~ ${s.lastVisit||s.firstVisit}`:'';
+      // 自動検出マーク（手動で上書きしている場合に小さく表示）
+      const autoTag=(isAuto&&ms)?'<span style="font-size:9px;color:var(--text-dim);margin-left:4px;" title="自動検出あり">🛰</span>':'';
       h+=`<div class="spot-item" data-spot-id="${s.id}">
-        <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${isManual?'利用した':isAuto?'自動検出（近くを通過）':'未訪問'}">${statusIcon}</div>
+        <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${statusTitle}">${statusIcon}</div>
         <div class="spot-info">
-          <div class="spot-name">${s.name}</div>
+          <div class="spot-name">${s.name}${autoTag}</div>
           <div class="spot-pref">${s.pref}</div>
           ${dateStr?`<div class="spot-dates">${dateStr}${s.visitDays?' ('+s.visitDays+'日)':''}</div>`:''}
           <div class="spot-actions">
-            <button class="spot-act-btn ${isManual?'checked':''}" data-spot-id="${s.id}" data-action="manual">${isManual?'✓ 利用した':'利用を確認'}</button>
+            <button class="spot-act-btn ${isManualV?'checked':''}" data-spot-id="${s.id}" data-action="visited">${isManualV?'✓ 利用した':'利用した'}</button>
+            <button class="spot-act-btn ${isPassed?'checked':''}" data-spot-id="${s.id}" data-action="passed" style="${isPassed?'background:var(--bg);border-color:var(--text-dim);color:var(--text-dim);font-weight:500;':''}">${isPassed?'✓ 通過のみ':'通過のみ'}</button>
           </div>
         </div>
         <button class="spot-locate-btn" data-lat="${s.lat}" data-lon="${s.lon}" title="地図で表示">📍</button>
@@ -2472,12 +2504,22 @@
     // イベント: 戻るボタン
     $('spot-back-to-cats').addEventListener('click',()=>{renderSpotCatList();renderSpotHeaderStats();});
 
-    // イベント: 手動チェック
-    el.querySelectorAll('[data-action="manual"]').forEach(btn=>{
+    // イベント: 利用した / 通過のみ
+    el.querySelectorAll('[data-action="visited"]').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const sid=btn.dataset.spotId;
-        const cur=isManualChecked(sid);
-        setManualChecked(sid,!cur);
+        const cur=getManualStatus(sid);
+        setManualStatus(sid,cur==='visited'?undefined:'visited');
+        renderSpotList(catId);
+        updateSpotMarkers();
+        renderSpotHeaderStats();
+      });
+    });
+    el.querySelectorAll('[data-action="passed"]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const sid=btn.dataset.spotId;
+        const cur=getManualStatus(sid);
+        setManualStatus(sid,cur==='passed'?undefined:'passed');
         renderSpotList(catId);
         updateSpotMarkers();
         renderSpotHeaderStats();
@@ -2516,21 +2558,22 @@
     for(const cat of spotData.categories){
       const catIcon=cat.icon||'📍';
       for(const s of cat.spots){
-        const isManual=s._manualChecked||isManualChecked(s.id);
-        const isAuto=s.autoDetected;
+        const effVisited=isEffectiveVisited(s);
+        const isManualV=isManualVisited(s);
         const marker=new google.maps.Marker({
           position:{lat:s.lat,lng:s.lon},
           map:spotMarkersVisible?map:null,
-          icon:makeSpotIcon(catIcon,isAuto,isManual),
+          icon:makeSpotIcon(catIcon,effVisited,isManualV),
           title:s.name,
           zIndex:5,
         });
         const dateStr=s.firstVisit?`<br>初訪問: ${s.firstVisit}`:'';
-        const statusLabel=isManual?'利用した':isAuto?'自動検出':'未訪問';
+        const ms=s._manualStatus||getManualStatus(s.id);
+        const statusLabel=ms==='visited'?'利用した':ms==='passed'?'通過のみ':s.autoDetected?'自動検出':'未訪問';
         const iwContent=`<div style="font-family:'Noto Sans JP',sans-serif;font-size:13px;">
           <div style="font-weight:700;font-size:14px;">${cat.icon||''} ${s.name}</div>
           <div style="color:#7a8494;font-size:11px;margin-top:2px;">${cat.name} · ${s.pref}</div>
-          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManual?'#60a5fa':isAuto?'#bfdbfe':'#f3f4f6'};color:${isManual?'#fff':isAuto?'#1e40af':'#6b7280'};font-weight:500;">${statusLabel}</span></div>
+          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManualV?'#60a5fa':effVisited?'#bfdbfe':'#f3f4f6'};color:${isManualV?'#fff':effVisited?'#1e40af':'#6b7280'};font-weight:500;">${statusLabel}</span>${s.autoDetected&&ms?'<span style="font-size:9px;color:#7a8494;margin-left:4px;" title="自動検出あり">🛰</span>':''}</div>
           ${dateStr?`<div style="font-size:11px;color:#7a8494;margin-top:4px;font-family:'DM Mono',monospace;">${dateStr}</div>`:''}
         </div>`;
         marker.addListener('click',()=>{
@@ -2558,8 +2601,9 @@
         if(found) break;
       }
       if(found){
-        const isManual=found._manualChecked||isManualChecked(sid);
-        marker.setIcon(makeSpotIcon(catIcon,found.autoDetected,isManual));
+        const effVisited=isEffectiveVisited(found);
+        const isManualV=isManualVisited(found);
+        marker.setIcon(makeSpotIcon(catIcon,effVisited,isManualV));
       }
     }
   }

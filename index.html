@@ -94,7 +94,8 @@
 
   /* InfoWindow override */
   .gm-style .gm-style-iw-c{border-radius:10px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;}
-  .gm-style .gm-style-iw-d{overflow:auto!important;padding:14px 18px!important;}
+  .gm-style .gm-style-iw-d{overflow:auto!important;padding:0!important;}
+  .iw-body{padding:14px 18px 16px;text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:13px;}
   .pop-pref{font-size:11px;color:var(--text-dim);text-align:left;}
   .pop-name{font-weight:700;font-size:15px;color:var(--text-bright);margin-top:1px;white-space:nowrap;text-align:left;}
   .pop-badge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500;}
@@ -567,6 +568,7 @@
   await __gmapPromise;
 
   const FILL=['transparent','#bfdbfe','#60a5fa','#2563eb'];
+  const STROKE=['#c0c5d0','#93c5fd','#3b82f6','#1d4ed8'];
   const STROKE_COLOR='#2563eb'; // 全レベル共通の境界線色
 
   function getLevel(d){if(!d||d===0)return 0;if(d===1)return 1;if(d===2)return 2;return 3;}
@@ -752,7 +754,7 @@
     const city=visitedData.cities[code];
     const lv=getLevel(city?city.visitDays:0);
     const score=city?Math.min(city.visitDays,3):0;
-    let h=`<div style="font-family:'Noto Sans JP',sans-serif;font-size:13px;color:${getComputedStyle(document.documentElement).getPropertyValue('--text')};text-align:left;">`;
+    let h=`<div class="iw-body" style="color:${getComputedStyle(document.documentElement).getPropertyValue('--text')};">`;
     h+=`<div class="pop-pref">${fp.pref||''}</div><div class="pop-name">${fullName}</div>`;
     h+=`<span class="pop-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
     if(city) h+=`<div class="pop-detail">初訪問: ${city.firstVisit}<br>最終: ${city.lastVisit}<br>訪問日数: ${city.visitDays}日<br>制覇スコア: ${score}/3</div>`;
@@ -2613,7 +2615,7 @@
           }
           if(allCats.length>1) catLabels=allCats.map(c=>(c.icon||'')+' '+c.name).join(' / ');
         }
-        const iwContent=`<div style="font-family:'Noto Sans JP',sans-serif;font-size:13px;text-align:left;">
+        const iwContent=`<div class="iw-body">
           <div style="font-weight:700;font-size:14px;">${s.name}</div>
           <div style="color:#7a8494;font-size:11px;margin-top:2px;">${catLabels} · ${s.pref}</div>
           <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManualV?'#60a5fa':effVisited?'#bfdbfe':'#f3f4f6'};color:${isManualV?'#fff':effVisited?'#1e40af':'#6b7280'};font-weight:500;">${statusLabel}</span>${s.autoDetected&&ms?'<span style="font-size:9px;color:#7a8494;margin-left:4px;" title="自動検出あり">🛰</span>':''}</div>

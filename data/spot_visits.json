@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-04-16T09:13:34.437682",
+    "generated": "2026-04-16T11:39:26.220098",
     "totalSpots": 21,
     "visitedSpots": 17,
     "spotsVersion": 3
@@ -19,6 +19,7 @@
           "lat": 36.6229647,
           "lon": 138.5967231,
           "radiusM": 1500,
+          "group": "草津温泉_群馬県",
           "autoDetected": true,
           "firstVisit": "2024-05-11",
           "lastVisit": "2024-05-11",
@@ -31,6 +32,7 @@
           "lat": 34.7978083,
           "lon": 135.2476961,
           "radiusM": 1500,
+          "group": "有馬温泉_兵庫県",
           "autoDetected": true,
           "firstVisit": "2024-06-14",
           "lastVisit": "2024-06-14",
@@ -77,6 +79,7 @@
           "lat": 34.7978083,
           "lon": 135.2476961,
           "radiusM": 1500,
+          "group": "有馬温泉_兵庫県",
           "autoDetected": true,
           "firstVisit": "2024-06-14",
           "lastVisit": "2024-06-14",
@@ -157,6 +160,7 @@
           "lat": 36.6229647,
           "lon": 138.5967231,
           "radiusM": 1500,
+          "group": "草津温泉_群馬県",
           "autoDetected": true,
           "firstVisit": "2024-05-11",
           "lastVisit": "2024-05-11",
@@ -169,6 +173,7 @@
           "lat": 34.7978083,
           "lon": 135.2476961,
           "radiusM": 1500,
+          "group": "有馬温泉_兵庫県",
           "autoDetected": true,
           "firstVisit": "2024-06-14",
           "lastVisit": "2024-06-14",

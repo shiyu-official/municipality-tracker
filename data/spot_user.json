@@ -1,41 +1,53 @@
 {
   "sanmeisen_kusatsu": {
-    "manualChecked": true
+    "status": "visited"
   },
   "sanmeisen_gero": {
-    "manualChecked": true
+    "status": "visited"
   },
   "sankotou_shirahama": {
-    "manualChecked": true
+    "status": "visited"
   },
   "bijin_kawanaka": {
-    "manualChecked": true
+    "status": "visited"
   },
   "bijin_ryujin": {
-    "manualChecked": true
+    "status": "visited"
   },
   "bijin_yunokawa": {
-    "manualChecked": true
+    "status": "visited"
   },
   "yakusen_kusatsu": {
-    "manualChecked": true
+    "status": "visited"
   },
   "yakusen_matsunoyama": {
-    "manualChecked": true
+    "status": "visited"
   },
   "sankei_matsushima": {
-    "manualChecked": true
+    "status": "visited"
   },
   "sankei_amanohashidate": {
-    "manualChecked": true
+    "status": "visited"
   },
   "sankei_miyajima": {
-    "manualChecked": true
+    "status": "visited"
   },
   "yakei_hakodate": {
-    "manualChecked": true
+    "status": "visited"
   },
   "yakei_maya": {
-    "manualChecked": true
+    "status": "visited"
+  },
+  "sanmeisen_arima": {
+    "status": "passed"
+  },
+  "sankotou_arima": {
+    "status": "passed"
+  },
+  "yakusen_arima": {
+    "status": "passed"
+  },
+  "sanmeien_kairaku": {
+    "status": "passed"
   }
 }

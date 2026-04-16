@@ -2432,9 +2432,12 @@
         </div>
       </div>`;
     }).join('');
+    // カテゴリ一覧の下部に保存ボタン
+    el.innerHTML+=`<div style="padding:10px 12px;"><button class="ctrl-btn" id="spot-save-all-btn" style="width:100%;padding:8px;font-size:12px;">📥 利用確認データを保存</button></div>`;
     el.querySelectorAll('.spot-cat-item').forEach(item=>{
       item.addEventListener('click',()=>renderSpotList(item.dataset.catId));
     });
+    $('spot-save-all-btn').addEventListener('click',downloadSpotUserJson);
   }
 
   function renderSpotList(catId){
@@ -2464,8 +2467,6 @@
         <button class="spot-locate-btn" data-lat="${s.lat}" data-lon="${s.lon}" title="地図で表示">📍</button>
       </div>`;
     }
-    // 下部に保存ボタン
-    h+=`<div style="padding:10px 12px;"><button class="ctrl-btn" id="spot-save-btn" style="width:100%;padding:8px;font-size:12px;">📥 利用確認データを保存</button></div>`;
     el.innerHTML=h;
 
     // イベント: 戻るボタン
@@ -2482,9 +2483,6 @@
         renderSpotHeaderStats();
       });
     });
-
-    // イベント: 保存ボタン
-    $('spot-save-btn').addEventListener('click',downloadSpotUserJson);
 
     // イベント: 地図で表示
     el.querySelectorAll('.spot-locate-btn').forEach(btn=>{

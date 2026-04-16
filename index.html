@@ -113,11 +113,11 @@
   #loading-status{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;}
 
   .layer-toggles{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
-  /* スマホ時: ズームボタン(RIGHT_BOTTOM)の左隣に固定配置 */
+  /* スマホ時: レイヤートグルは左上（サイドバータブの下） */
   .layer-toggles-mobile{
     position:fixed;
-    bottom:50px;
-    right:54px;
+    top:62px;
+    left:8px;
     z-index:999;
     margin-top:0 !important;
     background:var(--bg-panel);
@@ -126,16 +126,16 @@
     padding:6px 10px;
     box-shadow:0 2px 8px rgba(0,0,0,0.08);
   }
-  /* ルートパネル開放中: ルートパネル下端の上に逃がす */
+  /* ルートパネル開放中もそのまま左上 */
   body.route-panel-open .layer-toggles-mobile{
-    bottom:calc(100dvh - 186px);
+    top:62px;
   }
   .toggle-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text);cursor:pointer;user-select:none;}
   .toggle-item input{margin:0;accent-color:var(--accent);cursor:pointer;}
   .toggle-line{display:inline-block;width:16px;height:3px;background:#ef4444;border-radius:2px;}
   .toggle-fill{display:inline-block;width:14px;height:10px;background:var(--visit-2-fill);border:1px solid var(--visit-2-stroke);border-radius:2px;}
 
-  .legend{position:fixed;bottom:16px;left:336px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:left 0.3s ease;}
+  .legend{position:fixed;bottom:36px;left:336px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:left 0.3s ease;}
   .legend-title{font-weight:700;color:var(--text-bright);margin-bottom:8px;font-size:11px;}
   .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
   .legend-color{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid rgba(0,0,0,0.08);}
@@ -371,9 +371,9 @@
     .route-type-btn{font-size:11px;padding:6px 4px;}
     #route-reset-btn{font-size:12px;padding:8px 12px;}
 
-    /* ── 凡例: 右下（Googleロゴと被らないよう余白確保） ── */
+    /* ── 凡例: ズーム+-ボタンの左脇 ── */
     .legend{
-      bottom:36px;right:8px;left:auto;
+      bottom:90px;right:54px;left:auto;
       padding:8px 12px;border-radius:10px;
     }
     .legend-title{font-size:10px;font-weight:700;margin-bottom:5px;}
@@ -421,13 +421,13 @@
   .spot-cat-bar{flex:1;height:4px;background:var(--bg);border-radius:2px;overflow:hidden;}
   .spot-cat-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;}
   .spot-cat-count{font-size:10px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text-dim);white-space:nowrap;}
-  .spot-cat-complete .spot-cat-count{color:#16a34a;}
+  .spot-cat-complete .spot-cat-count{color:var(--visit-2-stroke);}
 
   .spot-item{padding:10px 12px;border-radius:8px;transition:background 0.15s;display:flex;align-items:flex-start;gap:10px;}
   .spot-item:hover{background:var(--bg-panel-hover);}
   .spot-status{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all 0.2s;}
   .spot-status.auto{background:var(--visit-1-fill);border-color:var(--visit-1-stroke);color:#1e40af;}
-  .spot-status.manual{background:#bbf7d0;border-color:#4ade80;color:#166534;}
+  .spot-status.manual{background:var(--visit-2-fill);border-color:var(--visit-2-stroke);color:#fff;}
   .spot-info{flex:1;min-width:0;}
   .spot-name{font-size:13px;font-weight:500;color:var(--text-bright);}
   .spot-pref{font-size:10px;color:var(--text-dim);}
@@ -2398,7 +2398,7 @@
     $('spot-header-stats').innerHTML=`
       <div class="spot-stat-chip"><span>総スポット</span><span class="sv">${stats.total}</span></div>
       <div class="spot-stat-chip"><span>自動検出</span><span class="sv">${stats.autoVisited}</span></div>
-      <div class="spot-stat-chip"><span>利用確認</span><span class="sv">${stats.manualChecked}</span></div>
+      <div class="spot-stat-chip"><span>利用した</span><span class="sv">${stats.manualChecked}</span></div>
     `;
   }
 
@@ -2433,7 +2433,7 @@
       </div>`;
     }).join('');
     // カテゴリ一覧の下部に保存ボタン
-    el.innerHTML+=`<div style="padding:10px 12px;"><button class="ctrl-btn" id="spot-save-all-btn" style="width:100%;padding:8px;font-size:12px;">📥 利用確認データを保存</button></div>`;
+    el.innerHTML+=`<div style="padding:10px 12px;"><button class="ctrl-btn" id="spot-save-all-btn" style="width:100%;padding:8px;font-size:12px;">📥 利用データを保存</button></div>`;
     el.querySelectorAll('.spot-cat-item').forEach(item=>{
       item.addEventListener('click',()=>renderSpotList(item.dataset.catId));
     });
@@ -2455,13 +2455,13 @@
       const statusIcon=isManual?'✔':isAuto?'~':'';
       const dateStr=s.firstVisit?`${s.firstVisit} ~ ${s.lastVisit||s.firstVisit}`:'';
       h+=`<div class="spot-item" data-spot-id="${s.id}">
-        <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${isManual?'利用確認済み':isAuto?'自動検出（近くを通過）':'未訪問'}">${statusIcon}</div>
+        <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${isManual?'利用した':isAuto?'自動検出（近くを通過）':'未訪問'}">${statusIcon}</div>
         <div class="spot-info">
           <div class="spot-name">${s.name}</div>
           <div class="spot-pref">${s.pref}</div>
           ${dateStr?`<div class="spot-dates">${dateStr}${s.visitDays?' ('+s.visitDays+'日)':''}</div>`:''}
           <div class="spot-actions">
-            <button class="spot-act-btn ${isManual?'checked':''}" data-spot-id="${s.id}" data-action="manual">${isManual?'✓ 利用確認済':'利用を確認'}</button>
+            <button class="spot-act-btn ${isManual?'checked':''}" data-spot-id="${s.id}" data-action="manual">${isManual?'✓ 利用した':'利用を確認'}</button>
           </div>
         </div>
         <button class="spot-locate-btn" data-lat="${s.lat}" data-lon="${s.lon}" title="地図で表示">📍</button>
@@ -2501,8 +2501,8 @@
 
   // ── スポットマーカー (地図上) ──
   function makeSpotIcon(catIcon,visited,manualChecked){
-    const bgColor=manualChecked?'#16a34a':visited?'#3b82f6':'#e5e7eb';
-    const borderColor=manualChecked?'#15803d':visited?'#2563eb':'#9ca3af';
+    const bgColor=manualChecked?'#60a5fa':visited?'#bfdbfe':'#e5e7eb';
+    const borderColor=manualChecked?'#3b82f6':visited?'#93c5fd':'#9ca3af';
     const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34">
       <circle cx="17" cy="17" r="15" fill="${bgColor}" stroke="${borderColor}" stroke-width="2"/>
       <text x="17" y="23" text-anchor="middle" font-size="16">${catIcon}</text>
@@ -2526,11 +2526,11 @@
           zIndex:5,
         });
         const dateStr=s.firstVisit?`<br>初訪問: ${s.firstVisit}`:'';
-        const statusLabel=isManual?'利用確認済':isAuto?'自動検出':'未訪問';
+        const statusLabel=isManual?'利用した':isAuto?'自動検出':'未訪問';
         const iwContent=`<div style="font-family:'Noto Sans JP',sans-serif;font-size:13px;">
           <div style="font-weight:700;font-size:14px;">${cat.icon||''} ${s.name}</div>
           <div style="color:#7a8494;font-size:11px;margin-top:2px;">${cat.name} · ${s.pref}</div>
-          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManual?'#bbf7d0':isAuto?'#bfdbfe':'#f3f4f6'};color:${isManual?'#166534':isAuto?'#1e40af':'#6b7280'};font-weight:500;">${statusLabel}</span></div>
+          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManual?'#60a5fa':isAuto?'#bfdbfe':'#f3f4f6'};color:${isManual?'#fff':isAuto?'#1e40af':'#6b7280'};font-weight:500;">${statusLabel}</span></div>
           ${dateStr?`<div style="font-size:11px;color:#7a8494;margin-top:4px;font-family:'DM Mono',monospace;">${dateStr}</div>`:''}
         </div>`;
         marker.addListener('click',()=>{

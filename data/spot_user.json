@@ -1,2 +1,41 @@
 {
+  "sanmeisen_kusatsu": {
+    "manualChecked": true
+  },
+  "sanmeisen_gero": {
+    "manualChecked": true
+  },
+  "sankotou_shirahama": {
+    "manualChecked": true
+  },
+  "bijin_kawanaka": {
+    "manualChecked": true
+  },
+  "bijin_ryujin": {
+    "manualChecked": true
+  },
+  "bijin_yunokawa": {
+    "manualChecked": true
+  },
+  "yakusen_kusatsu": {
+    "manualChecked": true
+  },
+  "yakusen_matsunoyama": {
+    "manualChecked": true
+  },
+  "sankei_matsushima": {
+    "manualChecked": true
+  },
+  "sankei_amanohashidate": {
+    "manualChecked": true
+  },
+  "sankei_miyajima": {
+    "manualChecked": true
+  },
+  "yakei_hakodate": {
+    "manualChecked": true
+  },
+  "yakei_maya": {
+    "manualChecked": true
+  }
 }

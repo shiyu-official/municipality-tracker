@@ -689,7 +689,7 @@
   // レベルフィルタ: どのレベルを色付き表示するか（デフォは全OFF=チェックなし）
   const legendFilter={0:false,1:false,2:false,3:false};
   // 未訪問ハイライト用の色
-  const UNVISITED_HIGHLIGHT='#FF904B'; // 濃い目のオレンジ
+  const UNVISITED_HIGHLIGHT='#fdba74'; // 薄めのオレンジ
 
   function applyGeoStyles(){
     geoDataLayer.setStyle(feature=>{
@@ -859,7 +859,18 @@
 　}
 
 　chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
-　chkPolygons.addEventListener('change', function(){ geoDataLayer.setMap(this.checked?map:null); });
+　chkPolygons.addEventListener('change', function(){
+    geoDataLayer.setMap(this.checked?map:null);
+    // 市区町村レイヤOFF時: legendフィルタを無効化＆全解除
+    document.querySelectorAll('.legend-filter').forEach(cb=>{
+      cb.disabled=!chkPolygons.checked;
+      if(!chkPolygons.checked){
+        cb.checked=false;
+        legendFilter[parseInt(cb.dataset.lv)]=false;
+      }
+    });
+    if(!chkPolygons.checked) applyGeoStyles();
+  });
 
   // 互換ラッパー
   map.getCenter_compat=()=>{const c=map.getCenter();return{lat:c.lat(),lng:c.lng()};};

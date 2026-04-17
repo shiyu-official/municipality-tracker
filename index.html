@@ -426,15 +426,15 @@
   .spot-cat-desc{font-size:10px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .spot-cat-prog{display:flex;align-items:center;gap:6px;margin-top:4px;}
   .spot-cat-bar{flex:1;height:4px;background:var(--bg);border-radius:2px;overflow:hidden;}
-  .spot-cat-bar-fill{height:100%;background:var(--accent);border-radius:2px;transition:width 0.3s;}
+  .spot-cat-bar-fill{height:100%;background:#4ade80;border-radius:2px;transition:width 0.3s;}
   .spot-cat-count{font-size:10px;font-weight:600;font-family:'DM Mono',monospace;color:var(--text-dim);white-space:nowrap;}
-  .spot-cat-complete .spot-cat-count{color:var(--visit-2-stroke);}
+  .spot-cat-complete .spot-cat-count{color:#4ade80;}
 
   .spot-item{padding:10px 12px;border-radius:8px;transition:background 0.15s;display:flex;align-items:flex-start;gap:10px;}
   .spot-item:hover{background:var(--bg-panel-hover);}
   .spot-status{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px;cursor:pointer;transition:all 0.2s;}
-  .spot-status.auto{background:var(--visit-1-fill);border-color:var(--visit-1-stroke);color:#1e40af;}
-  .spot-status.manual{background:var(--visit-2-fill);border-color:var(--visit-2-stroke);color:#fff;}
+  .spot-status.auto{background:#EFFBF1;border-color:#86efac;color:#166534;}
+  .spot-status.manual{background:#C1F0C8;border-color:#4ade80;color:#166534;}
   .spot-info{flex:1;min-width:0;}
   .spot-name{font-size:13px;font-weight:500;color:var(--text-bright);}
   .spot-pref{font-size:10px;color:var(--text-dim);}
@@ -442,7 +442,7 @@
   .spot-actions{display:flex;gap:4px;margin-top:6px;}
   .spot-act-btn{padding:3px 8px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--text-dim);transition:all 0.15s;}
   .spot-act-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .spot-act-btn.checked{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:500;}
+  .spot-act-btn.checked{background:#EFFBF1;border-color:#4ade80;color:#166534;font-weight:500;}
   .spot-locate-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:13px;padding:2px;flex-shrink:0;margin-top:2px;}
   .spot-locate-btn:hover{color:var(--accent);}
 
@@ -2601,8 +2601,8 @@
 
   // ── スポットマーカー (地図上) ──
   function makeSpotIcon(catIcon,visited,manualChecked){
-    const bgColor=manualChecked?'#60a5fa':visited?'#bfdbfe':'#e5e7eb';
-    const borderColor=manualChecked?'#3b82f6':visited?'#93c5fd':'#9ca3af';
+    const bgColor=manualChecked?'#C1F0C8':visited?'#EFFBF1':'#e5e7eb';
+    const borderColor=manualChecked?'#4ade80':visited?'#86efac':'#9ca3af';
     const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34">
       <circle cx="17" cy="17" r="15" fill="${bgColor}" stroke="${borderColor}" stroke-width="2"/>
       <text x="17" y="23" text-anchor="middle" font-size="16">${catIcon}</text>
@@ -2641,7 +2641,7 @@
         const iwContent=`<div class="iw-body">
           <div style="font-weight:700;font-size:14px;">${s.name}</div>
           <div style="color:#7a8494;font-size:11px;margin-top:2px;">${catLabels} · ${s.pref}</div>
-          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManualV?'#60a5fa':effVisited?'#bfdbfe':'#f3f4f6'};color:${isManualV?'#fff':effVisited?'#1e40af':'#6b7280'};font-weight:500;">${statusLabel}</span>${s.autoDetected&&ms?'<span style="font-size:9px;color:#7a8494;margin-left:4px;" title="自動検出あり">🛰</span>':''}</div>
+          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManualV?'#C1F0C8':effVisited?'#EFFBF1':'#f3f4f6'};color:${isManualV?'#166534':effVisited?'#166534':'#6b7280'};font-weight:500;">${statusLabel}</span>${s.autoDetected&&ms?'<span style="font-size:9px;color:#7a8494;margin-left:4px;" title="自動検出あり">🛰</span>':''}</div>
           ${dateStr?`<div style="font-size:11px;color:#7a8494;margin-top:4px;font-family:'DM Mono',monospace;">${dateStr}</div>`:''}
         </div>`;
         marker.addListener('click',()=>{

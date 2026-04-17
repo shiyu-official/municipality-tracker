@@ -744,6 +744,23 @@
       handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},feat,cx,cy);
       return;
     }
+    // GoogleネイティブPOIクリック: デフォルトInfoWindowを阻止して自前で表示
+    if(e.placeId){
+      e.stop();
+      placesService.getDetails({placeId:e.placeId,fields:['name','formatted_address','url']},(place,status)=>{
+        if(status===google.maps.places.PlacesServiceStatus.OK&&place){
+          const h=`<div class="iw-body">
+            <div style="font-weight:700;font-size:14px;">${place.name||''}</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;">${place.formatted_address||''}</div>
+            ${place.url?`<a href="${place.url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-block;margin-top:4px;">Googleマップで見る</a>`:''}
+          </div>`;
+          infoWindow.setContent(h);
+          infoWindow.setPosition(e.latLng);
+          infoWindow.open(map);
+        }
+      });
+      return;
+    }
     infoWindow.close();
   });
 

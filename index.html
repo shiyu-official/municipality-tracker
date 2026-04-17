@@ -475,7 +475,7 @@
   </div>
   <div id="tab-pref" class="sidebar-tab-panel active">
     <div class="sidebar-header">
-      <input type="text" id="pref-search" placeholder="都道府県を検索...">
+      <input type="text" id="pref-search" placeholder="都道府県・市区町村を検索...">
       <div class="control-row">
         <button class="ctrl-btn active" data-sort="rate-desc">踏破率↓</button>
         <button class="ctrl-btn" data-sort="rate-asc">踏破率↑</button>
@@ -882,7 +882,34 @@
   function renderPrefList(filter=''){
     currentView='prefList'; currentPrefCode=null;
     let entries=Object.entries(prefs);
-    if(filter) entries=entries.filter(([_,p])=>p.name.includes(filter));
+
+    // 市区町村名で検索された場合、該当する市区町村を直接表示
+    if(filter){
+      // まず都道府県名でフィルタ
+      const prefMatches=entries.filter(([_,p])=>p.name.includes(filter));
+      // 市区町村名でフィルタ
+      const cityMatches=[];
+      for(const[pc,cities] of Object.entries(prefCities)){
+        for(const c of cities){
+          if(c.name.includes(filter)){
+            cityMatches.push({...c,prefCode:pc,prefName:prefs[pc]?.name||''});
+          }
+        }
+      }
+      // 市区町村ヒットがあり都道府県ヒットがない場合、市区町村リストを表示
+      if(cityMatches.length>0&&prefMatches.length===0){
+        renderCitySearchResults(cityMatches,filter);
+        return;
+      }
+      // 両方ある場合でも市区町村のマッチがあれば先頭に市区町村結果を出す
+      if(cityMatches.length>0&&prefMatches.length>0){
+        entries=prefMatches;
+        // 都道府県リスト+市区町村リストを両方出す
+        renderPrefListWithCityResults(entries,cityMatches,filter);
+        return;
+      }
+      entries=prefMatches;
+    }
 
     if(currentSort==='rate-desc'){
       if(currentMode==='visit') entries.sort((a,b)=>b[1].rate-a[1].rate||a[0].localeCompare(b[0]));
@@ -921,6 +948,104 @@
     });
   }
 
+  // 市区町村名検索結果を直接表示
+  function renderCitySearchResults(cityMatches,filter){
+    currentView='prefList'; currentPrefCode=null;
+    let h=`<div style="padding:6px 12px;font-size:11px;color:var(--text-dim);">「${filter}」の市区町村 (${cityMatches.length}件)</div>`;
+    for(const c of cityMatches){
+      const scoreText=currentMode==='complete'?`${c.score}/3`:`${c.visitDays}日`;
+      const metaText=c.visitDays>0?`${c.firstVisit} ~ ${c.lastVisit}`:'—';
+      h+=`<div class="city-item" data-code="${c.code}" style="cursor:pointer;">
+        <div class="city-lv" style="background:${FILL[c.level]};border:1px solid ${STROKE[c.level]};"></div>
+        <div class="city-info">
+          <div class="city-name">${c.name} <span style="font-size:10px;color:var(--text-dim);">${c.prefName}</span></div>
+          <div class="city-meta">${metaText}</div>
+        </div>
+        <div class="city-score" style="color:${c.level>0?STROKE[c.level]:''}">${scoreText}</div>
+      </div>`;
+    }
+    content.innerHTML=h;
+    content.querySelectorAll('.city-item[data-code]').forEach(item=>{
+      item.addEventListener('click',()=>zoomToCity(item.dataset.code));
+    });
+  }
+
+  // 都道府県リスト+市区町村検索結果の混在表示
+  function renderPrefListWithCityResults(entries,cityMatches,filter){
+    currentView='prefList'; currentPrefCode=null;
+    // 市区町村結果を先頭に
+    let h=`<div style="padding:6px 12px;font-size:11px;color:var(--text-dim);">「${filter}」の市区町村 (${cityMatches.length}件)</div>`;
+    for(const c of cityMatches){
+      const scoreText=currentMode==='complete'?`${c.score}/3`:`${c.visitDays}日`;
+      const metaText=c.visitDays>0?`${c.firstVisit} ~ ${c.lastVisit}`:'—';
+      h+=`<div class="city-item" data-code="${c.code}" style="cursor:pointer;">
+        <div class="city-lv" style="background:${FILL[c.level]};border:1px solid ${STROKE[c.level]};"></div>
+        <div class="city-info">
+          <div class="city-name">${c.name} <span style="font-size:10px;color:var(--text-dim);">${c.prefName}</span></div>
+          <div class="city-meta">${metaText}</div>
+        </div>
+        <div class="city-score" style="color:${c.level>0?STROKE[c.level]:''}">${scoreText}</div>
+      </div>`;
+    }
+    // 都道府県結果
+    h+=`<div style="padding:6px 12px;margin-top:8px;font-size:11px;color:var(--text-dim);border-top:1px solid var(--border-light);">都道府県</div>`;
+    for(const[code,p] of entries){
+      const ps=prefStats[code]||{score:0,maxScore:p.total*3};
+      const cr=ps.maxScore>0?(ps.score/ps.maxScore*100).toFixed(1):'0.0';
+      const ringRate=currentMode==='visit'?p.rate:parseFloat(cr);
+      const rateLabel=currentMode==='visit'?`踏破 ${p.visited}/${p.total}`:`制覇 ${ps.score}/${ps.maxScore}`;
+      const subLabel=currentMode==='visit'?`制覇 ${cr}%`:`踏破 ${p.visited}/${p.total}`;
+      h+=`<div class="pref-item" data-code="${code}">
+        <div class="pref-rate-ring">${ringSVG(ringRate)}<span>${Math.round(ringRate)}</span></div>
+        <div class="pref-info">
+          <div class="pref-name">${p.name}</div>
+          <div class="pref-rates"><span>${rateLabel}</span><span>${subLabel}</span></div>
+          ${barHTML(code)}
+        </div>
+      </div>`;
+    }
+    content.innerHTML=h;
+    content.querySelectorAll('.city-item[data-code]').forEach(item=>{
+      item.addEventListener('click',()=>zoomToCity(item.dataset.code));
+    });
+    content.querySelectorAll('.pref-item').forEach(item=>{
+      item.addEventListener('click',()=>showCityDetail(item.dataset.code));
+    });
+  }
+
+  // 市区町村にズーム
+  function zoomToCity(code){
+    const bounds=new google.maps.LatLngBounds();
+    const features=_geoFeaturesByCode[code]||[];
+    for(const f of features){
+      const flat=flattenCoords(f.geometry.coordinates);
+      for(const c of flat) bounds.extend({lat:c[1],lng:c[0]});
+    }
+    if(!bounds.isEmpty()){
+      map.fitBounds(bounds,{top:30,right:30,bottom:30,left:30});
+    } else {
+      const centroid=getCityCentroid(code);
+      if(centroid) {map.setCenter({lat:centroid[0],lng:centroid[1]});map.setZoom(13);}
+    }
+    // InfoWindowも表示
+    const fp=featureProps[code]||{};
+    const fullName=buildFullName(code,fp.gun,fp.city,fp.ward)||'不明';
+    const city=visitedData.cities[code];
+    const lv=getLevel(city?city.visitDays:0);
+    const score=city?Math.min(city.visitDays,3):0;
+    let ih=`<div class="iw-body" style="color:${getComputedStyle(document.documentElement).getPropertyValue('--text')};">`;
+    ih+=`<div class="pop-pref">${fp.pref||''}</div><div class="pop-name">${fullName}</div>`;
+    ih+=`<span class="pop-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
+    if(city) ih+=`<div class="pop-detail">初訪問: ${city.firstVisit}<br>最終: ${city.lastVisit}<br>訪問日数: ${city.visitDays}日<br>制覇スコア: ${score}/3</div>`;
+    ih+=`</div>`;
+    const centroid=getCityCentroid(code);
+    if(centroid){
+      infoWindow.setContent(ih);
+      infoWindow.setPosition({lat:centroid[0],lng:centroid[1]});
+      infoWindow.open(map);
+    }
+  }
+
   function showCityDetail(prefCode){
     currentView='cityDetail'; currentPrefCode=prefCode;
     const p=prefs[prefCode];
@@ -947,7 +1072,7 @@
     for(const c of sorted){
       const scoreText=currentMode==='complete'?`${c.score}/3`:`${c.visitDays}日`;
       const metaText=c.visitDays>0?`${c.firstVisit} ~ ${c.lastVisit}`:'—';
-      h+=`<div class="city-item">
+      h+=`<div class="city-item" data-code="${c.code}" style="cursor:pointer;">
         <div class="city-lv" style="background:${FILL[c.level]};border:1px solid ${STROKE[c.level]};"></div>
         <div class="city-info">
           <div class="city-name">${c.name}</div>
@@ -959,6 +1084,9 @@
 
     content.innerHTML=h;
     $('back-to-pref').addEventListener('click',()=>renderPrefList($('pref-search').value));
+    content.querySelectorAll('.city-item[data-code]').forEach(item=>{
+      item.addEventListener('click',()=>zoomToCity(item.dataset.code));
+    });
   }
 
   renderPrefList();

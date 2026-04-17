@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "categories": [
     {
       "id": "sanmeisen",
@@ -7,32 +7,20 @@
       "description": "林羅山が選んだ日本を代表する三つの名湯",
       "icon": "♨️",
       "spots": [
-        {
-          "id": "sanmeisen_kusatsu",
-          "name": "草津温泉",
-          "pref": "群馬県",
-          "lat": 36.6229647,
-          "lon": 138.5967231,
-          "radiusM": 1500,
-          "group": "草津温泉_群馬県"
-        },
-        {
-          "id": "sanmeisen_arima",
-          "name": "有馬温泉",
-          "pref": "兵庫県",
-          "lat": 34.7978083,
-          "lon": 135.2476961,
-          "radiusM": 1500,
-          "group": "有馬温泉_兵庫県"
-        },
-        {
-          "id": "sanmeisen_gero",
-          "name": "下呂温泉",
-          "pref": "岐阜県",
-          "lat": 35.8065452,
-          "lon": 137.239409,
-          "radiusM": 1500
-        }
+        { "id": "sanmeisen_kusatsu", "name": "草津温泉", "pref": "群馬県", "lat": 36.6229647, "lon": 138.5967231, "radiusM": 1500, "group": "草津温泉_群馬県" },
+        { "id": "sanmeisen_arima", "name": "有馬温泉", "pref": "兵庫県", "lat": 34.7978083, "lon": 135.2476961, "radiusM": 1500, "group": "有馬温泉_兵庫県" },
+        { "id": "sanmeisen_gero", "name": "下呂温泉", "pref": "岐阜県", "lat": 35.8065452, "lon": 137.239409, "radiusM": 1500 }
+      ]
+    },
+    {
+      "id": "sanmeisen_makura",
+      "name": "日本三名泉（枕草子説）",
+      "description": "枕草子に記された三つの名湯",
+      "icon": "📜",
+      "spots": [
+        { "id": "makura_arima", "name": "有馬温泉", "pref": "兵庫県", "lat": 34.7978083, "lon": 135.2476961, "radiusM": 1500, "group": "有馬温泉_兵庫県" },
+        { "id": "makura_tamatsukuri", "name": "玉造温泉", "pref": "島根県", "lat": 35.4171996, "lon": 133.0103417, "radiusM": 1500 },
+        { "id": "makura_sakakibara", "name": "榊原温泉", "pref": "三重県", "lat": 34.705635, "lon": 136.374033, "radiusM": 1500 }
       ]
     },
     {
@@ -41,31 +29,9 @@
       "description": "日本書紀・風土記に登場する日本最古の温泉",
       "icon": "🏛️",
       "spots": [
-        {
-          "id": "sankotou_dogo",
-          "name": "道後温泉",
-          "pref": "愛媛県",
-          "lat": 33.8520748,
-          "lon": 132.7864098,
-          "radiusM": 1500
-        },
-        {
-          "id": "sankotou_arima",
-          "name": "有馬温泉",
-          "pref": "兵庫県",
-          "lat": 34.7978083,
-          "lon": 135.2476961,
-          "radiusM": 1500,
-          "group": "有馬温泉_兵庫県"
-        },
-        {
-          "id": "sankotou_shirahama",
-          "name": "白浜温泉",
-          "pref": "和歌山県",
-          "lat": 33.679595,
-          "lon": 135.345551,
-          "radiusM": 1500
-        }
+        { "id": "sankotou_dogo", "name": "道後温泉", "pref": "愛媛県", "lat": 33.8520748, "lon": 132.7864098, "radiusM": 1500 },
+        { "id": "sankotou_arima", "name": "有馬温泉", "pref": "兵庫県", "lat": 34.7978083, "lon": 135.2476961, "radiusM": 1500, "group": "有馬温泉_兵庫県" },
+        { "id": "sankotou_shirahama", "name": "白浜温泉", "pref": "和歌山県", "lat": 33.679595, "lon": 135.345551, "radiusM": 1500 }
       ]
     },
     {
@@ -74,30 +40,20 @@
       "description": "肌に良い泉質で知られる美人の湯",
       "icon": "💎",
       "spots": [
-        {
-          "id": "bijin_kawanaka",
-          "name": "川中温泉",
-          "pref": "群馬県",
-          "lat": 36.5785097,
-          "lon": 138.7253603,
-          "radiusM": 1500
-        },
-        {
-          "id": "bijin_ryujin",
-          "name": "龍神温泉",
-          "pref": "和歌山県",
-          "lat": 33.9562765,
-          "lon": 135.5621255,
-          "radiusM": 1500
-        },
-        {
-          "id": "bijin_yunokawa",
-          "name": "湯の川温泉",
-          "pref": "島根県",
-          "lat": 35.390328,
-          "lon": 132.8719826,
-          "radiusM": 1500
-        }
+        { "id": "bijin_kawanaka", "name": "川中温泉", "pref": "群馬県", "lat": 36.5785097, "lon": 138.7253603, "radiusM": 1500 },
+        { "id": "bijin_ryujin", "name": "龍神温泉", "pref": "和歌山県", "lat": 33.9562765, "lon": 135.5621255, "radiusM": 1500 },
+        { "id": "bijin_yunokawa", "name": "湯の川温泉", "pref": "島根県", "lat": 35.390328, "lon": 132.8719826, "radiusM": 1500 }
+      ]
+    },
+    {
+      "id": "sandai_bihadanoyu",
+      "name": "日本三大美肌の湯",
+      "description": "美肌効果で知られる三つの温泉",
+      "icon": "✨",
+      "spots": [
+        { "id": "bihada_ureshino", "name": "嬉野温泉", "pref": "佐賀県", "lat": 33.096349, "lon": 129.981557, "radiusM": 1500 },
+        { "id": "bihada_hinokami", "name": "斐乃上温泉", "pref": "島根県", "lat": 35.186603, "lon": 133.1774923, "radiusM": 1500 },
+        { "id": "bihada_kitsuregawa", "name": "喜連川温泉", "pref": "栃木県", "lat": 36.7171655, "lon": 140.0200654, "radiusM": 1500 }
       ]
     },
     {
@@ -106,64 +62,53 @@
       "description": "療養効果が高い温泉として知られる三湯",
       "icon": "💊",
       "spots": [
-        {
-          "id": "yakusen_kusatsu",
-          "name": "草津温泉",
-          "pref": "群馬県",
-          "lat": 36.6229647,
-          "lon": 138.5967231,
-          "radiusM": 1500,
-          "group": "草津温泉_群馬県"
-        },
-        {
-          "id": "yakusen_arima",
-          "name": "有馬温泉",
-          "pref": "兵庫県",
-          "lat": 34.7978083,
-          "lon": 135.2476961,
-          "radiusM": 1500,
-          "group": "有馬温泉_兵庫県"
-        },
-        {
-          "id": "yakusen_matsunoyama",
-          "name": "松之山温泉",
-          "pref": "新潟県",
-          "lat": 37.0646726,
-          "lon": 138.599093,
-          "radiusM": 1500
-        }
+        { "id": "yakusen_kusatsu", "name": "草津温泉", "pref": "群馬県", "lat": 36.6229647, "lon": 138.5967231, "radiusM": 1500, "group": "草津温泉_群馬県" },
+        { "id": "yakusen_arima", "name": "有馬温泉", "pref": "兵庫県", "lat": 34.7978083, "lon": 135.2476961, "radiusM": 1500, "group": "有馬温泉_兵庫県" },
+        { "id": "yakusen_matsunoyama", "name": "松之山温泉", "pref": "新潟県", "lat": 37.0646726, "lon": 138.599093, "radiusM": 1500 }
+      ]
+    },
+    {
+      "id": "sandai_miyu",
+      "name": "日本三御湯",
+      "description": "皇室が選んだ日本の御湯",
+      "icon": "👑",
+      "spots": [
+        { "id": "miyu_akiu", "name": "秋保温泉", "pref": "宮城県", "lat": 38.225128, "lon": 140.7270832, "radiusM": 1500 },
+        { "id": "miyu_bessho", "name": "別所温泉", "pref": "長野県", "lat": 36.352971, "lon": 138.161793, "radiusM": 1500 },
+        { "id": "miyu_nozawa", "name": "野沢温泉", "pref": "長野県", "lat": 36.9228462, "lon": 138.4405097, "radiusM": 1500 }
+      ]
+    },
+    {
+      "id": "sandai_hitou",
+      "name": "日本三大秘湯",
+      "description": "秘境に湧く日本三大秘湯",
+      "icon": "🏔️",
+      "spots": [
+        { "id": "hitou_niseko", "name": "ニセコ薬師温泉", "pref": "北海道", "lat": 42.8329830, "lon": 140.5947571, "radiusM": 1500 },
+        { "id": "hitou_yachi", "name": "谷地温泉", "pref": "青森県", "lat": 40.6329639, "lon": 140.9245396, "radiusM": 1500 },
+        { "id": "hitou_iya", "name": "祖谷温泉", "pref": "徳島県", "lat": 33.9213454, "lon": 133.8173719, "radiusM": 1500 }
+      ]
+    },
+    {
+      "id": "sandai_ichou",
+      "name": "胃腸病に効く三大温泉",
+      "description": "胃腸病に効能がある三つの温泉",
+      "icon": "🏥",
+      "spots": [
+        { "id": "ichou_shima", "name": "四万温泉", "pref": "群馬県", "lat": 36.6832232, "lon": 138.7769096, "radiusM": 1500 },
+        { "id": "ichou_gaga", "name": "峩々温泉", "pref": "宮城県", "lat": 38.1439031, "lon": 140.5001871, "radiusM": 1500 },
+        { "id": "ichou_yunohira", "name": "湯平温泉", "pref": "大分県", "lat": 33.1939553, "lon": 131.3267668, "radiusM": 1500 }
       ]
     },
     {
       "id": "sankei",
       "name": "日本三景",
       "description": "林春斎が選んだ日本を代表する三つの景観",
-      "icon": "🏔️",
+      "icon": "🌊",
       "spots": [
-        {
-          "id": "sankei_matsushima",
-          "name": "松島",
-          "pref": "宮城県",
-          "lat": 38.3665984,
-          "lon": 141.0769598,
-          "radiusM": 1000
-        },
-        {
-          "id": "sankei_amanohashidate",
-          "name": "天橋立",
-          "pref": "京都府",
-          "lat": 35.5698022,
-          "lon": 135.1918204,
-          "radiusM": 1200
-        },
-        {
-          "id": "sankei_miyajima",
-          "name": "宮島",
-          "pref": "広島県",
-          "lat": 34.2959896,
-          "lon": 132.3198285,
-          "radiusM": 1500
-        }
+        { "id": "sankei_matsushima", "name": "松島", "pref": "宮城県", "lat": 38.3665984, "lon": 141.0769598, "radiusM": 1000 },
+        { "id": "sankei_amanohashidate", "name": "天橋立", "pref": "京都府", "lat": 35.5698022, "lon": 135.1918204, "radiusM": 1200 },
+        { "id": "sankei_miyajima", "name": "宮島", "pref": "広島県", "lat": 34.2959896, "lon": 132.3198285, "radiusM": 1500 }
       ]
     },
     {
@@ -172,30 +117,9 @@
       "description": "日本を代表する三つの庭園",
       "icon": "🌿",
       "spots": [
-        {
-          "id": "sanmeien_kenroku",
-          "name": "兼六園",
-          "pref": "石川県",
-          "lat": 36.5621278,
-          "lon": 136.6626515,
-          "radiusM": 500
-        },
-        {
-          "id": "sanmeien_koraku",
-          "name": "後楽園",
-          "pref": "岡山県",
-          "lat": 34.6673339,
-          "lon": 133.93617,
-          "radiusM": 500
-        },
-        {
-          "id": "sanmeien_kairaku",
-          "name": "偕楽園",
-          "pref": "茨城県",
-          "lat": 36.3754136,
-          "lon": 140.4538299,
-          "radiusM": 600
-        }
+        { "id": "sanmeien_kenroku", "name": "兼六園", "pref": "石川県", "lat": 36.5621278, "lon": 136.6626515, "radiusM": 500 },
+        { "id": "sanmeien_koraku", "name": "後楽園", "pref": "岡山県", "lat": 34.6673339, "lon": 133.93617, "radiusM": 500 },
+        { "id": "sanmeien_kairaku", "name": "偕楽園", "pref": "茨城県", "lat": 36.3754136, "lon": 140.4538299, "radiusM": 600 }
       ]
     },
     {
@@ -204,30 +128,64 @@
       "description": "日本を代表する三大夜景スポット",
       "icon": "🌃",
       "spots": [
-        {
-          "id": "yakei_hakodate",
-          "name": "函館山",
-          "pref": "北海道",
-          "lat": 41.7592941,
-          "lon": 140.703917,
-          "radiusM": 600
-        },
-        {
-          "id": "yakei_maya",
-          "name": "摩耶山 掬星台",
-          "pref": "兵庫県",
-          "lat": 34.7342415,
-          "lon": 135.2063283,
-          "radiusM": 500
-        },
-        {
-          "id": "yakei_inasa",
-          "name": "稲佐山",
-          "pref": "長崎県",
-          "lat": 32.7526235,
-          "lon": 129.8495163,
-          "radiusM": 500
-        }
+        { "id": "yakei_hakodate", "name": "函館山", "pref": "北海道", "lat": 41.7592941, "lon": 140.703917, "radiusM": 600 },
+        { "id": "yakei_maya", "name": "摩耶山 掬星台", "pref": "兵庫県", "lat": 34.7342415, "lon": 135.2063283, "radiusM": 500 },
+        { "id": "yakei_inasa", "name": "稲佐山", "pref": "長崎県", "lat": 32.7526235, "lon": 129.8495163, "radiusM": 500 }
+      ]
+    },
+    {
+      "id": "sandai_karst",
+      "name": "日本三大カルスト地形",
+      "description": "日本を代表する三つのカルスト台地",
+      "icon": "🪨",
+      "spots": [
+        { "id": "karst_akiyoshi", "name": "秋吉台", "pref": "山口県", "lat": 34.234894, "lon": 131.3058647, "radiusM": 2000, "group": "秋吉_山口県" },
+        { "id": "karst_hiraodai", "name": "平尾台", "pref": "福岡県", "lat": 33.7616586, "lon": 130.9040847, "radiusM": 1500 },
+        { "id": "karst_shikoku", "name": "四国カルスト", "pref": "愛媛県・高知県", "lat": 33.4733418, "lon": 132.9959171, "radiusM": 2000 }
+      ]
+    },
+    {
+      "id": "sandai_shonyudo",
+      "name": "日本三大鍾乳洞",
+      "description": "日本を代表する三つの鍾乳洞",
+      "icon": "🕳️",
+      "spots": [
+        { "id": "shonyu_ryusen", "name": "龍泉洞", "pref": "岩手県", "lat": 39.8601009, "lon": 141.7969943, "radiusM": 500 },
+        { "id": "shonyu_akiyoshi", "name": "秋芳洞", "pref": "山口県", "lat": 34.2281082, "lon": 131.3035348, "radiusM": 500, "group": "秋吉_山口県" },
+        { "id": "shonyu_ryuga", "name": "龍河洞", "pref": "高知県", "lat": 33.6033924, "lon": 133.7451653, "radiusM": 500 }
+      ]
+    },
+    {
+      "id": "sandai_meibaku",
+      "name": "日本三名瀑",
+      "description": "日本を代表する三つの名瀑",
+      "icon": "💧",
+      "spots": [
+        { "id": "meibaku_nachi", "name": "那智の滝", "pref": "和歌山県", "lat": 33.6753396, "lon": 135.8876081, "radiusM": 500, "group": "那智の滝_和歌山県" },
+        { "id": "meibaku_kegon", "name": "華厳の滝", "pref": "栃木県", "lat": 36.7380893, "lon": 139.501941, "radiusM": 500, "group": "華厳の滝_栃木県" },
+        { "id": "meibaku_fukuroda", "name": "袋田の滝", "pref": "茨城県", "lat": 36.7644657, "lon": 140.4070018, "radiusM": 500 }
+      ]
+    },
+    {
+      "id": "sandai_shintaki",
+      "name": "日本三大神滝",
+      "description": "神聖な三つの滝",
+      "icon": "⛩️",
+      "spots": [
+        { "id": "shintaki_nachi", "name": "那智の滝", "pref": "和歌山県", "lat": 33.6753396, "lon": 135.8876081, "radiusM": 500, "group": "那智の滝_和歌山県" },
+        { "id": "shintaki_kegon", "name": "華厳の滝", "pref": "栃木県", "lat": 36.7380893, "lon": 139.501941, "radiusM": 500, "group": "華厳の滝_栃木県" },
+        { "id": "shintaki_nunobiki", "name": "布引の滝", "pref": "兵庫県", "lat": 34.7097005, "lon": 135.1938164, "radiusM": 500 }
+      ]
+    },
+    {
+      "id": "sandai_keikoku",
+      "name": "日本三大渓",
+      "description": "日本を代表する三つの渓谷",
+      "icon": "🏞️",
+      "spots": [
+        { "id": "keikoku_geibikei", "name": "猊鼻渓", "pref": "岩手県", "lat": 38.9894482, "lon": 141.2554516, "radiusM": 800 },
+        { "id": "keikoku_sagakei", "name": "嵯峨渓", "pref": "宮城県", "lat": 38.3262492, "lon": 141.1734908, "radiusM": 800 },
+        { "id": "keikoku_yabakei", "name": "耶馬渓", "pref": "大分県", "lat": 33.4998128, "lon": 131.1714769, "radiusM": 1000 }
       ]
     }
   ]

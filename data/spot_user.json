@@ -49,5 +49,47 @@
   },
   "sanmeien_kairaku": {
     "status": "passed"
+  },
+  "makura_arima": {
+    "status": "passed"
+  },
+  "makura_tamatsukuri": {
+    "status": "passed"
+  },
+  "makura_sakakibara": {
+    "status": "visited"
+  },
+  "bihada_ureshino": {
+    "status": "visited"
+  },
+  "bihada_hinokami": {
+    "status": "visited"
+  },
+  "bihada_kitsuregawa": {
+    "status": "visited"
+  },
+  "miyu_akiu": {
+    "status": "visited"
+  },
+  "miyu_nozawa": {
+    "status": "visited"
+  },
+  "hitou_yachi": {
+    "status": "visited"
+  },
+  "ichou_shima": {
+    "status": "visited"
+  },
+  "shonyu_akiyoshi": {
+    "status": "visited"
+  },
+  "karst_akiyoshi": {
+    "status": "visited"
+  },
+  "shintaki_nunobiki": {
+    "status": "passed"
+  },
+  "keikoku_geibikei": {
+    "status": "visited"
   }
 }

@@ -558,10 +558,10 @@
 
 <div class="legend">
   <div class="legend-title">訪問回数</div>
-  <div class="legend-item"><div class="legend-color" style="background:transparent;border:1.5px solid rgba(37,99,235,0.4);"></div><span class="legend-label">未訪問</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></div>
-  <div class="legend-item"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></div>
+  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="0" style="margin:0;accent-color:#f97316;cursor:pointer;"><div class="legend-color" style="background:transparent;border:1.5px solid rgba(37,99,235,0.4);"></div><span class="legend-label">未訪問</span></label></div>
+  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="1" style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></label></div>
+  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="2" style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></label></div>
+  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="3" style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></label></div>
 </div>
 
 <script src="https://unpkg.com/topojson-client@3"></script>
@@ -686,6 +686,11 @@
   geoDataLayer.addGeoJson(geoData);
   await new Promise(r=>setTimeout(r,50)); // 描画を待つ
 
+  // レベルフィルタ: どのレベルを色付き表示するか（デフォは全OFF=チェックなし）
+  const legendFilter={0:false,1:false,2:false,3:false};
+  // 未訪問ハイライト用の色
+  const UNVISITED_HIGHLIGHT='#fdba74'; // 薄めのオレンジ
+
   function applyGeoStyles(){
     geoDataLayer.setStyle(feature=>{
       const code=feature.getProperty('N03_007');
@@ -702,11 +707,36 @@
       }
       const city=visitedData.cities[code];
       const lv=getLevel(city?city.visitDays:0);
-      const fillOpacity=lv===0?0:0.7;
-      return{fillColor:FILL[lv],fillOpacity:fillOpacity,strokeColor:STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
+
+      // フィルタが1つもONでなければ従来表示
+      const anyFilterOn=Object.values(legendFilter).some(v=>v);
+      if(!anyFilterOn){
+        const fillOpacity=lv===0?0:0.7;
+        return{fillColor:FILL[lv],fillOpacity:fillOpacity,strokeColor:STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
+      }
+
+      // フィルタON時: チェックの入ったレベルだけ色表示
+      if(legendFilter[lv]){
+        if(lv===0){
+          // 未訪問: オレンジでハイライト、境界線は青
+          return{fillColor:UNVISITED_HIGHLIGHT,fillOpacity:0.45,strokeColor:STROKE_COLOR,strokeWeight:0.8,strokeOpacity:0.5,clickable:true,zIndex:1};
+        }
+        return{fillColor:FILL[lv],fillOpacity:0.7,strokeColor:STROKE_COLOR,strokeWeight:1.0,strokeOpacity:0.6,clickable:true,zIndex:1};
+      } else {
+        // チェックが入っていないレベル: fillなし、境界線のみ
+        return{fillColor:'transparent',fillOpacity:0,strokeColor:STROKE_COLOR,strokeWeight:0.5,strokeOpacity:0.25,clickable:true,zIndex:1};
+      }
     });
   }
   applyGeoStyles();
+
+  // legendチェックボックスのイベント
+  document.querySelectorAll('.legend-filter').forEach(cb=>{
+    cb.addEventListener('change',()=>{
+      legendFilter[parseInt(cb.dataset.lv)]=cb.checked;
+      applyGeoStyles();
+    });
+  });
 
   // Hover（strokeのみ強調、fillは変えない）
   let hoveredFeature=null;

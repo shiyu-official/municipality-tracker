@@ -559,9 +559,9 @@
 <div class="legend">
   <div class="legend-title">訪問回数</div>
   <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="0" style="margin:0;accent-color:#f97316;cursor:pointer;"><div class="legend-color" style="background:transparent;border:1.5px solid rgba(37,99,235,0.4);"></div><span class="legend-label">未訪問</span></label></div>
-  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="1" style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></label></div>
-  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="2" style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></label></div>
-  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="3" style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></label></div>
+  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="1" checked style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></label></div>
+  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="2" checked style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></label></div>
+  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="3" checked style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></label></div>
 </div>
 
 <script src="https://unpkg.com/topojson-client@3"></script>
@@ -687,9 +687,9 @@
   await new Promise(r=>setTimeout(r,50)); // 描画を待つ
 
   // レベルフィルタ: どのレベルを色付き表示するか（デフォは全OFF=チェックなし）
-  const legendFilter={0:false,1:false,2:false,3:false};
+  const legendFilter={0:false,1:true,2:true,3:true};
   // 未訪問ハイライト用の色
-  const UNVISITED_HIGHLIGHT='#FF904B'; // 濃い目のオレンジ
+  const UNVISITED_HIGHLIGHT='#fdba74'; // 薄めのオレンジ
 
   function applyGeoStyles(){
     geoDataLayer.setStyle(feature=>{
@@ -734,6 +734,15 @@
   document.querySelectorAll('.legend-filter').forEach(cb=>{
     cb.addEventListener('change',()=>{
       legendFilter[parseInt(cb.dataset.lv)]=cb.checked;
+      // 凡例が全OFFなら市区町村レイヤも非表示、どれかONなら自動表示
+      const anyOn=Object.values(legendFilter).some(v=>v);
+      if(!anyOn){
+        geoDataLayer.setMap(null);
+        chkPolygons.checked=false;
+      } else if(!chkPolygons.checked){
+        chkPolygons.checked=true;
+        geoDataLayer.setMap(map);
+      }
       applyGeoStyles();
     });
   });
@@ -861,15 +870,21 @@
 　chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
 　chkPolygons.addEventListener('change', function(){
     geoDataLayer.setMap(this.checked?map:null);
-    // 市区町村レイヤOFF時: legendフィルタを無効化＆全解除
-    document.querySelectorAll('.legend-filter').forEach(cb=>{
-      cb.disabled=!chkPolygons.checked;
-      if(!chkPolygons.checked){
+    if(!this.checked){
+      // 市区町村OFF → 凡例も全OFF
+      document.querySelectorAll('.legend-filter').forEach(cb=>{
         cb.checked=false;
         legendFilter[parseInt(cb.dataset.lv)]=false;
-      }
-    });
-    if(!chkPolygons.checked) applyGeoStyles();
+      });
+    } else {
+      // 市区町村ON → 1-3回をONに復帰
+      [1,2,3].forEach(lv=>{
+        legendFilter[lv]=true;
+        const cb=document.querySelector(`.legend-filter[data-lv="${lv}"]`);
+        if(cb) cb.checked=true;
+      });
+      applyGeoStyles();
+    }
   });
 
   // 互換ラッパー

@@ -27,6 +27,56 @@
     --visit-1-fill:#bfdbfe; --visit-1-stroke:#93c5fd;
     --visit-2-fill:#60a5fa; --visit-2-stroke:#3b82f6;
     --visit-3-fill:#2563eb; --visit-3-stroke:#1d4ed8;
+    --shadow-sm:0 2px 8px rgba(0,0,0,0.05);
+    --shadow-md:0 2px 12px rgba(0,0,0,0.08);
+    --shadow-lg:0 4px 16px rgba(0,0,0,0.10);
+    --shadow-xl:0 8px 32px rgba(0,0,0,0.15);
+    --iw-shadow:0 4px 20px rgba(0,0,0,0.08);
+    --legend-border:rgba(0,0,0,0.08);
+    --badge-1-bg:#bfdbfe; --badge-1-fg:#1e40af;
+    --badge-2-bg:#60a5fa; --badge-2-fg:#1e3a5f;
+    --badge-3-bg:#2563eb; --badge-3-fg:#ffffff;
+    --success-bg:#EFFBF1; --success-bg-strong:#C1F0C8; --success-border:#86efac; --success-border-strong:#4ade80; --success-fg:#166534;
+    --warn-bg:#fef3c7; --warn-fg:#92400e;
+    --route-hl-fill:#fcd34d; --route-hl-stroke:#92400e;
+    --pick-hint-border:var(--accent);
+    --pick-hint-shadow:0 4px 20px rgba(37,99,235,0.15);
+    --gmap-link-bg:#ffffff; --gmap-link-border:#dadce0; --gmap-link-fg:#1a73e8; --gmap-link-hover-bg:#f8f9fa;
+    --danger-bg-hover:#fff0f0; --danger:#ef4444;
+    --track-stroke:#ef4444;
+    --water:#dce6f0;
+    --unvisited-highlight:#FF904B;
+  }
+  /* ── ダークモード（OSの設定に自動追随） ── */
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1319; --bg-panel:#1a1f28; --bg-panel-hover:#242a35;
+      --border:#333a47; --border-light:#262c37;
+      --text:#d9dde5; --text-dim:#8891a2; --text-bright:#f0f2f7;
+      --accent:#60a5fa; --accent-light:rgba(96,165,250,0.15);
+      --unvisited-fill:transparent; --unvisited-stroke:#4a5160;
+      --visit-1-fill:#1e3a5f; --visit-1-stroke:#3b82f6;
+      --visit-2-fill:#2563eb; --visit-2-stroke:#60a5fa;
+      --visit-3-fill:#93c5fd; --visit-3-stroke:#bfdbfe;
+      --shadow-sm:0 2px 8px rgba(0,0,0,0.35);
+      --shadow-md:0 2px 12px rgba(0,0,0,0.45);
+      --shadow-lg:0 4px 16px rgba(0,0,0,0.50);
+      --shadow-xl:0 8px 32px rgba(0,0,0,0.60);
+      --iw-shadow:0 4px 20px rgba(0,0,0,0.55);
+      --legend-border:rgba(255,255,255,0.08);
+      --badge-1-bg:#1e3a5f; --badge-1-fg:#bfdbfe;
+      --badge-2-bg:#2563eb; --badge-2-fg:#dbeafe;
+      --badge-3-bg:#93c5fd; --badge-3-fg:#0b1220;
+      --success-bg:#14301e; --success-bg-strong:#1a4a2c; --success-border:#2d6b45; --success-border-strong:#4ade80; --success-fg:#86efac;
+      --warn-bg:#3a2a10; --warn-fg:#fcd34d;
+      --route-hl-fill:#78350f; --route-hl-stroke:#fcd34d;
+      --pick-hint-shadow:0 4px 20px rgba(96,165,250,0.25);
+      --gmap-link-bg:#1a1f28; --gmap-link-border:#333a47; --gmap-link-fg:#60a5fa; --gmap-link-hover-bg:#242a35;
+      --danger-bg-hover:#3a1616; --danger:#f87171;
+      --track-stroke:#f87171;
+      --water:#0d1b2a;
+      --unvisited-highlight:#d97706;
+    }
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
@@ -55,6 +105,12 @@
   .control-row{display:flex;gap:3px;margin-top:6px;}
   .ctrl-btn{flex:1;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text-dim);font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;}
   .ctrl-btn.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:500;}
+  .sort-select{width:100%;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;outline:none;}
+  .sort-select:focus{border-color:var(--accent);}
+  .filter-chips{display:flex;gap:4px;flex-wrap:wrap;}
+  .filter-chip{flex:1;min-width:calc(50% - 2px);padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:12px;color:var(--text-dim);font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;transition:all 0.12s;white-space:nowrap;}
+  .filter-chip:hover{border-color:var(--accent);color:var(--accent);}
+  .filter-chip.active{background:var(--accent-light);border-color:var(--accent);color:var(--accent);font-weight:500;}
 
   /* Back button for city detail view */
   .back-btn{display:flex;align-items:center;gap:4px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;margin-bottom:8px;transition:background 0.15s;}
@@ -93,7 +149,8 @@
   #map{width:100%;height:100%;background:var(--bg);}
 
   /* InfoWindow override */
-  .gm-style .gm-style-iw-c{border-radius:10px!important;padding:0!important;box-shadow:0 4px 20px rgba(0,0,0,0.08)!important;}
+  .gm-style .gm-style-iw-c{border-radius:10px!important;padding:0!important;box-shadow:var(--iw-shadow)!important;background:var(--bg-panel)!important;color:var(--text)!important;}
+  .gm-style .gm-style-iw-tc::after{background:var(--bg-panel)!important;}
   /* .gm-style-iw-d には標準paddingを残す（Googleネイティブスポット表示用）*/
   .gm-style .gm-style-iw-d{overflow:auto!important;padding:14px 14px!important;}
   /* 閉じるボタン(×)のみ非表示。スポット名など他の要素は残す */
@@ -106,9 +163,9 @@
   .pop-name{font-weight:700;font-size:15px;color:var(--text-bright);margin-top:1px;white-space:nowrap;text-align:left;}
   .pop-badge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500;}
   .pop-badge.badge-0{background:var(--unvisited-fill);color:var(--text-dim);}
-  .pop-badge.badge-1{background:var(--visit-1-fill);color:#1e40af;}
-  .pop-badge.badge-2{background:var(--visit-2-fill);color:#1e3a5f;}
-  .pop-badge.badge-3{background:var(--visit-3-fill);color:#fff;}
+  .pop-badge.badge-1{background:var(--badge-1-bg);color:var(--badge-1-fg);}
+  .pop-badge.badge-2{background:var(--badge-2-bg);color:var(--badge-2-fg);}
+  .pop-badge.badge-3{background:var(--badge-3-bg);color:var(--badge-3-fg);}
   .pop-detail{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-dim);margin-top:6px;line-height:1.6;}
 
   #loading{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s ease;}
@@ -119,7 +176,7 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   #loading-status{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;}
 
-  .layer-toggles{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+  .layer-toggles{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;box-shadow:var(--shadow-sm);}
   /* スマホ時: レイヤートグルは左上（サイドバータブの下） */
   .layer-toggles-mobile{
     position:fixed;
@@ -131,7 +188,7 @@
     border:1px solid var(--border);
     border-radius:8px;
     padding:6px 10px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
+    box-shadow:var(--shadow-md);
   }
   /* ルートパネル開放中もそのまま左上 */
   body.route-panel-open .layer-toggles-mobile{
@@ -139,18 +196,18 @@
   }
   .toggle-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text);cursor:pointer;user-select:none;}
   .toggle-item input{margin:0;accent-color:var(--accent);cursor:pointer;}
-  .toggle-line{display:inline-block;width:16px;height:3px;background:#ef4444;border-radius:2px;}
+  .toggle-line{display:inline-block;width:16px;height:3px;background:var(--track-stroke);border-radius:2px;}
   .toggle-fill{display:inline-block;width:14px;height:10px;background:var(--visit-2-fill);border:1px solid var(--visit-2-stroke);border-radius:2px;}
 
-  .legend{position:fixed;bottom:36px;left:336px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:0 2px 12px rgba(0,0,0,0.05);transition:left 0.3s ease;}
+  .legend{position:fixed;bottom:36px;left:336px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:var(--shadow-sm);transition:left 0.3s ease;}
   .legend-title{font-weight:700;color:var(--text-bright);margin-bottom:8px;font-size:11px;}
   .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-  .legend-color{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid rgba(0,0,0,0.08);}
+  .legend-color{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid var(--legend-border);}
   .legend-label{color:var(--text);font-size:11px;}
 
   /* ── 検索・ルートUI ── */
   #search-panel{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:1001;width:420px;max-width:calc(100vw - 32px);}
-  #search-box-wrap{display:flex;align-items:center;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,0.10);padding:0 10px;gap:6px;height:42px;}
+  #search-box-wrap{display:flex;align-items:center;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);padding:0 10px;gap:6px;height:42px;}
   #search-input{flex:1;border:none;background:transparent;font-size:14px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;}
   #search-input::placeholder{color:var(--text-dim);}
   #search-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:16px;padding:4px;display:flex;align-items:center;}
@@ -161,14 +218,14 @@
   #locate-btn{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:15px;padding:4px;display:flex;align-items:center;}
   #locate-btn:hover{color:var(--accent);}
 
-  #search-results{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.10);margin-top:6px;overflow:hidden;display:none;}
+  #search-results{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);margin-top:6px;overflow:hidden;display:none;}
   .search-result-item{padding:10px 14px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border-light);transition:background 0.12s;}
   .search-result-item:last-child{border-bottom:none;}
   .search-result-item:hover{background:var(--bg-panel-hover);}
   .sri-name{font-weight:500;color:var(--text-bright);}
   .sri-addr{font-size:11px;color:var(--text-dim);margin-top:2px;}
 
-  #route-panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.10);margin-top:6px;display:none;flex-direction:column;max-height:50vh;overflow:hidden;}
+  #route-panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);margin-top:6px;display:none;flex-direction:column;max-height:50vh;overflow:hidden;}
   #route-panel .route-type-row{flex-shrink:0;padding:10px 14px 0;margin-bottom:0;}
   #route-panel-inner{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:8px 14px 12px;}
   #route-panel-inner::-webkit-scrollbar{width:3px;}
@@ -181,7 +238,7 @@
   .route-input{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;}
   .route-input:focus{border-color:var(--accent);}
   .route-input::placeholder{color:var(--text-dim);}
-  .route-suggest{position:absolute;top:100%;left:0;right:0;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,0.08);z-index:10;display:none;max-height:180px;overflow-y:auto;}
+  .route-suggest{position:absolute;top:100%;left:0;right:0;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;box-shadow:var(--shadow-md);z-index:10;display:none;max-height:180px;overflow-y:auto;}
   .route-suggest-item{padding:8px 12px;font-size:12px;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background 0.1s;}
   .route-suggest-item:last-child{border-bottom:none;}
   .route-suggest-item:hover{background:var(--bg-panel-hover);}
@@ -196,14 +253,14 @@
   #route-clear-btn{width:100%;padding:6px;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text-dim);font-size:12px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;display:none;}
   #route-clear-btn:hover{background:var(--bg-panel-hover);}
   .gmap-links{margin-top:8px;display:flex;flex-direction:column;gap:4px;}
-  .gmap-link-btn{display:flex;align-items:center;gap:6px;padding:7px 10px;background:#fff;border:1px solid #dadce0;border-radius:8px;color:#1a73e8;font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;text-decoration:none;transition:background 0.12s,box-shadow 0.12s;}
-  .gmap-link-btn:hover{background:#f8f9fa;box-shadow:0 1px 3px rgba(0,0,0,0.1);}
+  .gmap-link-btn{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--gmap-link-bg);border:1px solid var(--gmap-link-border);border-radius:8px;color:var(--gmap-link-fg);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;text-decoration:none;transition:background 0.12s,box-shadow 0.12s;}
+  .gmap-link-btn:hover{background:var(--gmap-link-hover-bg);box-shadow:var(--shadow-sm);}
   .gmap-link-btn .gmap-icon{font-size:15px;flex-shrink:0;}
   .gmap-link-btn .gmap-label{flex:1;}
   .gmap-link-btn .gmap-sub{font-size:10px;color:var(--text-dim);font-weight:400;}
 
-  .city-select-modal{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:2000;display:flex;align-items:center;justify-content:center;}
-  .csm-inner{background:var(--bg-panel);border-radius:12px;width:340px;max-height:70vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.15);}
+  .city-select-modal{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;}
+  .csm-inner{background:var(--bg-panel);border-radius:12px;width:340px;max-height:70vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl);}
   .csm-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .csm-header h3{font-size:14px;font-weight:700;color:var(--text-bright);}
   .csm-close{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;}
@@ -217,8 +274,8 @@
   .csm-section-label{padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;border-top:1px solid var(--border-light);margin-top:4px;}
   .csm-section-label:first-child{border-top:none;margin-top:0;}
   .csm-city-item .csm-badge{display:inline-block;font-size:9px;padding:1px 6px;border-radius:8px;margin-left:6px;vertical-align:middle;}
-  .csm-badge.unvisited{background:#fef3c7;color:#92400e;}
-  .csm-badge.visited{background:#dbeafe;color:#1e40af;}
+  .csm-badge.unvisited{background:var(--warn-bg);color:var(--warn-fg);}
+  .csm-badge.visited{background:var(--badge-1-bg);color:var(--badge-1-fg);}
 
   /* 経由地 */
   .route-waypoints{margin:0 0 4px 0;}
@@ -228,12 +285,12 @@
   .route-icon-btn{background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-dim);padding:2px 3px;flex-shrink:0;}
   .route-icon-btn:hover{color:var(--accent);}
   .wp-remove-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;border-radius:4px;flex-shrink:0;}
-  .wp-remove-btn:hover{color:#ef4444;background:rgba(239,68,68,0.08);}
+  .wp-remove-btn:hover{color:var(--danger);background:var(--danger-bg-hover);}
   #add-waypoint-btn{width:100%;padding:5px;background:var(--bg);border:1px dashed var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:8px;transition:all 0.15s;}
   #add-waypoint-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
 
   /* 地図クリック選択モーダル */
-  .map-click-modal{position:fixed;z-index:2002;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);padding:0;width:280px;animation:modalPop 0.2s ease;}
+  .map-click-modal{position:fixed;z-index:2002;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-xl);padding:0;width:280px;animation:modalPop 0.2s ease;}
   @keyframes modalPop{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
   .mcm-header{padding:12px 16px 8px;font-size:13px;font-weight:700;color:var(--text-bright);border-bottom:1px solid var(--border-light);}
   .mcm-option{padding:12px 16px;cursor:pointer;transition:background 0.12s;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);}
@@ -247,7 +304,7 @@
   .mcm-option .mcm-sub{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:normal;word-break:break-all;}
   .mcm-overlay{position:fixed;inset:0;z-index:2001;background:transparent;}
   .map-pick-active #map{cursor:crosshair!important;}
-  .map-pick-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:2001;background:var(--bg-panel);border:1px solid var(--accent);border-radius:10px;padding:10px 20px;box-shadow:0 4px 20px rgba(37,99,235,0.15);font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;animation:hintSlideUp 0.3s ease;}
+  .map-pick-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:2001;background:var(--bg-panel);border:1px solid var(--accent);border-radius:10px;padding:10px 20px;box-shadow:var(--pick-hint-shadow);font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;animation:hintSlideUp 0.3s ease;}
   @keyframes hintSlideUp{from{opacity:0;transform:translateX(-50%) translateY(16px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
   .map-pick-hint .hint-cancel{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;}
   .map-pick-hint .hint-cancel:hover{background:var(--bg-panel-hover);}
@@ -275,7 +332,7 @@
   .sr-name{font-size:12px;font-weight:500;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .sr-meta{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:1px;}
   .sr-delete{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;flex-shrink:0;}
-  .sr-delete:hover{color:#ef4444;}
+  .sr-delete:hover{color:var(--danger);}
   .sr-edit{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;flex-shrink:0;}
   .sr-edit:hover{color:var(--accent);}
   .sr-empty{padding:20px;text-align:center;color:var(--text-dim);font-size:12px;}
@@ -286,7 +343,7 @@
   #route-save-btn{width:100%;padding:6px;background:var(--accent-light);border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;display:none;}
   #route-save-btn:hover{background:var(--accent);color:#fff;}
   /* 色選択ポップアップ */
-  .color-picker-popup{position:absolute;z-index:2000;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,0.12);display:flex;gap:4px;flex-wrap:wrap;width:120px;}
+  .color-picker-popup{position:absolute;z-index:2000;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px;box-shadow:var(--shadow-lg);display:flex;gap:4px;flex-wrap:wrap;width:120px;}
   .color-picker-swatch{width:20px;height:20px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color 0.1s;}
   .color-picker-swatch:hover{border-color:var(--text);}
 
@@ -306,7 +363,7 @@
     white-space:nowrap;
     flex-shrink:0;
   }
-  #route-reset-btn:hover{background:#fff0f0;border-color:#ef4444;color:#ef4444;}
+  #route-reset-btn:hover{background:var(--danger-bg-hover);border-color:var(--danger);color:var(--danger);}
 
   /* 検索ボタン行 */
   .route-action-row{display:flex;gap:6px;align-items:stretch;margin-top:10px;}
@@ -476,14 +533,26 @@
   <div id="tab-pref" class="sidebar-tab-panel active">
     <div class="sidebar-header">
       <input type="text" id="pref-search" placeholder="都道府県・市区町村を検索...">
-      <div class="control-row">
-        <button class="ctrl-btn active" data-sort="rate-desc">踏破率↓</button>
-        <button class="ctrl-btn" data-sort="rate-asc">踏破率↑</button>
-        <button class="ctrl-btn" data-sort="code">コード順</button>
+      <div class="control-row" style="margin-top:6px;">
+        <select id="sort-select" class="sort-select">
+          <option value="rate-desc">踏破率 高→低</option>
+          <option value="rate-asc">踏破率 低→高</option>
+          <option value="code">コード順</option>
+          <option value="last-visit-desc">最終訪問 新→古</option>
+          <option value="last-visit-asc">最終訪問 古→新</option>
+          <option value="visits-desc">訪問回数 多→少</option>
+          <option value="visits-asc">訪問回数 少→多</option>
+        </select>
       </div>
       <div class="control-row" style="margin-top:4px;">
         <button class="ctrl-btn active" data-mode="visit" id="mode-visit">踏破モード</button>
         <button class="ctrl-btn" data-mode="complete" id="mode-complete">制覇モード</button>
+      </div>
+      <div class="filter-chips" id="filter-chips" style="margin-top:6px;">
+        <button class="filter-chip active" data-filter="all">すべて</button>
+        <button class="filter-chip" data-filter="unvisited">未訪問のみ</button>
+        <button class="filter-chip" data-filter="visited">訪問済みのみ</button>
+        <button class="filter-chip" data-filter="multi">複数回訪問</button>
       </div>
     </div>
     <div id="sidebar-content"></div>
@@ -573,25 +642,121 @@
   $('loading-status').textContent='Google Maps APIを初期化中...';
   await __gmapPromise;
 
-  const FILL=['transparent','#bfdbfe','#60a5fa','#2563eb'];
-  const STROKE=['#c0c5d0','#93c5fd','#3b82f6','#1d4ed8'];
-  const STROKE_COLOR='#2563eb'; // 全レベル共通の境界線色
+  // 地図ポリゴン用の色はCSS変数から動的取得（ダークモード追随のため）
+  function getCssVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function getMapColors(){
+    return {
+      FILL:[
+        'transparent',
+        getCssVar('--visit-1-fill')||'#bfdbfe',
+        getCssVar('--visit-2-fill')||'#60a5fa',
+        getCssVar('--visit-3-fill')||'#2563eb'
+      ],
+      STROKE:[
+        getCssVar('--unvisited-stroke')||'#c0c5d0',
+        getCssVar('--visit-1-stroke')||'#93c5fd',
+        getCssVar('--visit-2-stroke')||'#3b82f6',
+        getCssVar('--visit-3-stroke')||'#1d4ed8'
+      ],
+      STROKE_COLOR:getCssVar('--accent')||'#2563eb',
+      UNVISITED_HIGHLIGHT:getCssVar('--unvisited-highlight')||'#FF904B',
+      ROUTE_HL_FILL:getCssVar('--route-hl-fill')||'#fcd34d',
+      ROUTE_HL_STROKE:getCssVar('--route-hl-stroke')||'#92400e',
+      TRACK_STROKE:getCssVar('--track-stroke')||'#ef4444',
+      WATER:getCssVar('--water')||'#dce6f0'
+    };
+  }
+  let mapColors=getMapColors();
+
+  const FILL=['transparent','var(--visit-1-fill)','var(--visit-2-fill)','var(--visit-3-fill)'];
+  const STROKE=['var(--unvisited-stroke)','var(--visit-1-stroke)','var(--visit-2-stroke)','var(--visit-3-stroke)'];
+  const STROKE_COLOR='var(--accent)'; // 全レベル共通の境界線色（CSSのみで使用）
 
   function getLevel(d){if(!d||d===0)return 0;if(d===1)return 1;if(d===2)return 2;return 3;}
   function getLevelLabel(l){return['未訪問','1回','2回','3回以上'][l];}
 
+  // ── IndexedDBキャッシュ（重いGeoJSON/TopoJSON用） ──
+  const IDB_NAME='tohaMapCache';
+  const IDB_VERSION=1;
+  const IDB_STORE='files';
+  function openCacheDB(){
+    return new Promise((resolve,reject)=>{
+      if(!('indexedDB' in window)){reject(new Error('no indexedDB'));return;}
+      const req=indexedDB.open(IDB_NAME,IDB_VERSION);
+      req.onupgradeneeded=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error);
+    });
+  }
+  async function idbGet(db,key){
+    return new Promise(r=>{
+      const tx=db.transaction(IDB_STORE,'readonly');
+      const req=tx.objectStore(IDB_STORE).get(key);
+      req.onsuccess=()=>r(req.result||null);
+      req.onerror=()=>r(null);
+    });
+  }
+  async function idbPut(db,key,value){
+    return new Promise(r=>{
+      const tx=db.transaction(IDB_STORE,'readwrite');
+      tx.objectStore(IDB_STORE).put(value,key);
+      tx.oncomplete=()=>r(true);
+      tx.onerror=()=>r(false);
+    });
+  }
+  // HEADリクエストでLast-Modified / ETag を取得（失敗時はnull）
+  async function fetchVersionTag(url){
+    try{
+      const res=await fetch(url,{method:'HEAD',cache:'no-cache'});
+      if(!res.ok) return null;
+      return res.headers.get('ETag')||res.headers.get('Last-Modified')||null;
+    }catch(e){return null;}
+  }
+  // キャッシュ付きfetch（JSON想定）
+  // - versionTagが一致すればキャッシュ採用、不一致/取得失敗なら再取得
+  // - 初回HEAD失敗時はキャッシュがあればそれを優先（オフライン保険）
+  async function cachedFetchJson(url,{label}={}){
+    let db=null;
+    try{db=await openCacheDB();}catch(e){db=null;}
+    const [tag,cached]=await Promise.all([
+      fetchVersionTag(url),
+      db?idbGet(db,url):Promise.resolve(null)
+    ]);
+    if(cached&&tag&&cached.versionTag===tag){
+      return cached.data;
+    }
+    // HEAD失敗 + キャッシュあり → キャッシュ採用（オフライン時）
+    if(cached&&!tag){
+      console.log('[cache] using stale cache (no HEAD):',url);
+      return cached.data;
+    }
+    // 本体取得
+    if(label) $('loading-status').textContent=label;
+    const res=await fetch(url);
+    if(!res.ok) throw new Error('fetch failed: '+url+' '+res.status);
+    const data=await res.json();
+    if(db){
+      const finalTag=tag||res.headers.get('ETag')||res.headers.get('Last-Modified')||String(Date.now());
+      idbPut(db,url,{data,versionTag:finalTag,cachedAt:Date.now()});
+    }
+    return data;
+  }
+
   // ── Data ──
   $('loading-status').textContent='データを読み込み中...';
-  const [topoRes,visitedRes,tracksRes]=await Promise.all([
-    fetch('data/municipalities.topojson'),
-    fetch('data/visited_cities.json'),
-    fetch('data/tracks.geojson').catch(()=>null)
+  // 更新頻度が低く重いファイルはIndexedDBキャッシュ経由
+  // visited_cities.jsonは更新頻度が高いため通常fetch
+  const [topoData,visitedData,tracksData]=await Promise.all([
+    cachedFetchJson('data/municipalities.topojson',{label:'市区町村データを読み込み中...'}),
+    fetch('data/visited_cities.json').then(r=>r.json()),
+    cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}).catch(()=>null)
   ]);
   $('loading-status').textContent='データを解析中...';
-  const topoData=await topoRes.json();
-  const visitedData=await visitedRes.json();
-  let tracksData=null;
-  if(tracksRes&&tracksRes.ok) tracksData=await tracksRes.json();
   const objectName=Object.keys(topoData.objects)[0];
   const geoData=topojson.feature(topoData,topoData.objects[objectName]);
 
@@ -657,11 +822,45 @@
   const prefs=visitedData.prefectures;
   const prefStats={};
   for(const[pc,p]of Object.entries(prefs)){
-    prefStats[pc]={lvCounts:[p.total-p.visited,0,0,0],score:0,maxScore:p.total*3};
+    prefStats[pc]={lvCounts:[p.total-p.visited,0,0,0],score:0,maxScore:p.total*3,lastVisit:null,totalVisitDays:0};
   }
   for(const[code,c]of Object.entries(visitedData.cities)){
     const pc=c.prefCode,lv=getLevel(c.visitDays);
     if(prefStats[pc]&&lv>0){prefStats[pc].lvCounts[lv]++;prefStats[pc].score+=Math.min(c.visitDays,3);}
+    if(prefStats[pc]){
+      prefStats[pc].totalVisitDays+=(c.visitDays||0);
+      if(c.lastVisit&&(!prefStats[pc].lastVisit||c.lastVisit>prefStats[pc].lastVisit)){
+        prefStats[pc].lastVisit=c.lastVisit;
+      }
+    }
+  }
+
+  // ── Google Mapsスタイル（ライト/ダーク用） ──
+  const GMAP_STYLES_LIGHT=[{featureType:'water',stylers:[{color:'#dce6f0'}]}];
+  // ダーク用はGoogle公式サンプル準拠のシンプルダーク
+  const GMAP_STYLES_DARK=[
+    {elementType:'geometry',stylers:[{color:'#242f3e'}]},
+    {elementType:'labels.text.stroke',stylers:[{color:'#242f3e'}]},
+    {elementType:'labels.text.fill',stylers:[{color:'#9aa4b8'}]},
+    {featureType:'administrative.locality',elementType:'labels.text.fill',stylers:[{color:'#d59563'}]},
+    {featureType:'poi',elementType:'labels.text.fill',stylers:[{color:'#d59563'}]},
+    {featureType:'poi.park',elementType:'geometry',stylers:[{color:'#263c3f'}]},
+    {featureType:'poi.park',elementType:'labels.text.fill',stylers:[{color:'#6b9a76'}]},
+    {featureType:'road',elementType:'geometry',stylers:[{color:'#38414e'}]},
+    {featureType:'road',elementType:'geometry.stroke',stylers:[{color:'#212a37'}]},
+    {featureType:'road',elementType:'labels.text.fill',stylers:[{color:'#9ca5b3'}]},
+    {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#746855'}]},
+    {featureType:'road.highway',elementType:'geometry.stroke',stylers:[{color:'#1f2835'}]},
+    {featureType:'road.highway',elementType:'labels.text.fill',stylers:[{color:'#f3d19c'}]},
+    {featureType:'transit',elementType:'geometry',stylers:[{color:'#2f3948'}]},
+    {featureType:'transit.station',elementType:'labels.text.fill',stylers:[{color:'#d59563'}]},
+    {featureType:'water',elementType:'geometry',stylers:[{color:'#17263c'}]},
+    {featureType:'water',elementType:'labels.text.fill',stylers:[{color:'#515c6d'}]},
+    {featureType:'water',elementType:'labels.text.stroke',stylers:[{color:'#17263c'}]}
+  ];
+  const darkModeMql=window.matchMedia('(prefers-color-scheme: dark)');
+  function getCurrentMapStyles(){
+    return darkModeMql.matches?GMAP_STYLES_DARK:GMAP_STYLES_LIGHT;
   }
 
   // ── Map (Google Maps) ──
@@ -675,7 +874,7 @@
       ?google.maps.ControlPosition.RIGHT_TOP
       :google.maps.ControlPosition.RIGHT_BOTTOM},
     streetViewControl:false,fullscreenControl:false,
-    styles:[{featureType:'water',stylers:[{color:'#dce6f0'}]}]
+    styles:getCurrentMapStyles()
   });
   const infoWindow=new google.maps.InfoWindow();
 
@@ -688,15 +887,14 @@
 
   // レベルフィルタ: どのレベルを色付き表示するか（デフォは全OFF=チェックなし）
   const legendFilter={0:false,1:true,2:true,3:true};
-  // 未訪問ハイライト用の色
-  const UNVISITED_HIGHLIGHT='#FF904B'; // 薄めのオレンジ
 
   function applyGeoStyles(){
+    const mc=mapColors;
     geoDataLayer.setStyle(feature=>{
       const code=feature.getProperty('N03_007');
       // 一時ルートハイライト（最優先）
       if(window._routeHighlightCodes&&window._routeHighlightCodes.has(code)){
-        return{fillColor:'#fcd34d',fillOpacity:0.45,strokeColor:'#92400e',strokeWeight:1.5,strokeOpacity:0.7,clickable:true,zIndex:3};
+        return{fillColor:mc.ROUTE_HL_FILL,fillOpacity:0.45,strokeColor:mc.ROUTE_HL_STROKE,strokeWeight:1.5,strokeOpacity:0.7,clickable:true,zIndex:3};
       }
       // 保存ルートハイライト（表示中のもの）
       for(const id of Object.keys(displayedRoutes)){
@@ -712,23 +910,33 @@
       const anyFilterOn=Object.values(legendFilter).some(v=>v);
       if(!anyFilterOn){
         const fillOpacity=lv===0?0:0.7;
-        return{fillColor:FILL[lv],fillOpacity:fillOpacity,strokeColor:STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
+        return{fillColor:mc.FILL[lv],fillOpacity:fillOpacity,strokeColor:mc.STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
       }
 
       // フィルタON時: チェックの入ったレベルだけ色表示
       if(legendFilter[lv]){
         if(lv===0){
-          // 未訪問: オレンジでハイライト、境界線は青
-          return{fillColor:UNVISITED_HIGHLIGHT,fillOpacity:0.45,strokeColor:STROKE_COLOR,strokeWeight:0.8,strokeOpacity:0.5,clickable:true,zIndex:1};
+          // 未訪問: ハイライト色、境界線はアクセント色
+          return{fillColor:mc.UNVISITED_HIGHLIGHT,fillOpacity:0.45,strokeColor:mc.STROKE_COLOR,strokeWeight:0.8,strokeOpacity:0.5,clickable:true,zIndex:1};
         }
-        return{fillColor:FILL[lv],fillOpacity:0.7,strokeColor:STROKE_COLOR,strokeWeight:1.0,strokeOpacity:0.6,clickable:true,zIndex:1};
+        return{fillColor:mc.FILL[lv],fillOpacity:0.7,strokeColor:mc.STROKE_COLOR,strokeWeight:1.0,strokeOpacity:0.6,clickable:true,zIndex:1};
       } else {
         // チェックが入っていないレベル: fillなし、境界線のみ
-        return{fillColor:'transparent',fillOpacity:0,strokeColor:STROKE_COLOR,strokeWeight:0.5,strokeOpacity:0.25,clickable:true,zIndex:1};
+        return{fillColor:'transparent',fillOpacity:0,strokeColor:mc.STROKE_COLOR,strokeWeight:0.5,strokeOpacity:0.25,clickable:true,zIndex:1};
       }
     });
   }
   applyGeoStyles();
+
+  // OSのダークモード切替に追従して地図の色も更新
+  darkModeMql.addEventListener('change',()=>{
+    mapColors=getMapColors();
+    map.setOptions({styles:getCurrentMapStyles()});
+    if(tracksDataLayer){
+      tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
+    }
+    applyGeoStyles();
+  });
 
   // legendチェックボックスのイベント
   document.querySelectorAll('.legend-filter').forEach(cb=>{
@@ -751,7 +959,7 @@
   let hoveredFeature=null;
   geoDataLayer.addListener('mouseover',e=>{
     hoveredFeature=e.feature;
-    geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:'#2563eb',strokeOpacity:1.0});
+    geoDataLayer.overrideStyle(e.feature,{strokeWeight:2.5,strokeColor:mapColors.STROKE_COLOR,strokeOpacity:1.0});
   });
   geoDataLayer.addListener('mouseout',e=>{
     geoDataLayer.revertStyle(e.feature);
@@ -829,7 +1037,7 @@
   if(tracksData){
     tracksDataLayer=new google.maps.Data({map:map});
     tracksDataLayer.addGeoJson(tracksData);
-    tracksDataLayer.setStyle({strokeColor:'#ef4444',strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
+    tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
   }
 
   // レイヤートグル（Google Maps カスタムコントロール）
@@ -921,6 +1129,85 @@
   let currentMode='visit';
   let currentView='prefList';
   let currentPrefCode=null;
+  let currentFilter='all'; // all | unvisited | visited | multi
+
+  // 都道府県一覧用のソート（entries: [code, prefData] の配列）
+  function sortPrefEntries(entries){
+    const sorters={
+      'rate-desc':(a,b)=>{
+        if(currentMode==='visit') return b[1].rate-a[1].rate||a[0].localeCompare(b[0]);
+        const sa=prefStats[a[0]]?.score||0,sb=prefStats[b[0]]?.score||0;
+        const ma=prefStats[a[0]]?.maxScore||1,mb=prefStats[b[0]]?.maxScore||1;
+        return(sb/mb)-(sa/ma)||a[0].localeCompare(b[0]);
+      },
+      'rate-asc':(a,b)=>{
+        if(currentMode==='visit') return a[1].rate-b[1].rate||a[0].localeCompare(b[0]);
+        const sa=prefStats[a[0]]?.score||0,sb=prefStats[b[0]]?.score||0;
+        const ma=prefStats[a[0]]?.maxScore||1,mb=prefStats[b[0]]?.maxScore||1;
+        return(sa/ma)-(sb/mb)||a[0].localeCompare(b[0]);
+      },
+      'code':(a,b)=>a[0].localeCompare(b[0]),
+      'last-visit-desc':(a,b)=>{
+        const la=prefStats[a[0]]?.lastVisit||'',lb=prefStats[b[0]]?.lastVisit||'';
+        if(!la&&!lb) return a[0].localeCompare(b[0]);
+        if(!la) return 1; // 未訪問は末尾
+        if(!lb) return -1;
+        return lb.localeCompare(la)||a[0].localeCompare(b[0]);
+      },
+      'last-visit-asc':(a,b)=>{
+        const la=prefStats[a[0]]?.lastVisit||'',lb=prefStats[b[0]]?.lastVisit||'';
+        if(!la&&!lb) return a[0].localeCompare(b[0]);
+        if(!la) return 1;
+        if(!lb) return -1;
+        return la.localeCompare(lb)||a[0].localeCompare(b[0]);
+      },
+      'visits-desc':(a,b)=>{
+        const va=prefStats[a[0]]?.totalVisitDays||0,vb=prefStats[b[0]]?.totalVisitDays||0;
+        return vb-va||a[0].localeCompare(b[0]);
+      },
+      'visits-asc':(a,b)=>{
+        const va=prefStats[a[0]]?.totalVisitDays||0,vb=prefStats[b[0]]?.totalVisitDays||0;
+        return va-vb||a[0].localeCompare(b[0]);
+      }
+    };
+    const fn=sorters[currentSort]||sorters['rate-desc'];
+    return entries.sort(fn);
+  }
+
+  // 市区町村用のソート（cities: city オブジェクト配列）
+  function sortCities(cities){
+    const sorters={
+      'rate-desc':(a,b)=>(currentMode==='complete'?b.score-a.score:b.visitDays-a.visitDays)||a.code.localeCompare(b.code),
+      'rate-asc':(a,b)=>(currentMode==='complete'?a.score-b.score:a.visitDays-b.visitDays)||a.code.localeCompare(b.code),
+      'code':(a,b)=>a.code.localeCompare(b.code),
+      'last-visit-desc':(a,b)=>{
+        const la=a.lastVisit||'',lb=b.lastVisit||'';
+        if(!la&&!lb) return a.code.localeCompare(b.code);
+        if(!la) return 1;
+        if(!lb) return -1;
+        return lb.localeCompare(la)||a.code.localeCompare(b.code);
+      },
+      'last-visit-asc':(a,b)=>{
+        const la=a.lastVisit||'',lb=b.lastVisit||'';
+        if(!la&&!lb) return a.code.localeCompare(b.code);
+        if(!la) return 1;
+        if(!lb) return -1;
+        return la.localeCompare(lb)||a.code.localeCompare(b.code);
+      },
+      'visits-desc':(a,b)=>b.visitDays-a.visitDays||a.code.localeCompare(b.code),
+      'visits-asc':(a,b)=>a.visitDays-b.visitDays||a.code.localeCompare(b.code)
+    };
+    const fn=sorters[currentSort]||sorters['rate-desc'];
+    return cities.sort(fn);
+  }
+
+  // 市区町村フィルタ
+  function filterCities(cities){
+    if(currentFilter==='unvisited') return cities.filter(c=>c.visitDays===0);
+    if(currentFilter==='visited') return cities.filter(c=>c.visitDays>0);
+    if(currentFilter==='multi') return cities.filter(c=>c.visitDays>=2);
+    return cities;
+  }
 
   function ringSVG(rate,size=40){
     const r=size/2-4,circ=2*Math.PI*r,off=circ*(1-rate/100);
@@ -967,21 +1254,7 @@
       entries=prefMatches;
     }
 
-    if(currentSort==='rate-desc'){
-      if(currentMode==='visit') entries.sort((a,b)=>b[1].rate-a[1].rate||a[0].localeCompare(b[0]));
-      else entries.sort((a,b)=>{
-        const sa=prefStats[a[0]]?.score||0,sb=prefStats[b[0]]?.score||0;
-        const ma=prefStats[a[0]]?.maxScore||1,mb=prefStats[b[0]]?.maxScore||1;
-        return(sb/mb)-(sa/ma)||a[0].localeCompare(b[0]);
-      });
-    }else if(currentSort==='rate-asc'){
-      if(currentMode==='visit') entries.sort((a,b)=>a[1].rate-b[1].rate||a[0].localeCompare(b[0]));
-      else entries.sort((a,b)=>{
-        const sa=prefStats[a[0]]?.score||0,sb=prefStats[b[0]]?.score||0;
-        const ma=prefStats[a[0]]?.maxScore||1,mb=prefStats[b[0]]?.maxScore||1;
-        return(sa/ma)-(sb/mb)||a[0].localeCompare(b[0]);
-      });
-    }else entries.sort((a,b)=>a[0].localeCompare(b[0]));
+    entries=sortPrefEntries(entries);
 
     content.innerHTML=entries.map(([code,p])=>{
       const ps=prefStats[code]||{score:0,maxScore:p.total*3};
@@ -1007,8 +1280,11 @@
   // 市区町村名検索結果を直接表示
   function renderCitySearchResults(cityMatches,filter){
     currentView='prefList'; currentPrefCode=null;
-    let h=`<div style="padding:6px 12px;font-size:11px;color:var(--text-dim);">「${filter}」の市区町村 (${cityMatches.length}件)</div>`;
-    for(const c of cityMatches){
+    let list=filterCities([...cityMatches]);
+    list=sortCities(list);
+    const filterSuffix=currentFilter!=='all'?` [${list.length}/${cityMatches.length}]`:'';
+    let h=`<div style="padding:6px 12px;font-size:11px;color:var(--text-dim);">「${filter}」の市区町村 (${cityMatches.length}件)${filterSuffix}</div>`;
+    for(const c of list){
       const scoreText=currentMode==='complete'?`${c.score}/3`:`${c.visitDays}日`;
       const metaText=c.visitDays>0?`${c.firstVisit} ~ ${c.lastVisit}`:'—';
       h+=`<div class="city-item" data-code="${c.code}" style="cursor:pointer;">
@@ -1030,8 +1306,11 @@
   function renderPrefListWithCityResults(entries,cityMatches,filter){
     currentView='prefList'; currentPrefCode=null;
     // 市区町村結果を先頭に
-    let h=`<div style="padding:6px 12px;font-size:11px;color:var(--text-dim);">「${filter}」の市区町村 (${cityMatches.length}件)</div>`;
-    for(const c of cityMatches){
+    let list=filterCities([...cityMatches]);
+    list=sortCities(list);
+    const filterSuffix=currentFilter!=='all'?` [${list.length}/${cityMatches.length}]`:'';
+    let h=`<div style="padding:6px 12px;font-size:11px;color:var(--text-dim);">「${filter}」の市区町村 (${cityMatches.length}件)${filterSuffix}</div>`;
+    for(const c of list){
       const scoreText=currentMode==='complete'?`${c.score}/3`:`${c.visitDays}日`;
       const metaText=c.visitDays>0?`${c.firstVisit} ~ ${c.lastVisit}`:'—';
       h+=`<div class="city-item" data-code="${c.code}" style="cursor:pointer;">
@@ -1122,8 +1401,13 @@
     h+=`</div></div>`;
 
     let sorted=[...cities];
-    if(currentMode==='complete') sorted.sort((a,b)=>b.score-a.score||a.code.localeCompare(b.code));
-    else sorted.sort((a,b)=>b.visitDays-a.visitDays||a.code.localeCompare(b.code));
+    sorted=filterCities(sorted);
+    sorted=sortCities(sorted);
+
+    // フィルタ適用時はヒット件数を表示
+    if(currentFilter!=='all'){
+      h+=`<div style="padding:4px 12px 6px;font-size:11px;color:var(--text-dim);">表示 ${sorted.length} / ${cities.length} 件</div>`;
+    }
 
     for(const c of sorted){
       const scoreText=currentMode==='complete'?`${c.score}/3`:`${c.visitDays}日`;
@@ -1153,13 +1437,28 @@
     else renderPrefList(e.target.value);
   });
 
-  // Sort buttons
-  document.querySelectorAll('.ctrl-btn[data-sort]').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      document.querySelectorAll('.ctrl-btn[data-sort]').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');currentSort=btn.dataset.sort;
-      if(currentView==='prefList') renderPrefList($('pref-search').value);
-      else if(currentPrefCode) showCityDetail(currentPrefCode);
+  // Re-render helper — 現在のビューを再描画
+  function rerenderCurrentView(){
+    if(currentView==='cityDetail'&&currentPrefCode){
+      showCityDetail(currentPrefCode);
+    } else {
+      renderPrefList($('pref-search').value);
+    }
+  }
+
+  // Sort select
+  $('sort-select').addEventListener('change',e=>{
+    currentSort=e.target.value;
+    rerenderCurrentView();
+  });
+
+  // Filter chips
+  document.querySelectorAll('.filter-chip').forEach(chip=>{
+    chip.addEventListener('click',()=>{
+      document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      currentFilter=chip.dataset.filter;
+      rerenderCurrentView();
     });
   });
 
@@ -1170,8 +1469,7 @@
       btn.classList.add('active');currentMode=btn.dataset.mode;
       // [変更2] モード切替時にヘッダーを更新
       updateHeaderStats(currentMode);
-      if(currentView==='prefList') renderPrefList($('pref-search').value);
-      else if(currentPrefCode) showCityDetail(currentPrefCode);
+      rerenderCurrentView();
     });
   });
 

@@ -346,6 +346,16 @@
   #route-optimize-btn{width:100%;padding:7px;background:var(--bg);border:1px dashed var(--accent);border-radius:7px;color:var(--accent);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;transition:all 0.15s;}
   #route-optimize-btn:hover:not(:disabled){background:var(--accent-light);border-style:solid;}
   #route-optimize-btn:disabled{opacity:0.5;cursor:wait;}
+  /* 許容時間設定 */
+  .route-optimize-config{display:flex;align-items:center;gap:6px;margin-top:8px;padding:0 2px;font-size:11px;color:var(--text-dim);flex-wrap:wrap;}
+  .route-optimize-config label{flex-shrink:0;}
+  .route-optimize-config input[type="number"]{width:56px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;text-align:right;outline:none;-moz-appearance:textfield;}
+  .route-optimize-config input[type="number"]:focus{border-color:var(--accent);}
+  .route-optimize-config input[type="number"]::-webkit-outer-spin-button,
+  .route-optimize-config input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  .route-optimize-config .ro-unit{flex-shrink:0;}
+  .route-optimize-config select{padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;outline:none;}
+  .route-optimize-config select:focus{border-color:var(--accent);}
   #route-optimize-status{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:6px;min-height:0;line-height:1.5;}
   #route-optimize-status.active{margin-top:6px;padding:6px 8px;background:var(--accent-light);border-radius:5px;color:var(--accent);}
   #route-optimize-status .ro-result{color:var(--success-fg);padding:6px 8px;background:var(--success-bg);border-radius:5px;}
@@ -624,6 +634,17 @@
         <div class="route-action-row">
           <button id="route-go-btn">ルートを検索</button>
           <button id="route-reset-btn" title="入力をすべてクリア">✕ クリア</button>
+        </div>
+        <div class="route-optimize-config">
+          <label for="route-optimize-detour">許容</label>
+          <input type="number" id="route-optimize-detour" min="1" max="600" step="5" value="30">
+          <span class="ro-unit">分</span>
+          <label for="route-optimize-target" style="margin-left:auto;">対象</label>
+          <select id="route-optimize-target">
+            <option value="0">未訪問のみ</option>
+            <option value="1">2回未満</option>
+            <option value="2">3回未満</option>
+          </select>
         </div>
         <button id="route-optimize-btn" title="経路上の未訪問市区町村を自動で経由地に追加">🎯 未訪問を最大化</button>
         <div id="route-optimize-status"></div>
@@ -2129,6 +2150,49 @@
   // D-1 最適化ボタン
   $('route-optimize-btn').addEventListener('click',optimizeRouteForUnvisited);
 
+  // ボタンラベルを対象レベルに応じて更新
+  function updateOptimizeBtnLabel(){
+    const btn=$('route-optimize-btn');
+    if(!btn) return;
+    const lv=getTargetMaxLevel();
+    btn.textContent=`🎯 ${getTargetLabel(lv)}を最大化`;
+  }
+
+  // D-1 許容時間入力: localStorageから復元、変更時に保存
+  (function initDetourInput(){
+    const inp=$('route-optimize-detour');
+    if(!inp) return;
+    const saved=parseFloat(localStorage.getItem(LS_KEY_DETOUR));
+    if(!isNaN(saved)&&saved>0) inp.value=saved;
+    inp.addEventListener('change',()=>{
+      const v=parseFloat(inp.value);
+      if(!isNaN(v)&&v>0){
+        localStorage.setItem(LS_KEY_DETOUR,String(v));
+      } else {
+        // 不正値はデフォルトに戻す
+        inp.value=OPTIMIZE_DEFAULTS.maxDetourMin;
+        localStorage.removeItem(LS_KEY_DETOUR);
+      }
+    });
+  })();
+
+  // D-1 対象レベル選択: localStorageから復元、変更時に保存+ボタンラベル更新
+  (function initTargetSelect(){
+    const sel=$('route-optimize-target');
+    if(!sel) return;
+    const saved=parseInt(localStorage.getItem(LS_KEY_TARGET),10);
+    if(!isNaN(saved)&&saved>=0&&saved<=2) sel.value=String(saved);
+    sel.addEventListener('change',()=>{
+      const v=parseInt(sel.value,10);
+      if(!isNaN(v)&&v>=0&&v<=2){
+        localStorage.setItem(LS_KEY_TARGET,String(v));
+      }
+      updateOptimizeBtnLabel();
+    });
+    // 初期ラベル設定
+    updateOptimizeBtnLabel();
+  })();
+
   // 経由地5個以上でスクロール可能に切り替え
   function updateRouteInputsScroll(){
     const el=$('route-inputs-scroll');
@@ -2354,13 +2418,55 @@
 
   // ── D-1: 未訪問市区町村を最大通過するルート最適化 ──
   // 設定
-  const OPTIMIZE_CONFIG={
-    maxCandidates:15,          // 事前スクリーニング後の候補数上限
-    maxAddWaypoints:5,         // 追加する経由地の最大数
-    maxDetourSec:30*60,        // 1候補あたりの追加許容時間（デフォ30分）
-    searchRadiusRatio:0.7,     // 直行距離のこの割合を検索半径に
-    apiCallBudget:20           // Directions API総呼び出し上限（セーフティ）
+  const OPTIMIZE_DEFAULTS={
+    maxDetourMin:30,    // デフォルト許容時間(分)
+    targetMaxLevel:0    // デフォルト対象レベル: 0=未訪問のみ
   };
+  const OPTIMIZE_CONFIG={
+    maxCandidates:8,           // 事前スクリーニング後の候補数上限（API予算とのバランス）
+    searchRadiusRatio:0.7,     // 直行距離のこの割合を検索半径に
+    apiCallBudget:10           // Directions API総呼び出し上限（セーフティ）
+  };
+  const LS_KEY_DETOUR='tohaMap.optimizeDetourMin';
+  const LS_KEY_TARGET='tohaMap.optimizeTargetLevel';
+
+  // 許容時間(秒)を取得: 入力欄の値を優先、無効ならlocalStorage、なければデフォルト
+  function getDetourSec(){
+    const inputEl=$('route-optimize-detour');
+    let min=null;
+    if(inputEl){
+      const v=parseFloat(inputEl.value);
+      if(!isNaN(v)&&v>0) min=v;
+    }
+    if(min===null){
+      const saved=parseFloat(localStorage.getItem(LS_KEY_DETOUR));
+      if(!isNaN(saved)&&saved>0) min=saved;
+    }
+    if(min===null) min=OPTIMIZE_DEFAULTS.maxDetourMin;
+    return min*60;
+  }
+
+  // 候補対象の最大レベルを取得: 0=未訪問のみ, 1=未訪問+1回, 2=未訪問+1〜2回
+  // (visitDays<=このレベル を候補とする)
+  function getTargetMaxLevel(){
+    const sel=$('route-optimize-target');
+    let lv=null;
+    if(sel){
+      const v=parseInt(sel.value,10);
+      if(!isNaN(v)&&v>=0&&v<=2) lv=v;
+    }
+    if(lv===null){
+      const saved=parseInt(localStorage.getItem(LS_KEY_TARGET),10);
+      if(!isNaN(saved)&&saved>=0&&saved<=2) lv=saved;
+    }
+    if(lv===null) lv=OPTIMIZE_DEFAULTS.targetMaxLevel;
+    return lv;
+  }
+
+  // レベルから日本語ラベル
+  function getTargetLabel(maxLv){
+    return ['未訪問','2回未満','3回未満'][maxLv]||'未訪問';
+  }
 
   // 全市区町村の重心キャッシュ（初回の計算コスト削減）
   const _centroidCache={};
@@ -2434,7 +2540,9 @@
       const baseDuration=baseRoute.duration;
       const alreadyPassed=getPassedCityCodes(baseRoute.geometry.coordinates);
 
-      // 2. 候補の絞り込み（未訪問 かつ 経路中点から一定範囲内）
+      // 2. 候補の絞り込み（対象レベル かつ 経路中点から一定範囲内）
+      const targetMaxLv=getTargetMaxLevel();
+      const targetLabel=getTargetLabel(targetMaxLv);
       const directDist=distMeters(routeFromCoord,routeToCoord);
       const mid=midpoint(routeFromCoord,routeToCoord);
       const searchRadius=Math.max(directDist*OPTIMIZE_CONFIG.searchRadiusRatio,20000); // 最低20km
@@ -2449,19 +2557,22 @@
         }
       }
 
-      setStatus('未訪問候補を検索中...');
-      // 未訪問市区町村を距離付きでスコアリング
+      setStatus(`${targetLabel}候補を検索中...`);
+      // 候補レベルの市区町村を距離付きでスコアリング
+      // targetMaxLv=0: 未訪問のみ (visitDays===0)
+      // targetMaxLv=1: 1回以下 (visitDays<=1)
+      // targetMaxLv=2: 2回以下 (visitDays<=2)
       const candidates=[];
       for(const code of allCodes){
-        // 訪問済みスキップ
-        if((visitedData.cities[code]?.visitDays||0)>0) continue;
+        const visitDays=visitedData.cities[code]?.visitDays||0;
+        if(visitDays>targetMaxLv) continue; // 対象レベル外
         if(excluded.has(code)) continue;
-        if(alreadyPassed.has(code)) continue; // すでに通ってる未訪問は追加不要
+        if(alreadyPassed.has(code)) continue; // すでに通ってる対象は追加不要
         const centroid=getCentroidCached(code);
         if(!centroid) continue;
         const distFromMid=distMeters(mid,centroid);
         if(distFromMid>searchRadius) continue;
-        candidates.push({code,centroid,distFromMid});
+        candidates.push({code,centroid,distFromMid,visitDays});
       }
       // 中点から近い順
       candidates.sort((a,b)=>a.distFromMid-b.distFromMid);
@@ -2470,7 +2581,7 @@
       if(shortlist.length===0){
         setStatus(alreadyPassed.size>0
           ?`既にルート上で ${alreadyPassed.size} 市区町村を通過しており、追加候補なし`
-          :'追加できる未訪問市区町村が範囲内にありません',
+          :`追加できる${targetLabel}市区町村が範囲内にありません`,
           'ro-result');
         btn.disabled=false;
         return;
@@ -2481,50 +2592,48 @@
       const appended=[]; // [{code,name,coord}]
       let currentWp=[...currentWpCoords]; // 現在の経由座標列
 
-      const maxAdd=Math.min(OPTIMIZE_CONFIG.maxAddWaypoints,shortlist.length);
+      const detourSec=getDetourSec(); // この呼び出し時点の許容時間(秒)
+      // API予算をシビアに守るため、1イテレーションあたり最大 EVAL_BATCH 件のみ評価して
+      // その中の最良を採用する（API消費が予測可能になる）
+      const EVAL_BATCH=5;
       let remaining=[...shortlist];
 
-      for(let iter=0;iter<maxAdd;iter++){
-        if(apiCalls>=maxApi){
-          console.warn('[optimize] API budget exhausted');
+      while(remaining.length>0){
+        // 残りAPI予算が足りない（最低1回評価分も無い）なら終了
+        if(apiCalls>=maxApi) break;
+        const remainingBudget=maxApi-apiCalls;
+        if(remainingBudget<1) break;
+
+        const evalCount=Math.min(EVAL_BATCH,remaining.length,remainingBudget);
+        setStatus(`候補を評価中... ${appended.length+1}件目（API ${apiCalls}/${maxApi}）`);
+
+        // 中点距離順で先頭evalCount件を評価
+        const slice=remaining.slice(0,evalCount).map(cand=>({
+          cand,
+          pts:[routeFromCoord,...currentWp,cand.centroid,routeToCoord]
+        }));
+        const results=await Promise.all(slice.map(async item=>{
+          apiCalls++;
+          const r=await fetchRoute(item.pts,{noAlternatives:true});
+          return {cand:item.cand,route:r};
+        }));
+
+        // この評価バッチ内で許容時間内かつ最良の候補を選ぶ
+        let best=null; // {cand, extraTime}
+        for(const res of results){
+          if(!res.route) continue;
+          const extraTime=res.route.duration-baseDuration;
+          if(extraTime>detourSec) continue;
+          if(!best||extraTime<best.extraTime){
+            best={cand:res.cand,extraTime};
+          }
+        }
+
+        if(!best){
+          // この5件中に許容範囲の候補なし → これ以上探しても見つかりにくい
+          // (中点距離順なので、以降の候補はより遠い傾向)
           break;
         }
-        setStatus(`候補を評価中... ${iter+1}/${maxAdd}（検索済み ${apiCalls}/${maxApi}）`);
-
-        // 残候補それぞれについて「現在の経由地 + その候補」で追加コストを測る
-        // 可能性が高い順（中点から近い順）に検査し、早期打ち切りで節約
-        let best=null; // {cand, extraTime}
-        const evalBatch=[];
-        for(const cand of remaining){
-          if(apiCalls>=maxApi) break;
-          // ポイント列: from -> [現在のwp] -> cand -> to
-          const pts=[routeFromCoord,...currentWp,cand.centroid,routeToCoord];
-          evalBatch.push({cand,pts});
-        }
-
-        // 並列実行（最大5件ずつ）で軽く高速化しつつAPIバジェット守る
-        const batchSize=Math.min(5,maxApi-apiCalls);
-        for(let bi=0;bi<evalBatch.length&&apiCalls<maxApi;bi+=batchSize){
-          const slice=evalBatch.slice(bi,Math.min(bi+batchSize,evalBatch.length,bi+maxApi-apiCalls));
-          const results=await Promise.all(slice.map(async item=>{
-            apiCalls++;
-            const r=await fetchRoute(item.pts,{noAlternatives:true});
-            return {cand:item.cand,route:r};
-          }));
-          for(const res of results){
-            if(!res.route) continue;
-            const extraTime=res.route.duration-baseDuration;
-            if(extraTime>OPTIMIZE_CONFIG.maxDetourSec) continue;
-            if(!best||extraTime<best.extraTime){
-              best={cand:res.cand,extraTime};
-            }
-          }
-          // 既に閾値内のbestが見つかっているならこれ以上探さない
-          // （中点距離順に評価しているので、以降はより遠い候補になる傾向）
-          if(best&&best.extraTime<OPTIMIZE_CONFIG.maxDetourSec*0.5) break;
-        }
-
-        if(!best) break; // 追加できる候補なし
 
         // 採用: 名前を特定して追加
         const fp=featureProps[best.cand.code]||{};
@@ -2533,15 +2642,17 @@
           code:best.cand.code,
           name:`${fp.pref||''}${cityName}`,
           coord:best.cand.centroid,
-          extraTime:best.extraTime
+          extraTime:best.extraTime,
+          visitDays:best.cand.visitDays
         });
         currentWp=[...currentWp,best.cand.centroid];
+        // 採用済みを除外
         remaining=remaining.filter(c=>c.code!==best.cand.code);
       }
 
       // 4. 結果を routeWaypoints に反映（既存の末尾に追加）
       if(appended.length===0){
-        setStatus(`候補 ${shortlist.length} 件を検討しましたが、追加許容時間（${OPTIMIZE_CONFIG.maxDetourSec/60}分）内で通過できる市区町村はありませんでした`,'ro-result');
+        setStatus(`候補 ${shortlist.length} 件を検討しましたが、許容時間（${Math.round(detourSec/60)}分）内で通過できる${targetLabel}市区町村はありませんでした`,'ro-result');
         btn.disabled=false;
         return;
       }
@@ -2558,7 +2669,7 @@
       updateRouteInputsScroll();
 
       const totalExtra=Math.round(appended[appended.length-1].extraTime/60);
-      setStatus(`✓ 未訪問 ${appended.length} 市区町村を追加（合計 +${totalExtra}分）。「ルートを検索」で再計算してください`,'ro-result');
+      setStatus(`✓ ${targetLabel} ${appended.length} 市区町村を追加（合計 +${totalExtra}分）。「ルートを検索」で再計算してください`,'ro-result');
 
     }catch(e){
       console.error('[optimize] error:',e);

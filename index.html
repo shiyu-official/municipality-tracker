@@ -342,6 +342,14 @@
   /* ルート保存ボタン */
   #route-save-btn{width:100%;padding:6px;background:var(--accent-light);border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;display:none;}
   #route-save-btn:hover{background:var(--accent);color:#fff;}
+  /* 未訪問最大化ボタン */
+  #route-optimize-btn{width:100%;padding:7px;background:var(--bg);border:1px dashed var(--accent);border-radius:7px;color:var(--accent);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;transition:all 0.15s;}
+  #route-optimize-btn:hover:not(:disabled){background:var(--accent-light);border-style:solid;}
+  #route-optimize-btn:disabled{opacity:0.5;cursor:wait;}
+  #route-optimize-status{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:6px;min-height:0;line-height:1.5;}
+  #route-optimize-status.active{margin-top:6px;padding:6px 8px;background:var(--accent-light);border-radius:5px;color:var(--accent);}
+  #route-optimize-status .ro-result{color:var(--success-fg);padding:6px 8px;background:var(--success-bg);border-radius:5px;}
+  #route-optimize-status .ro-err{color:var(--danger);padding:6px 8px;background:var(--danger-bg-hover);border-radius:5px;}
   /* 色選択ポップアップ */
   .color-picker-popup{position:absolute;z-index:2000;background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px;box-shadow:var(--shadow-lg);display:flex;gap:4px;flex-wrap:wrap;width:120px;}
   .color-picker-swatch{width:20px;height:20px;border-radius:4px;cursor:pointer;border:2px solid transparent;transition:border-color 0.1s;}
@@ -617,6 +625,8 @@
           <button id="route-go-btn">ルートを検索</button>
           <button id="route-reset-btn" title="入力をすべてクリア">✕ クリア</button>
         </div>
+        <button id="route-optimize-btn" title="経路上の未訪問市区町村を自動で経由地に追加">🎯 未訪問を最大化</button>
+        <div id="route-optimize-status"></div>
         <div id="route-result"></div>
         <button id="route-clear-btn">ルートをクリア</button>
         <button id="route-save-btn">📥 ルートを保存</button>
@@ -2107,6 +2117,9 @@
     if(inputs.length) inputs[inputs.length-1].focus();
   });
 
+  // D-1 最適化ボタン
+  $('route-optimize-btn').addEventListener('click',optimizeRouteForUnvisited);
+
   // 経由地5個以上でスクロール可能に切り替え
   function updateRouteInputsScroll(){
     const el=$('route-inputs-scroll');
@@ -2328,6 +2341,222 @@
       }
     }
     return false;
+  }
+
+  // ── D-1: 未訪問市区町村を最大通過するルート最適化 ──
+  // 設定
+  const OPTIMIZE_CONFIG={
+    maxCandidates:15,          // 事前スクリーニング後の候補数上限
+    maxAddWaypoints:5,         // 追加する経由地の最大数
+    maxDetourSec:30*60,        // 1候補あたりの追加許容時間（デフォ30分）
+    searchRadiusRatio:0.7,     // 直行距離のこの割合を検索半径に
+    apiCallBudget:20           // Directions API総呼び出し上限（セーフティ）
+  };
+
+  // 全市区町村の重心キャッシュ（初回の計算コスト削減）
+  const _centroidCache={};
+  function getCentroidCached(code){
+    if(code in _centroidCache) return _centroidCache[code];
+    const c=getCityCentroid(code);
+    _centroidCache[code]=c;
+    return c;
+  }
+
+  // 2点間の地球上の距離（メートル）
+  function distMeters(a,b){
+    return google.maps.geometry.spherical.computeDistanceBetween(
+      new google.maps.LatLng(a[0],a[1]),
+      new google.maps.LatLng(b[0],b[1])
+    );
+  }
+
+  // 2点の中点
+  function midpoint(a,b){
+    return [(a[0]+b[0])/2,(a[1]+b[1])/2];
+  }
+
+  // ルート上の通過市区町村コードを列挙（幾何判定のみ、API不要）
+  function getPassedCityCodes(routeCoords){
+    const passed=new Set();
+    for(let i=0;i<routeCoords.length;i+=3){
+      const lat=routeCoords[i][1],lng=routeCoords[i][0];
+      const feat=findMunicipalityAtPoint({lat,lng});
+      if(feat){
+        const code=feat.properties?.N03_007||feat.getProperty?.('N03_007');
+        if(code) passed.add(code);
+      }
+    }
+    return passed;
+  }
+
+  // D-1 本体: 現在の出発地・経由地・目的地から、未訪問を最大通過するよう経由地を追加
+  async function optimizeRouteForUnvisited(){
+    const btn=$('route-optimize-btn');
+    const statusEl=$('route-optimize-status');
+    const setStatus=(txt,cls='active')=>{
+      statusEl.className=cls;
+      statusEl.textContent=txt;
+    };
+
+    // 0. 入力チェック
+    if(!routeFromCoord||!routeToCoord){
+      setStatus('出発地と目的地を設定してください','ro-err');
+      return;
+    }
+
+    btn.disabled=true;
+    let apiCalls=0;
+    const maxApi=OPTIMIZE_CONFIG.apiCallBudget;
+
+    try{
+      setStatus('ベースルートを計算中...');
+      // 1. 現在の経由地構成でベースルートを取得
+      const currentWpCoords=routeWaypoints
+        .filter(wp=>wp.coord)
+        .map(wp=>wp.coord);
+      const basePoints=[routeFromCoord,...currentWpCoords,routeToCoord];
+      const baseRoute=await fetchRoute(basePoints,{noAlternatives:true});
+      apiCalls++;
+      if(!baseRoute){
+        setStatus('ベースルートの取得に失敗しました','ro-err');
+        btn.disabled=false;
+        return;
+      }
+      const baseDuration=baseRoute.duration;
+      const alreadyPassed=getPassedCityCodes(baseRoute.geometry.coordinates);
+
+      // 2. 候補の絞り込み（未訪問 かつ 経路中点から一定範囲内）
+      const directDist=distMeters(routeFromCoord,routeToCoord);
+      const mid=midpoint(routeFromCoord,routeToCoord);
+      const searchRadius=Math.max(directDist*OPTIMIZE_CONFIG.searchRadiusRatio,20000); // 最低20km
+      // 既に経由地/出発地/目的地になっている市区町村は除外
+      const excluded=new Set();
+      for(const wp of routeWaypoints){
+        if(wp.cityCode) excluded.add(wp.cityCode);
+        if(wp.coord){
+          const feat=findMunicipalityAtPoint({lat:wp.coord[0],lng:wp.coord[1]});
+          const code=feat?.properties?.N03_007||feat?.getProperty?.('N03_007');
+          if(code) excluded.add(code);
+        }
+      }
+
+      setStatus('未訪問候補を検索中...');
+      // 未訪問市区町村を距離付きでスコアリング
+      const candidates=[];
+      for(const code of allCodes){
+        // 訪問済みスキップ
+        if((visitedData.cities[code]?.visitDays||0)>0) continue;
+        if(excluded.has(code)) continue;
+        if(alreadyPassed.has(code)) continue; // すでに通ってる未訪問は追加不要
+        const centroid=getCentroidCached(code);
+        if(!centroid) continue;
+        const distFromMid=distMeters(mid,centroid);
+        if(distFromMid>searchRadius) continue;
+        candidates.push({code,centroid,distFromMid});
+      }
+      // 中点から近い順
+      candidates.sort((a,b)=>a.distFromMid-b.distFromMid);
+      const shortlist=candidates.slice(0,OPTIMIZE_CONFIG.maxCandidates);
+
+      if(shortlist.length===0){
+        setStatus(alreadyPassed.size>0
+          ?`既にルート上で ${alreadyPassed.size} 市区町村を通過しており、追加候補なし`
+          :'追加できる未訪問市区町村が範囲内にありません',
+          'ro-result');
+        btn.disabled=false;
+        return;
+      }
+
+      // 3. 貪欲法で経由地を追加していく
+      // 採用経由地リスト（元のrouteWaypointsはこの段階では変更しない）
+      const appended=[]; // [{code,name,coord}]
+      let currentWp=[...currentWpCoords]; // 現在の経由座標列
+
+      const maxAdd=Math.min(OPTIMIZE_CONFIG.maxAddWaypoints,shortlist.length);
+      let remaining=[...shortlist];
+
+      for(let iter=0;iter<maxAdd;iter++){
+        if(apiCalls>=maxApi){
+          console.warn('[optimize] API budget exhausted');
+          break;
+        }
+        setStatus(`候補を評価中... ${iter+1}/${maxAdd}（検索済み ${apiCalls}/${maxApi}）`);
+
+        // 残候補それぞれについて「現在の経由地 + その候補」で追加コストを測る
+        // 可能性が高い順（中点から近い順）に検査し、早期打ち切りで節約
+        let best=null; // {cand, extraTime}
+        const evalBatch=[];
+        for(const cand of remaining){
+          if(apiCalls>=maxApi) break;
+          // ポイント列: from -> [現在のwp] -> cand -> to
+          const pts=[routeFromCoord,...currentWp,cand.centroid,routeToCoord];
+          evalBatch.push({cand,pts});
+        }
+
+        // 並列実行（最大5件ずつ）で軽く高速化しつつAPIバジェット守る
+        const batchSize=Math.min(5,maxApi-apiCalls);
+        for(let bi=0;bi<evalBatch.length&&apiCalls<maxApi;bi+=batchSize){
+          const slice=evalBatch.slice(bi,Math.min(bi+batchSize,evalBatch.length,bi+maxApi-apiCalls));
+          const results=await Promise.all(slice.map(async item=>{
+            apiCalls++;
+            const r=await fetchRoute(item.pts,{noAlternatives:true});
+            return {cand:item.cand,route:r};
+          }));
+          for(const res of results){
+            if(!res.route) continue;
+            const extraTime=res.route.duration-baseDuration;
+            if(extraTime>OPTIMIZE_CONFIG.maxDetourSec) continue;
+            if(!best||extraTime<best.extraTime){
+              best={cand:res.cand,extraTime};
+            }
+          }
+          // 既に閾値内のbestが見つかっているならこれ以上探さない
+          // （中点距離順に評価しているので、以降はより遠い候補になる傾向）
+          if(best&&best.extraTime<OPTIMIZE_CONFIG.maxDetourSec*0.5) break;
+        }
+
+        if(!best) break; // 追加できる候補なし
+
+        // 採用: 名前を特定して追加
+        const fp=featureProps[best.cand.code]||{};
+        const cityName=buildFullName(best.cand.code,fp.gun,fp.city,fp.ward)||best.cand.code;
+        appended.push({
+          code:best.cand.code,
+          name:`${fp.pref||''}${cityName}`,
+          coord:best.cand.centroid,
+          extraTime:best.extraTime
+        });
+        currentWp=[...currentWp,best.cand.centroid];
+        remaining=remaining.filter(c=>c.code!==best.cand.code);
+      }
+
+      // 4. 結果を routeWaypoints に反映（既存の末尾に追加）
+      if(appended.length===0){
+        setStatus(`候補 ${shortlist.length} 件を検討しましたが、追加許容時間（${OPTIMIZE_CONFIG.maxDetourSec/60}分）内で通過できる市区町村はありませんでした`,'ro-result');
+        btn.disabled=false;
+        return;
+      }
+
+      for(const a of appended){
+        routeWaypoints.push({
+          coord:a.coord,
+          name:a.name,
+          isCityWaypoint:true,
+          cityCode:a.code
+        });
+      }
+      renderWaypoints();
+      updateRouteInputsScroll();
+
+      const totalExtra=Math.round(appended[appended.length-1].extraTime/60);
+      setStatus(`✓ 未訪問 ${appended.length} 市区町村を追加（合計 +${totalExtra}分）。「ルートを検索」で再計算してください`,'ro-result');
+
+    }catch(e){
+      console.error('[optimize] error:',e);
+      setStatus('最適化中にエラーが発生しました','ro-err');
+    }finally{
+      btn.disabled=false;
+    }
   }
 
   function isPointInRing(latlng,ring){

@@ -919,6 +919,10 @@
   // レベルフィルタ: どのレベルを色付き表示するか（デフォは全OFF=チェックなし）
   const legendFilter={0:false,1:true,2:true,3:true};
 
+  // 保存ルートの表示状態。applyGeoStyles から参照されるため、ここで先に宣言しておく
+  // (実体定義は後段の「保存ルート管理」セクションでも触れる)
+  const displayedRoutes={}; // id -> {polyline, passedCodes, color, markers[]}
+
   function applyGeoStyles(){
     const mc=mapColors;
     geoDataLayer.setStyle(feature=>{
@@ -2158,40 +2162,8 @@
     btn.textContent=`🎯 ${getTargetLabel(lv)}を最大化`;
   }
 
-  // D-1 許容時間入力: localStorageから復元、変更時に保存
-  (function initDetourInput(){
-    const inp=$('route-optimize-detour');
-    if(!inp) return;
-    const saved=parseFloat(localStorage.getItem(LS_KEY_DETOUR));
-    if(!isNaN(saved)&&saved>0) inp.value=saved;
-    inp.addEventListener('change',()=>{
-      const v=parseFloat(inp.value);
-      if(!isNaN(v)&&v>0){
-        localStorage.setItem(LS_KEY_DETOUR,String(v));
-      } else {
-        // 不正値はデフォルトに戻す
-        inp.value=OPTIMIZE_DEFAULTS.maxDetourMin;
-        localStorage.removeItem(LS_KEY_DETOUR);
-      }
-    });
-  })();
-
-  // D-1 対象レベル選択: localStorageから復元、変更時に保存+ボタンラベル更新
-  (function initTargetSelect(){
-    const sel=$('route-optimize-target');
-    if(!sel) return;
-    const saved=parseInt(localStorage.getItem(LS_KEY_TARGET),10);
-    if(!isNaN(saved)&&saved>=0&&saved<=2) sel.value=String(saved);
-    sel.addEventListener('change',()=>{
-      const v=parseInt(sel.value,10);
-      if(!isNaN(v)&&v>=0&&v<=2){
-        localStorage.setItem(LS_KEY_TARGET,String(v));
-      }
-      updateOptimizeBtnLabel();
-    });
-    // 初期ラベル設定
-    updateOptimizeBtnLabel();
-  })();
+  // D-1 許容時間入力・対象レベル選択 の初期化は、関連定数(LS_KEY_*など)が定義された
+  // 後ろのブロックで実行する（initOptimizeUI関数として後段で呼ぶ）
 
   // 経由地5個以上でスクロール可能に切り替え
   function updateRouteInputsScroll(){
@@ -2467,6 +2439,41 @@
   function getTargetLabel(maxLv){
     return ['未訪問','2回未満','3回未満'][maxLv]||'未訪問';
   }
+
+  // D-1 許容時間入力: localStorageから復元、変更時に保存
+  (function initDetourInput(){
+    const inp=$('route-optimize-detour');
+    if(!inp) return;
+    const saved=parseFloat(localStorage.getItem(LS_KEY_DETOUR));
+    if(!isNaN(saved)&&saved>0) inp.value=saved;
+    inp.addEventListener('change',()=>{
+      const v=parseFloat(inp.value);
+      if(!isNaN(v)&&v>0){
+        localStorage.setItem(LS_KEY_DETOUR,String(v));
+      } else {
+        // 不正値はデフォルトに戻す
+        inp.value=OPTIMIZE_DEFAULTS.maxDetourMin;
+        localStorage.removeItem(LS_KEY_DETOUR);
+      }
+    });
+  })();
+
+  // D-1 対象レベル選択: localStorageから復元、変更時に保存+ボタンラベル更新
+  (function initTargetSelect(){
+    const sel=$('route-optimize-target');
+    if(!sel) return;
+    const saved=parseInt(localStorage.getItem(LS_KEY_TARGET),10);
+    if(!isNaN(saved)&&saved>=0&&saved<=2) sel.value=String(saved);
+    sel.addEventListener('change',()=>{
+      const v=parseInt(sel.value,10);
+      if(!isNaN(v)&&v>=0&&v<=2){
+        localStorage.setItem(LS_KEY_TARGET,String(v));
+      }
+      updateOptimizeBtnLabel();
+    });
+    // 初期ラベル設定
+    updateOptimizeBtnLabel();
+  })();
 
   // 全市区町村の重心キャッシュ（初回の計算コスト削減）
   const _centroidCache={};
@@ -3531,7 +3538,7 @@
   // ── 保存ルート管理 ──
   const ROUTE_COLORS=['#fde047','#fb923c','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9','#f472b6','#4ade80','#2dd4bf'];
   let savedRoutes=[]; // [{id,name,color,mode,from,to,waypoints,geometry,distance,duration,passedCities}]
-  let displayedRoutes={}; // id -> {polyline, highlightLayer, markers[]}
+  // displayedRoutes は applyGeoStyles から参照される都合で前方宣言済み
 
   // data/routes.json から読み込み
   async function loadSavedRoutes(){

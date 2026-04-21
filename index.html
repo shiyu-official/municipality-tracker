@@ -5,6 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>踏破マップ — 市区町村コンプリート</title>
 <script>
+  // テーマ初期化（ロード画面のちらつき防止のため、他のスクリプトより前に実行）
+  (function(){
+    try{
+      const saved=localStorage.getItem('tohaMap.themeMode');
+      if(saved==='light'||saved==='dark'){
+        document.documentElement.setAttribute('data-theme',saved);
+      }
+    }catch(e){}
+  })();
   // Google Maps APIをダイナミックに読み込み
   (function(){
     const s=document.createElement('script');
@@ -47,9 +56,10 @@
     --water:#dce6f0;
     --unvisited-highlight:#FF904B;
   }
-  /* ── ダークモード（OSの設定に自動追随） ── */
+  /* ── ダークモード変数定義（手動強制 + OS追随の両方に適用） ── */
+  /* 1) OSがダーク かつ 手動ライト強制でない場合 */
   @media (prefers-color-scheme: dark){
-    :root{
+    :root:not([data-theme="light"]){
       --bg:#0f1319; --bg-panel:#1a1f28; --bg-panel-hover:#242a35;
       --border:#333a47; --border-light:#262c37;
       --text:#d9dde5; --text-dim:#8891a2; --text-bright:#f0f2f7;
@@ -78,12 +88,45 @@
       --unvisited-highlight:#d97706;
     }
   }
+  /* 2) 手動でダーク強制（OSに関係なく） */
+  :root[data-theme="dark"]{
+    --bg:#0f1319; --bg-panel:#1a1f28; --bg-panel-hover:#242a35;
+    --border:#333a47; --border-light:#262c37;
+    --text:#d9dde5; --text-dim:#8891a2; --text-bright:#f0f2f7;
+    --accent:#60a5fa; --accent-light:rgba(96,165,250,0.15);
+    --unvisited-fill:transparent; --unvisited-stroke:#4a5160;
+    --visit-1-fill:#1e3a5f; --visit-1-stroke:#3b82f6;
+    --visit-2-fill:#2563eb; --visit-2-stroke:#60a5fa;
+    --visit-3-fill:#93c5fd; --visit-3-stroke:#bfdbfe;
+    --shadow-sm:0 2px 8px rgba(0,0,0,0.35);
+    --shadow-md:0 2px 12px rgba(0,0,0,0.45);
+    --shadow-lg:0 4px 16px rgba(0,0,0,0.50);
+    --shadow-xl:0 8px 32px rgba(0,0,0,0.60);
+    --iw-shadow:0 4px 20px rgba(0,0,0,0.55);
+    --legend-border:rgba(255,255,255,0.08);
+    --badge-1-bg:#1e3a5f; --badge-1-fg:#bfdbfe;
+    --badge-2-bg:#2563eb; --badge-2-fg:#dbeafe;
+    --badge-3-bg:#93c5fd; --badge-3-fg:#0b1220;
+    --success-bg:#14301e; --success-bg-strong:#1a4a2c; --success-border:#2d6b45; --success-border-strong:#4ade80; --success-fg:#86efac;
+    --warn-bg:#3a2a10; --warn-fg:#fcd34d;
+    --route-hl-fill:#78350f; --route-hl-stroke:#fcd34d;
+    --pick-hint-shadow:0 4px 20px rgba(96,165,250,0.25);
+    --gmap-link-bg:#1a1f28; --gmap-link-border:#333a47; --gmap-link-fg:#60a5fa; --gmap-link-hover-bg:#242a35;
+    --danger-bg-hover:#3a1616; --danger:#f87171;
+    --track-stroke:#f87171;
+    --water:#0d1b2a;
+    --unvisited-highlight:#d97706;
+  }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
 
   #header{position:fixed;top:0;left:0;right:0;z-index:1000;height:54px;background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;}
   #header h1{font-size:16px;font-weight:700;white-space:nowrap;color:var(--text-bright);flex-shrink:0;}
   #header h1 span{color:var(--accent);}
+  #theme-toggle-btn{flex-shrink:0;width:32px;height:32px;background:var(--bg);border:1px solid var(--border);border-radius:50%;color:var(--text);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;padding:0;line-height:1;}
+  #theme-toggle-btn:hover{background:var(--bg-panel-hover);border-color:var(--accent);}
+  #theme-toggle-btn[data-mode="light"]::after{content:'';}
+  #theme-toggle-btn .theme-icon{font-size:15px;}
   .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
   .stat-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;white-space:nowrap;font-family:'DM Mono',monospace;}
   .stat-chip .label{color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;font-size:10px;}
@@ -395,11 +438,12 @@
     /* ── ヘッダー ── */
     #header{padding:0 8px;gap:5px;height:50px;}
     #header h1{display:none;}
-    .stat-chips{gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;scrollbar-width:none;}
+    .stat-chips{gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;scrollbar-width:none;min-width:0;}
     .stat-chips::-webkit-scrollbar{display:none;}
     .stat-chip{padding:5px 10px;font-size:11px;flex-shrink:0;border-radius:20px;gap:3px;}
     .stat-chip .label{font-size:10px;display:inline;}
     .stat-chip .value.large{font-size:13px;}
+    #theme-toggle-btn{width:28px;height:28px;font-size:12px;}
 
     /* ── サイドバー: 左からスライド（画面幅の92%、右端に地図見える） ── */
     #sidebar{
@@ -540,6 +584,7 @@
     <div class="stat-chip"><span class="label">制覇率</span><span class="value large" id="stat-complete">-</span></div>
     <div class="stat-chip"><span class="label">期間</span><span class="value" id="stat-range">-</span></div>
   </div>
+  <button id="theme-toggle-btn" title="テーマ切替（自動/ライト/ダーク）" aria-label="テーマ切替">🌓</button>
 </div>
 
 <div id="sidebar">
@@ -890,9 +935,33 @@
     {featureType:'water',elementType:'labels.text.stroke',stylers:[{color:'#17263c'}]}
   ];
   const darkModeMql=window.matchMedia('(prefers-color-scheme: dark)');
-  function getCurrentMapStyles(){
-    return darkModeMql.matches?GMAP_STYLES_DARK:GMAP_STYLES_LIGHT;
+
+  // 現在有効なテーマがダークかどうか判定
+  // themeMode: 'auto' | 'light' | 'dark'
+  const LS_KEY_THEME='tohaMap.themeMode';
+  function getThemeMode(){
+    const saved=localStorage.getItem(LS_KEY_THEME);
+    if(saved==='light'||saved==='dark'||saved==='auto') return saved;
+    return 'auto';
   }
+  function isDarkActive(){
+    const mode=getThemeMode();
+    if(mode==='dark') return true;
+    if(mode==='light') return false;
+    return darkModeMql.matches; // auto
+  }
+  function getCurrentMapStyles(){
+    return isDarkActive()?GMAP_STYLES_DARK:GMAP_STYLES_LIGHT;
+  }
+  // テーマ属性を html 要素に反映（CSSは :root[data-theme] で追随）
+  function applyThemeAttribute(){
+    const mode=getThemeMode();
+    const html=document.documentElement;
+    if(mode==='auto') html.removeAttribute('data-theme');
+    else html.setAttribute('data-theme',mode);
+  }
+  // 初期適用（Map生成前なのでDOMは既に反映される）
+  applyThemeAttribute();
 
   // ── Map (Google Maps) ──
   $('loading-status').textContent='地図を描画中...';
@@ -963,15 +1032,46 @@
   }
   applyGeoStyles();
 
-  // OSのダークモード切替に追従して地図の色も更新
-  darkModeMql.addEventListener('change',()=>{
+  // 現在のテーマ状態で地図/ポリゴン色を更新（OS変更・手動切替の両方で呼ばれる）
+  function applyCurrentTheme(){
+    applyThemeAttribute();
     mapColors=getMapColors();
     map.setOptions({styles:getCurrentMapStyles()});
     if(tracksDataLayer){
       tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
     }
     applyGeoStyles();
+    updateThemeBtnIcon();
+  }
+
+  // テーマトグルボタンのアイコンを現在の状態に合わせて更新
+  function updateThemeBtnIcon(){
+    const btn=$('theme-toggle-btn');
+    if(!btn) return;
+    const mode=getThemeMode();
+    // 自動: 🌓, ライト: ☀, ダーク: 🌙
+    const map={auto:'🌓',light:'☀️',dark:'🌙'};
+    btn.textContent=map[mode]||'🌓';
+    const labels={auto:'テーマ: 自動 (OS追随)',light:'テーマ: ライト',dark:'テーマ: ダーク'};
+    btn.title=labels[mode]+'（クリックで切替）';
+  }
+
+  // OSのダークモード切替に追従（自動モード時のみ意味を持つ）
+  darkModeMql.addEventListener('change',()=>{
+    if(getThemeMode()==='auto') applyCurrentTheme();
   });
+
+  // テーマトグルボタン: auto → light → dark → auto の循環
+  $('theme-toggle-btn').addEventListener('click',()=>{
+    const cur=getThemeMode();
+    const next={auto:'light',light:'dark',dark:'auto'}[cur]||'auto';
+    if(next==='auto') localStorage.removeItem(LS_KEY_THEME);
+    else localStorage.setItem(LS_KEY_THEME,next);
+    applyCurrentTheme();
+  });
+
+  // 初期アイコン表示
+  updateThemeBtnIcon();
 
   // legendチェックボックスのイベント
   document.querySelectorAll('.legend-filter').forEach(cb=>{

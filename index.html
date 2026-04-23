@@ -3785,6 +3785,27 @@
     let firstFix=true;          // 初回位置取得フラグ（地図中心を合わせる判定）
     let lastPos=null;           // 最新位置 {lat,lng,accuracy}
     let isTracking=false;
+    let initialTimeout=null;    // 初回取得タイムアウト監視
+
+    // ステータストースト（画面下部に表示、数秒で消える）
+    let toastEl=null,toastTimer=null;
+    function showToast(msg,opt={}){
+      if(!toastEl){
+        toastEl=document.createElement('div');
+        toastEl.id='geo-toast';
+        toastEl.style.cssText='position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:2500;background:rgba(0,0,0,0.82);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-family:"Noto Sans JP",sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.3);max-width:calc(100vw - 32px);text-align:center;pointer-events:none;transition:opacity 0.2s;';
+        document.body.appendChild(toastEl);
+      }
+      toastEl.textContent=msg;
+      toastEl.style.opacity='1';
+      if(opt.err) toastEl.style.background='rgba(185,28,28,0.92)';
+      else toastEl.style.background='rgba(0,0,0,0.82)';
+      if(toastTimer) clearTimeout(toastTimer);
+      const duration=opt.duration||3000;
+      if(duration>0){
+        toastTimer=setTimeout(()=>{toastEl.style.opacity='0';},duration);
+      }
+    }
 
     // 青ドット用のSVGアイコン（白フチ+青丸、脈動は疑似的にCircleで表現）
     function makeDotIcon(){
@@ -3852,41 +3873,85 @@
       if(fabRecenter) fabRecenter.hidden=!on||!lastPos;
     }
 
+    // 位置取得の成功コールバック
+    function onPositionSuccess(pos){
+      const {latitude,longitude,accuracy}=pos.coords;
+      lastPos={lat:latitude,lng:longitude,accuracy};
+      updatePositionMarkers(latitude,longitude,accuracy);
+      // 初回タイムアウト監視を解除
+      if(initialTimeout){clearTimeout(initialTimeout);initialTimeout=null;}
+      // 初回だけ地図中心を現在地に
+      if(firstFix){
+        firstFix=false;
+        recenterToCurrentPos(14);
+        showToast(`現在地を取得しました（精度 ±${Math.round(accuracy)}m）`,{duration:2500});
+      }
+      // 位置が取れた時点で recenterボタンを表示
+      if(fabRecenter&&isTracking) fabRecenter.hidden=false;
+    }
+
+    // 位置取得の失敗コールバック
+    function onPositionError(err){
+      console.warn('[geo] error:',err,'code:',err&&err.code,'msg:',err&&err.message);
+      // Safariではerr.codeが取れない/数値でないことがあるので文字列メッセージでも判定
+      const msg=(err&&err.message)||'';
+      const code=err&&err.code;
+      if(code===1 /* PERMISSION_DENIED */ || /denied|permission/i.test(msg)){
+        showToast('位置情報の利用が許可されていません。Safariの設定を確認してください。',{err:true,duration:5000});
+        stopTracking();
+        return;
+      }
+      if(code===2 /* POSITION_UNAVAILABLE */ || /unavailable|kCLError/i.test(msg)){
+        showToast('位置情報を取得できません。屋外に移動するかWi-Fi/モバイル通信を確認してください。',{err:true,duration:5000});
+        return;
+      }
+      if(code===3 /* TIMEOUT */ || /timeout/i.test(msg)){
+        showToast('位置取得がタイムアウトしました。再試行します...',{duration:3000});
+        // watchPositionは内部で再試行を続けるので停止しない
+        return;
+      }
+      // その他未分類
+      showToast('位置取得エラー: '+(msg||'不明'),{err:true,duration:4000});
+    }
+
     function startTracking(){
       if(!navigator.geolocation){
-        alert('このブラウザは現在地取得に対応していません');
+        showToast('このブラウザは現在地取得に対応していません',{err:true});
         setTrackingState(false);
         return;
       }
       if(watchId!==null) return; // 既に追跡中
       firstFix=true;
       setTrackingState(true);
+      showToast('位置情報を取得中...',{duration:0}); // 成功/失敗が来るまで表示し続ける
+
+      // iOS Safariでは watchPosition だけだと初回フィックスが遅い/取れないことがあるので
+      // まず getCurrentPosition で明示的に1回取得をトリガー
+      navigator.geolocation.getCurrentPosition(
+        onPositionSuccess,
+        onPositionError,
+        {
+          enableHighAccuracy:true,
+          maximumAge:10000,
+          timeout:20000
+        }
+      );
+
+      // 初回取得の監視（20秒以上何も来なかったら警告）
+      initialTimeout=setTimeout(()=>{
+        if(firstFix&&isTracking){
+          showToast('位置取得に時間がかかっています。屋外または窓際で試してください。',{duration:5000});
+        }
+      },20000);
+
+      // 継続監視
       watchId=navigator.geolocation.watchPosition(
-        (pos)=>{
-          const {latitude,longitude,accuracy}=pos.coords;
-          lastPos={lat:latitude,lng:longitude,accuracy};
-          updatePositionMarkers(latitude,longitude,accuracy);
-          // 初回だけ地図中心を現在地に（その後はユーザーが自由に動かせる）
-          if(firstFix){
-            firstFix=false;
-            recenterToCurrentPos(14);
-          }
-          // 位置が取れた時点で recenterボタンを表示
-          if(fabRecenter&&isTracking) fabRecenter.hidden=false;
-        },
-        (err)=>{
-          console.warn('[geo] error:',err);
-          // 拒否やタイムアウトなど
-          if(err.code===err.PERMISSION_DENIED){
-            alert('位置情報の利用が許可されていません。ブラウザの設定で許可してください。');
-            stopTracking();
-          }
-          // TIMEOUT は次の取得を待つので何もしない
-        },
+        onPositionSuccess,
+        onPositionError,
         {
           enableHighAccuracy:true, // GPS優先（屋外で数m精度）
           maximumAge:5000,         // 5秒以内のキャッシュは再利用
-          timeout:30000            // 30秒で取得失敗扱い（watchPositionでは継続）
+          timeout:60000            // Safariは長めに（30秒→60秒）
         }
       );
     }
@@ -3896,9 +3961,11 @@
         navigator.geolocation.clearWatch(watchId);
         watchId=null;
       }
+      if(initialTimeout){clearTimeout(initialTimeout);initialTimeout=null;}
       clearMarkers();
       lastPos=null;
       setTrackingState(false);
+      if(toastEl) toastEl.style.opacity='0';
     }
 
     fabToggle.addEventListener('click',()=>{

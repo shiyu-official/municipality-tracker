@@ -304,6 +304,17 @@
   /* InfoWindow override */
   .gm-style .gm-style-iw-c{border-radius:10px!important;padding:0!important;box-shadow:var(--iw-shadow)!important;background:var(--bg-panel)!important;color:var(--text)!important;}
   .gm-style .gm-style-iw-tc::after{background:var(--bg-panel)!important;}
+
+  /* Google Maps標準コントロールで明示OFFしきれないものを強制非表示（保険） */
+  /* cameraControl/panControl等、JS APIで消したつもりが一部UIライブラリ変更時に再出現することがある */
+  .gm-style > div > .gm-style-cc{/* 著作権表記は残す */}
+  .gm-style .gm-style-cc ~ .gm-bundled-control,
+  .gm-style .gm-style-cc ~ .gmnoprint[controlwidth]{
+    /* 右下のズーム/パンバンドルを確実に消す */
+  }
+  /* 右下に居座る Google Maps の "bundled control"（ズーム/パン統合パネル）を確実に非表示 */
+  .gm-bundled-control,
+  .gm-bundled-control-on-bottom{display:none!important;}
   /* .gm-style-iw-d には標準paddingを残す（Googleネイティブスポット表示用）*/
   .gm-style .gm-style-iw-d{overflow:auto!important;padding:14px 14px!important;}
   /* 閉じるボタン(×)のみ非表示。スポット名など他の要素は残す */
@@ -1067,8 +1078,13 @@
     mapTypeControl:window.innerWidth>768,
     mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT},
     zoomControl:false,          // マウスホイール/ピンチで代用
-    streetViewControl:false,
-    fullscreenControl:false,
+    streetViewControl:false,    // ストリートビューの人形アイコン非表示
+    fullscreenControl:false,    // フルスクリーンボタン非表示
+    panControl:false,           // パンコントロール（矢印群）非表示
+    rotateControl:false,        // 回転コントロール非表示
+    scaleControl:false,         // スケールバー非表示
+    cameraControl:false,        // カメラコントロール（新API）非表示
+    keyboardShortcuts:false,    // キーボードショートカットアイコン非表示
     gestureHandling:'greedy',   // スマホで1本指スクロール可能（2本指強制を解除）
     styles:getCurrentMapStyles()
   });

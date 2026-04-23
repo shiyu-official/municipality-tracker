@@ -145,6 +145,26 @@
   #theme-toggle-btn:hover{background:var(--bg-panel-hover);border-color:var(--accent);}
   #theme-toggle-btn[data-mode="light"]::after{content:'';}
   #theme-toggle-btn .theme-icon{font-size:15px;}
+
+  /* レイヤーメニューボタン */
+  #layer-menu-btn{flex-shrink:0;width:32px;height:32px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;padding:0;line-height:1;}
+  #layer-menu-btn:hover{background:var(--bg-panel-hover);border-color:var(--accent);}
+  #layer-menu-btn[aria-expanded="true"]{background:var(--accent-light);border-color:var(--accent);color:var(--accent);}
+
+  /* レイヤーメニューパネル */
+  #layer-menu-panel{position:fixed;top:60px;right:10px;z-index:1100;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);padding:10px 12px;min-width:200px;max-width:260px;animation:lmpFadeIn 0.15s ease;}
+  #layer-menu-panel[hidden]{display:none;}
+  @keyframes lmpFadeIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  .lmp-section{margin-bottom:10px;}
+  .lmp-section:last-child{margin-bottom:0;}
+  .lmp-section-title{font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border-light);}
+  .lmp-items{display:flex;flex-direction:column;gap:4px;}
+  .lmp-item{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:5px;cursor:pointer;font-size:12px;color:var(--text);transition:background 0.1s;}
+  .lmp-item:hover{background:var(--bg-panel-hover);}
+  .lmp-item input[type="checkbox"]{margin:0;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
+  .lmp-swatch{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid var(--legend-border);}
+  .lmp-line{display:inline-block;width:18px;height:3px;background:var(--track-stroke);border-radius:2px;flex-shrink:0;}
+  .lmp-fill{display:inline-block;width:18px;height:12px;background:var(--visit-2-fill);border-radius:3px;flex-shrink:0;}
   .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
   .stat-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;white-space:nowrap;font-family:'DM Mono',monospace;}
   .stat-chip .label{color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;font-size:10px;}
@@ -237,34 +257,7 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   #loading-status{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;}
 
-  .layer-toggles{background:var(--bg-panel);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:8px;box-shadow:var(--shadow-sm);}
-  /* スマホ時: レイヤートグルは左上（サイドバータブの下） */
-  .layer-toggles-mobile{
-    position:fixed;
-    top:108px;
-    left:0px;
-    z-index:999;
-    margin-top:0 !important;
-    background:var(--bg-panel);
-    border:1px solid var(--border);
-    border-radius:8px;
-    padding:6px 10px;
-    box-shadow:var(--shadow-md);
-  }
-  /* ルートパネル開放中もそのまま左上 */
-  body.route-panel-open .layer-toggles-mobile{
-    top:108px;
-  }
-  .toggle-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:12px;color:var(--text);cursor:pointer;user-select:none;}
-  .toggle-item input{margin:0;accent-color:var(--accent);cursor:pointer;}
-  .toggle-line{display:inline-block;width:16px;height:3px;background:var(--track-stroke);border-radius:2px;}
-  .toggle-fill{display:inline-block;width:14px;height:10px;background:var(--visit-2-fill);border:1px solid var(--visit-2-stroke);border-radius:2px;}
-
-  .legend{position:fixed;bottom:36px;left:336px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:12px 16px;z-index:999;box-shadow:var(--shadow-sm);transition:left 0.3s ease;}
-  .legend-title{font-weight:700;color:var(--text-bright);margin-bottom:8px;font-size:11px;}
-  .legend-item{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
-  .legend-color{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid var(--legend-border);}
-  .legend-label{color:var(--text);font-size:11px;}
+  /* （旧 .layer-toggles / .legend はヘッダーのメニューパネルに統合済み） */
 
   /* ── 検索・ルートUI ── */
   #search-panel{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:1001;width:420px;max-width:calc(100vw - 32px);}
@@ -462,6 +455,8 @@
     .stat-chip .label{font-size:10px;display:inline;}
     .stat-chip .value.large{font-size:13px;}
     #theme-toggle-btn{width:28px;height:28px;font-size:12px;}
+    #layer-menu-btn{width:28px;height:28px;font-size:14px;}
+    #layer-menu-panel{top:52px;right:6px;left:6px;min-width:0;max-width:none;}
 
     /* ── サイドバー: 左からスライド（画面幅の92%、右端に地図見える） ── */
     #sidebar{
@@ -514,16 +509,6 @@
     #route-go-btn{font-size:13px;padding:9px;}
     .route-type-btn{font-size:11px;padding:6px 4px;}
     #route-reset-btn{font-size:12px;padding:8px 12px;}
-
-    /* ── 凡例: ズーム+-ボタンの左脇 ── */
-    .legend{
-      bottom:24px;right:54px;left:auto;
-      padding:8px 12px;border-radius:10px;
-    }
-    .legend-title{font-size:10px;font-weight:700;margin-bottom:5px;}
-    .legend-label{font-size:10px;}
-    .legend-color{width:14px;height:10px;}
-    .legend-item{gap:5px;margin-bottom:3px;}
 
     /* モーダル */
     .csm-inner{width:calc(100vw - 32px);max-width:380px;}
@@ -602,7 +587,27 @@
     <div class="stat-chip"><span class="label">制覇率</span><span class="value large" id="stat-complete">-</span></div>
     <div class="stat-chip"><span class="label">期間</span><span class="value" id="stat-range">-</span></div>
   </div>
+  <button id="layer-menu-btn" title="レイヤー・凡例" aria-label="レイヤーメニュー" aria-expanded="false">☰</button>
   <button id="theme-toggle-btn" title="テーマ切替（自動/ライト/ダーク）" aria-label="テーマ切替">🌓</button>
+</div>
+
+<!-- レイヤー・凡例メニューパネル（開閉式） -->
+<div id="layer-menu-panel" role="menu" aria-labelledby="layer-menu-btn" hidden>
+  <div class="lmp-section">
+    <div class="lmp-section-title">レイヤー</div>
+    <div class="lmp-items" id="lmp-layers">
+      <!-- JS で市区町村・軌跡のチェックボックスを注入 -->
+    </div>
+  </div>
+  <div class="lmp-section">
+    <div class="lmp-section-title">訪問回数フィルタ</div>
+    <div class="lmp-items" id="lmp-filters">
+      <label class="lmp-item"><input type="checkbox" class="legend-filter" data-lv="0"><span class="lmp-swatch" style="background:transparent;border:1.5px solid var(--accent);opacity:0.4;"></span><span>未訪問</span></label>
+      <label class="lmp-item"><input type="checkbox" class="legend-filter" data-lv="1" checked><span class="lmp-swatch" style="background:var(--visit-1-fill);"></span><span>1回</span></label>
+      <label class="lmp-item"><input type="checkbox" class="legend-filter" data-lv="2" checked><span class="lmp-swatch" style="background:var(--visit-2-fill);"></span><span>2回</span></label>
+      <label class="lmp-item"><input type="checkbox" class="legend-filter" data-lv="3" checked><span class="lmp-swatch" style="background:var(--visit-3-fill);"></span><span>3回以上</span></label>
+    </div>
+  </div>
 </div>
 
 <div id="sidebar">
@@ -717,14 +722,6 @@
       </div>
     </div>
   </div>
-</div>
-
-<div class="legend">
-  <div class="legend-title">訪問回数</div>
-  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="0" style="margin:0;accent-color:#f97316;cursor:pointer;"><div class="legend-color" style="background:transparent;border:1.5px solid rgba(37,99,235,0.4);"></div><span class="legend-label">未訪問</span></label></div>
-  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="1" checked style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-1-fill);"></div><span class="legend-label">1回</span></label></div>
-  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="2" checked style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-2-fill);"></div><span class="legend-label">2回</span></label></div>
-  <div class="legend-item"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" class="legend-filter" data-lv="3" checked style="margin:0;accent-color:var(--accent);cursor:pointer;"><div class="legend-color" style="background:var(--visit-3-fill);"></div><span class="legend-label">3回以上</span></label></div>
 </div>
 
 <script src="https://unpkg.com/topojson-client@3"></script>
@@ -992,6 +989,7 @@
       ?google.maps.ControlPosition.RIGHT_TOP
       :google.maps.ControlPosition.RIGHT_BOTTOM},
     streetViewControl:false,fullscreenControl:false,
+    gestureHandling:'greedy',  // スマホで1本指スクロール可能（2本指強制を解除）
     styles:getCurrentMapStyles()
   });
   const infoWindow=new google.maps.InfoWindow();
@@ -1090,6 +1088,38 @@
 
   // 初期アイコン表示
   updateThemeBtnIcon();
+
+  // レイヤーメニューパネルの開閉
+  (function setupLayerMenu(){
+    const btn=$('layer-menu-btn');
+    const panel=$('layer-menu-panel');
+    if(!btn||!panel) return;
+    function open(){
+      panel.hidden=false;
+      btn.setAttribute('aria-expanded','true');
+    }
+    function close(){
+      panel.hidden=true;
+      btn.setAttribute('aria-expanded','false');
+    }
+    function toggle(){
+      if(panel.hidden) open(); else close();
+    }
+    btn.addEventListener('click',(e)=>{
+      e.stopPropagation();
+      toggle();
+    });
+    // パネル内クリックは伝播を止める（外側クリック扱いにしない）
+    panel.addEventListener('click',(e)=>e.stopPropagation());
+    // パネル外クリックで閉じる
+    document.addEventListener('click',()=>{
+      if(!panel.hidden) close();
+    });
+    // Escキーで閉じる
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='Escape'&&!panel.hidden) close();
+    });
+  })();
 
   // legendチェックボックスのイベント
   document.querySelectorAll('.legend-filter').forEach(cb=>{
@@ -1193,43 +1223,33 @@
     tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
   }
 
-  // レイヤートグル（Google Maps カスタムコントロール）
-  const toggleDiv=document.createElement('div');
-  toggleDiv.className='layer-toggles';
-  toggleDiv.style.margin='10px';
-  
-　// 変更後
-　const chkTracks = document.createElement('input');
-　chkTracks.type = 'checkbox';
-　chkTracks.id = 'toggle-tracks';
-　if (tracksData) { chkTracks.checked = true; } else { chkTracks.disabled = true; }
+  // レイヤートグル（ヘッダーのメニューパネル内に配置）
+  const chkTracks = document.createElement('input');
+  chkTracks.type = 'checkbox';
+  chkTracks.id = 'toggle-tracks';
+  if (tracksData) { chkTracks.checked = true; } else { chkTracks.disabled = true; }
 
-　const chkPolygons = document.createElement('input');
-　chkPolygons.type = 'checkbox';
-　chkPolygons.id = 'toggle-polygons';
-　chkPolygons.checked = true;
+  const chkPolygons = document.createElement('input');
+  chkPolygons.type = 'checkbox';
+  chkPolygons.id = 'toggle-polygons';
+  chkPolygons.checked = true;
 
-　const lblTracks = document.createElement('label');
-　lblTracks.className = 'toggle-item';
-　lblTracks.append(chkTracks, Object.assign(document.createElement('span'),{className:'toggle-line'}), Object.assign(document.createElement('span'),{textContent:'軌跡'}));
+  const lblTracks = document.createElement('label');
+  lblTracks.className = 'lmp-item';
+  lblTracks.append(chkTracks, Object.assign(document.createElement('span'),{className:'lmp-line'}), Object.assign(document.createElement('span'),{textContent:'軌跡'}));
 
-　const lblPolygons = document.createElement('label');
-　lblPolygons.className = 'toggle-item';
-　lblPolygons.append(chkPolygons, Object.assign(document.createElement('span'),{className:'toggle-fill'}), Object.assign(document.createElement('span'),{textContent:'市区町村'}));
+  const lblPolygons = document.createElement('label');
+  lblPolygons.className = 'lmp-item';
+  lblPolygons.append(chkPolygons, Object.assign(document.createElement('span'),{className:'lmp-fill'}), Object.assign(document.createElement('span'),{textContent:'市区町村'}));
 
-　toggleDiv.append(lblTracks, lblPolygons);
-　// スマホ縦画面: DOM固定要素として右下配置（Google Mapsコントロールより確実に位置制御可能）
-　// PC・横画面: Google Maps TOP_RIGHT コントロールとして配置
-　const isMobile=window.innerWidth<=768;
-　if(isMobile){
-　  toggleDiv.classList.add('layer-toggles-mobile');
-　  document.body.appendChild(toggleDiv);
-　} else {
-　  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(toggleDiv);
-　}
+  // メニューパネル内のlmp-layersに追加
+  const lmpLayers = $('lmp-layers');
+  if (lmpLayers) {
+    lmpLayers.append(lblPolygons, lblTracks);
+  }
 
-　chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
-　chkPolygons.addEventListener('change', function(){
+  chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
+  chkPolygons.addEventListener('change', function(){
     geoDataLayer.setMap(this.checked?map:null);
     if(!this.checked){
       // 市区町村OFF → 凡例も全OFF
@@ -3632,18 +3652,20 @@
     }
   }
 
-  // レイヤートグルにスポット表示切替を追加
+  // レイヤートグルにスポット表示切替を追加（ヘッダーのメニューパネル内へ）
   function addSpotLayerToggle(){
     const chkSpots=document.createElement('input');
     chkSpots.type='checkbox';chkSpots.id='toggle-spots';chkSpots.checked=true;
     const lblSpots=document.createElement('label');
-    lblSpots.className='toggle-item';
+    lblSpots.className='lmp-item';
     const spotIcon=document.createElement('span');
-    spotIcon.textContent='📍';spotIcon.style.fontSize='13px';
+    spotIcon.textContent='📍';
+    spotIcon.style.cssText='font-size:14px;width:18px;text-align:center;flex-shrink:0;';
     const spotText=document.createElement('span');
     spotText.textContent='スポット';
     lblSpots.append(chkSpots,spotIcon,spotText);
-    toggleDiv.appendChild(lblSpots);
+    const lmpLayers=$('lmp-layers');
+    if(lmpLayers) lmpLayers.appendChild(lblSpots);
     chkSpots.addEventListener('change',function(){
       spotMarkersVisible=this.checked;
       spotMarkers.forEach(m=>m.setMap(this.checked?map:null));

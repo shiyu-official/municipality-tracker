@@ -165,6 +165,16 @@
   .lmp-swatch{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid var(--legend-border);}
   .lmp-line{display:inline-block;width:18px;height:3px;background:var(--track-stroke);border-radius:2px;flex-shrink:0;}
   .lmp-fill{display:inline-block;width:18px;height:12px;background:var(--visit-2-fill);border-radius:3px;flex-shrink:0;}
+  /* 現在地用 */
+  .lmp-dot-wrap{display:inline-flex;align-items:center;justify-content:center;width:18px;height:12px;flex-shrink:0;}
+  .lmp-geo-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#4285f4;border:2px solid #fff;box-shadow:0 0 0 1px rgba(66,133,244,0.3);}
+  .lmp-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 8px;background:var(--accent-light);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:11px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all 0.1s;width:100%;}
+  .lmp-btn:hover{background:var(--accent);color:#fff;}
+  /* 現在地マーカー（地図上） */
+  @keyframes geo-pulse{
+    0%{transform:scale(1);opacity:0.6;}
+    100%{transform:scale(2.5);opacity:0;}
+  }
   .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
   .stat-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;white-space:nowrap;font-family:'DM Mono',monospace;}
   .stat-chip .label{color:var(--text-dim);font-family:'Noto Sans JP',sans-serif;font-size:10px;}
@@ -593,6 +603,13 @@
 
 <!-- レイヤー・凡例メニューパネル（開閉式） -->
 <div id="layer-menu-panel" role="menu" aria-labelledby="layer-menu-btn" hidden>
+  <div class="lmp-section">
+    <div class="lmp-section-title">現在地</div>
+    <div class="lmp-items">
+      <label class="lmp-item"><input type="checkbox" id="toggle-geolocation"><span class="lmp-dot-wrap"><span class="lmp-geo-dot"></span></span><span>現在地を追跡</span></label>
+      <button type="button" id="btn-recenter-location" class="lmp-btn" hidden>🎯 現在地に戻る</button>
+    </div>
+  </div>
   <div class="lmp-section">
     <div class="lmp-section-title">レイヤー</div>
     <div class="lmp-items" id="lmp-layers">
@@ -3674,6 +3691,143 @@
 
   // スポットデータ読み込み開始
   loadSpotData();
+
+  // ── 現在地リアルタイム追跡 ──
+  // watchPositionで継続的に現在地を取得し、地図に青いマーカーで表示
+  // Google Maps 標準アプリと同じ見た目・挙動
+  (function setupGeolocationTracking(){
+    const toggle=$('toggle-geolocation');
+    const recenterBtn=$('btn-recenter-location');
+    if(!toggle) return;
+
+    let watchId=null;           // watchPositionのID
+    let dotMarker=null;         // 中心の青いドット
+    let accuracyCircle=null;    // 精度を表す薄い円
+    let firstFix=true;          // 初回位置取得フラグ（地図中心を合わせる判定）
+    let lastPos=null;           // 最新位置 {lat,lng,accuracy}
+
+    // 青ドット用のSVGアイコン（白フチ+青丸、脈動は疑似的にCircleで表現）
+    function makeDotIcon(){
+      return {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: '#4285f4',
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3
+      };
+    }
+
+    function updatePositionMarkers(lat,lng,accuracy){
+      const pos={lat,lng};
+      if(!dotMarker){
+        dotMarker=new google.maps.Marker({
+          position:pos,
+          map:map,
+          icon:makeDotIcon(),
+          zIndex:9999,
+          clickable:false,
+          optimized:false
+        });
+      } else {
+        dotMarker.setPosition(pos);
+      }
+      // 精度円（GPSの accuracy は半径メートル）
+      if(!accuracyCircle){
+        accuracyCircle=new google.maps.Circle({
+          map:map,
+          center:pos,
+          radius:accuracy,
+          fillColor:'#4285f4',
+          fillOpacity:0.15,
+          strokeColor:'#4285f4',
+          strokeOpacity:0.3,
+          strokeWeight:1,
+          clickable:false,
+          zIndex:9998
+        });
+      } else {
+        accuracyCircle.setCenter(pos);
+        accuracyCircle.setRadius(accuracy);
+      }
+    }
+
+    function clearMarkers(){
+      if(dotMarker){dotMarker.setMap(null);dotMarker=null;}
+      if(accuracyCircle){accuracyCircle.setMap(null);accuracyCircle=null;}
+    }
+
+    function recenterToCurrentPos(zoomTo){
+      if(!lastPos) return;
+      map.panTo({lat:lastPos.lat,lng:lastPos.lng});
+      if(typeof zoomTo==='number'&&map.getZoom()<zoomTo){
+        map.setZoom(zoomTo);
+      }
+    }
+
+    function startTracking(){
+      if(!navigator.geolocation){
+        alert('このブラウザは現在地取得に対応していません');
+        toggle.checked=false;
+        return;
+      }
+      if(watchId!==null) return; // 既に追跡中
+      firstFix=true;
+      watchId=navigator.geolocation.watchPosition(
+        (pos)=>{
+          const {latitude,longitude,accuracy}=pos.coords;
+          lastPos={lat:latitude,lng:longitude,accuracy};
+          updatePositionMarkers(latitude,longitude,accuracy);
+          // 初回だけ地図中心を現在地に（その後はユーザーが自由に動かせる）
+          if(firstFix){
+            firstFix=false;
+            recenterToCurrentPos(14);
+            if(recenterBtn) recenterBtn.hidden=false;
+          }
+        },
+        (err)=>{
+          console.warn('[geo] error:',err);
+          // 拒否やタイムアウトなど
+          if(err.code===err.PERMISSION_DENIED){
+            alert('位置情報の利用が許可されていません。ブラウザの設定で許可してください。');
+            stopTracking();
+            toggle.checked=false;
+          }
+          // TIMEOUT は次の取得を待つので何もしない
+        },
+        {
+          enableHighAccuracy:true, // GPS優先（屋外で数m精度）
+          maximumAge:5000,         // 5秒以内のキャッシュは再利用
+          timeout:30000            // 30秒で取得失敗扱い（watchPositionでは継続）
+        }
+      );
+    }
+
+    function stopTracking(){
+      if(watchId!==null){
+        navigator.geolocation.clearWatch(watchId);
+        watchId=null;
+      }
+      clearMarkers();
+      lastPos=null;
+      if(recenterBtn) recenterBtn.hidden=true;
+    }
+
+    toggle.addEventListener('change',()=>{
+      if(toggle.checked) startTracking();
+      else stopTracking();
+    });
+
+    if(recenterBtn){
+      recenterBtn.addEventListener('click',()=>{
+        recenterToCurrentPos(15);
+      });
+    }
+
+    // ページ離脱時はクリーンアップ（バッテリー節約）
+    window.addEventListener('beforeunload',stopTracking);
+    // タブ非表示時に停止するかは好み。標準アプリは継続するので今回は継続
+  })();
 
   // ── 保存ルート管理 ──
   const ROUTE_COLORS=['#fde047','#fb923c','#a3e635','#34d399','#38bdf8','#818cf8','#e879f9','#f472b6','#4ade80','#2dd4bf'];

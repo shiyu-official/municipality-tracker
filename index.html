@@ -3956,18 +3956,13 @@
 
   // Sidebar toggle
   const sidebar=$('sidebar');
-  const legendEl=document.querySelector('.legend');
   function updateToggleBtn(){
     $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
-  }
-  function updateLegendPosition(){
-    if(window.innerWidth<=768) return;
-    legendEl.style.left=sidebar.classList.contains('collapsed')?'16px':'336px';
   }
   $('sidebar-toggle').addEventListener('click',()=>{
     sidebar.classList.toggle('collapsed');
     updateToggleBtn();
-    setTimeout(()=>{google.maps.event.trigger(map,'resize');updateLegendPosition();},350);
+    setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
   });
   // オーバーレイタップでサイドバーを閉じる（スマホ）
   $('sidebar-overlay').addEventListener('click',()=>{
@@ -3976,7 +3971,6 @@
     setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
   });
   if(window.innerWidth<=768){sidebar.classList.add('collapsed');updateToggleBtn();}
-  updateLegendPosition();
 
   $('loading').classList.add('hidden');
   setTimeout(()=>$('loading').remove(),500);

@@ -165,15 +165,77 @@
   .lmp-swatch{width:18px;height:12px;border-radius:3px;flex-shrink:0;border:1px solid var(--legend-border);}
   .lmp-line{display:inline-block;width:18px;height:3px;background:var(--track-stroke);border-radius:2px;flex-shrink:0;}
   .lmp-fill{display:inline-block;width:18px;height:12px;background:var(--visit-2-fill);border-radius:3px;flex-shrink:0;}
-  /* 現在地用 */
-  .lmp-dot-wrap{display:inline-flex;align-items:center;justify-content:center;width:18px;height:12px;flex-shrink:0;}
-  .lmp-geo-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#4285f4;border:2px solid #fff;box-shadow:0 0 0 1px rgba(66,133,244,0.3);}
   .lmp-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 8px;background:var(--accent-light);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:11px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all 0.1s;width:100%;}
   .lmp-btn:hover{background:var(--accent);color:#fff;}
   /* 現在地マーカー（地図上） */
   @keyframes geo-pulse{
     0%{transform:scale(1);opacity:0.6;}
     100%{transform:scale(2.5);opacity:0;}
+  }
+
+  /* ── 現在地追跡FAB（右下のフローティングボタン） ── */
+  #geo-fab-group{
+    position:fixed;
+    right:16px;
+    bottom:24px;
+    z-index:999;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    align-items:flex-end;
+  }
+  #geo-fab-group button{
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    border:none;
+    background:var(--bg-panel);
+    color:var(--text);
+    font-size:20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:var(--shadow-lg);
+    transition:transform 0.12s,background 0.15s;
+    padding:0;
+    line-height:1;
+  }
+  #geo-fab-group button:hover{background:var(--bg-panel-hover);transform:scale(1.05);}
+  #geo-fab-group button:active{transform:scale(0.96);}
+  #geo-fab-group button[hidden]{display:none;}
+
+  /* 追跡OFF時: グレーの丸ドット */
+  #fab-geolocation .fab-geo-icon{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:20px;height:20px;
+  }
+  #fab-geolocation .fab-geo-dot{
+    display:inline-block;
+    width:14px;height:14px;
+    border-radius:50%;
+    background:transparent;
+    border:2.5px solid var(--text-dim);
+    transition:all 0.2s;
+  }
+  /* 追跡ON時: 青い塗りの丸ドット */
+  #fab-geolocation[aria-pressed="true"] .fab-geo-dot{
+    background:#4285f4;
+    border-color:#4285f4;
+    box-shadow:0 0 0 3px rgba(66,133,244,0.25);
+  }
+  #fab-geolocation[aria-pressed="true"]{background:var(--bg-panel);}
+
+  /* 現在地に戻る: 🎯 アイコン */
+  #fab-recenter{font-size:18px;}
+
+  @media(max-width:768px){
+    #geo-fab-group{right:12px;bottom:20px;gap:6px;}
+    #geo-fab-group button{width:44px;height:44px;font-size:18px;}
+    #fab-geolocation .fab-geo-icon{width:18px;height:18px;}
+    #fab-geolocation .fab-geo-dot{width:12px;height:12px;}
   }
   .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
   .stat-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;white-space:nowrap;font-family:'DM Mono',monospace;}
@@ -604,13 +666,6 @@
 <!-- レイヤー・凡例メニューパネル（開閉式） -->
 <div id="layer-menu-panel" role="menu" aria-labelledby="layer-menu-btn" hidden>
   <div class="lmp-section">
-    <div class="lmp-section-title">現在地</div>
-    <div class="lmp-items">
-      <label class="lmp-item"><input type="checkbox" id="toggle-geolocation"><span class="lmp-dot-wrap"><span class="lmp-geo-dot"></span></span><span>現在地を追跡</span></label>
-      <button type="button" id="btn-recenter-location" class="lmp-btn" hidden>🎯 現在地に戻る</button>
-    </div>
-  </div>
-  <div class="lmp-section">
     <div class="lmp-section-title">レイヤー</div>
     <div class="lmp-items" id="lmp-layers">
       <!-- JS で市区町村・軌跡のチェックボックスを注入 -->
@@ -625,6 +680,16 @@
       <label class="lmp-item"><input type="checkbox" class="legend-filter" data-lv="3" checked><span class="lmp-swatch" style="background:var(--visit-3-fill);"></span><span>3回以上</span></label>
     </div>
   </div>
+</div>
+
+<!-- 現在地追跡FAB（右下のフローティングボタン） -->
+<div id="geo-fab-group">
+  <button id="fab-recenter" type="button" title="現在地に戻る" aria-label="現在地に戻る" hidden>🎯</button>
+  <button id="fab-geolocation" type="button" title="現在地を追跡" aria-label="現在地を追跡" aria-pressed="false">
+    <span class="fab-geo-icon" aria-hidden="true">
+      <span class="fab-geo-dot"></span>
+    </span>
+  </button>
 </div>
 
 <div id="sidebar">
@@ -1001,12 +1066,10 @@
     center:{lat:36.5,lng:137.5},zoom:6,
     mapTypeControl:window.innerWidth>768,
     mapTypeControlOptions:{position:google.maps.ControlPosition.TOP_RIGHT},
-    zoomControl:true,
-    zoomControlOptions:{position:window.innerWidth>768
-      ?google.maps.ControlPosition.RIGHT_TOP
-      :google.maps.ControlPosition.RIGHT_BOTTOM},
-    streetViewControl:false,fullscreenControl:false,
-    gestureHandling:'greedy',  // スマホで1本指スクロール可能（2本指強制を解除）
+    zoomControl:false,          // マウスホイール/ピンチで代用
+    streetViewControl:false,
+    fullscreenControl:false,
+    gestureHandling:'greedy',   // スマホで1本指スクロール可能（2本指強制を解除）
     styles:getCurrentMapStyles()
   });
   const infoWindow=new google.maps.InfoWindow();
@@ -3696,15 +3759,16 @@
   // watchPositionで継続的に現在地を取得し、地図に青いマーカーで表示
   // Google Maps 標準アプリと同じ見た目・挙動
   (function setupGeolocationTracking(){
-    const toggle=$('toggle-geolocation');
-    const recenterBtn=$('btn-recenter-location');
-    if(!toggle) return;
+    const fabToggle=$('fab-geolocation');
+    const fabRecenter=$('fab-recenter');
+    if(!fabToggle) return;
 
     let watchId=null;           // watchPositionのID
     let dotMarker=null;         // 中心の青いドット
     let accuracyCircle=null;    // 精度を表す薄い円
     let firstFix=true;          // 初回位置取得フラグ（地図中心を合わせる判定）
     let lastPos=null;           // 最新位置 {lat,lng,accuracy}
+    let isTracking=false;
 
     // 青ドット用のSVGアイコン（白フチ+青丸、脈動は疑似的にCircleで表現）
     function makeDotIcon(){
@@ -3765,14 +3829,22 @@
       }
     }
 
+    function setTrackingState(on){
+      isTracking=on;
+      fabToggle.setAttribute('aria-pressed',String(on));
+      fabToggle.title=on?'現在地の追跡中（クリックで停止）':'現在地を追跡';
+      if(fabRecenter) fabRecenter.hidden=!on||!lastPos;
+    }
+
     function startTracking(){
       if(!navigator.geolocation){
         alert('このブラウザは現在地取得に対応していません');
-        toggle.checked=false;
+        setTrackingState(false);
         return;
       }
       if(watchId!==null) return; // 既に追跡中
       firstFix=true;
+      setTrackingState(true);
       watchId=navigator.geolocation.watchPosition(
         (pos)=>{
           const {latitude,longitude,accuracy}=pos.coords;
@@ -3782,8 +3854,9 @@
           if(firstFix){
             firstFix=false;
             recenterToCurrentPos(14);
-            if(recenterBtn) recenterBtn.hidden=false;
           }
+          // 位置が取れた時点で recenterボタンを表示
+          if(fabRecenter&&isTracking) fabRecenter.hidden=false;
         },
         (err)=>{
           console.warn('[geo] error:',err);
@@ -3791,7 +3864,6 @@
           if(err.code===err.PERMISSION_DENIED){
             alert('位置情報の利用が許可されていません。ブラウザの設定で許可してください。');
             stopTracking();
-            toggle.checked=false;
           }
           // TIMEOUT は次の取得を待つので何もしない
         },
@@ -3810,23 +3882,25 @@
       }
       clearMarkers();
       lastPos=null;
-      if(recenterBtn) recenterBtn.hidden=true;
+      setTrackingState(false);
     }
 
-    toggle.addEventListener('change',()=>{
-      if(toggle.checked) startTracking();
-      else stopTracking();
+    fabToggle.addEventListener('click',()=>{
+      if(isTracking) stopTracking();
+      else startTracking();
     });
 
-    if(recenterBtn){
-      recenterBtn.addEventListener('click',()=>{
+    if(fabRecenter){
+      fabRecenter.addEventListener('click',()=>{
         recenterToCurrentPos(15);
       });
     }
 
+    // 初期状態
+    setTrackingState(false);
+
     // ページ離脱時はクリーンアップ（バッテリー節約）
     window.addEventListener('beforeunload',stopTracking);
-    // タブ非表示時に停止するかは好み。標準アプリは継続するので今回は継続
   })();
 
   // ── 保存ルート管理 ──

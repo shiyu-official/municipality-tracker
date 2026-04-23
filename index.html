@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>踏破マップ — 市区町村コンプリート</title>
+
+<!-- PWA マニフェスト -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#0f1319" media="(prefers-color-scheme: dark)">
+
+<!-- アイコン -->
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+<!-- iOS PWA対応 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="踏破記録">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="踏破記録">
+
 <script>
   // テーマ初期化（ロード画面のちらつき防止のため、他のスクリプトより前に実行）
   (function(){
@@ -3941,6 +3959,32 @@
   $('loading').classList.add('hidden');
   setTimeout(()=>$('loading').remove(),500);
 })();
+</script>
+
+<!-- PWA: Service Worker 登録 -->
+<script>
+  // Service Worker 登録（file://からの直接起動では動かないので保護）
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(reg => {
+          console.log('[SW] registered:', reg.scope);
+          // 更新検知: 新しいSWが待機状態になったら静かに有効化
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[SW] new version available. Will activate on next page load.');
+                // ここで自動リロードすることもできるが、作業中に強制リロードは危険なので
+                // 次回リロード時に新SWが効くようにする
+              }
+            });
+          });
+        })
+        .catch(err => console.warn('[SW] registration failed:', err));
+    });
+  }
 </script>
 </body>
 </html>

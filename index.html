@@ -152,6 +152,9 @@
   #theme-toggle-btn[data-mode="light"]::after{content:'';}
   #theme-toggle-btn .theme-icon{font-size:15px;}
 
+  /* SVGアイコン共通 */
+  .btn-icon{display:block;pointer-events:none;}
+
   /* レイヤーメニューボタン */
   #layer-menu-btn{flex-shrink:0;width:32px;height:32px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;padding:0;line-height:1;}
   #layer-menu-btn:hover{background:var(--bg-panel-hover);border-color:var(--accent);}
@@ -368,14 +371,22 @@
   /* スポット名の左に一文字分の余白 */
   .gm-style .gm-style-iw-chr{padding-left:14px!important;}
   /* アプリ独自のpopup本文。左余白を少し広めに */
-  .iw-body{padding:0 6px 4px 6px;text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:13px;}
-  .pop-pref{font-size:11px;color:var(--text-dim);text-align:left;}
-  .pop-name{font-weight:700;font-size:15px;color:var(--text-bright);margin-top:1px;white-space:nowrap;text-align:left;}
-  .pop-badge{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:10px;font-size:11px;font-weight:500;}
+  .iw-body{padding:0;text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:13px;min-width:200px;}
+  .iw-accent-bar{height:4px;margin:0 -14px 12px;border-radius:10px 10px 0 0;}
+  .iw-content-wrap{padding:0;}
+  .pop-pref{font-size:11px;color:var(--text-dim);text-align:left;letter-spacing:0.5px;}
+  .pop-name{font-weight:700;font-size:16px;color:var(--text-bright);margin-top:2px;white-space:nowrap;text-align:left;}
+  .iw-meta{display:flex;align-items:center;gap:8px;margin-top:8px;}
+  .pop-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;letter-spacing:0.3px;}
   .pop-badge.badge-0{background:var(--unvisited-fill);color:var(--text-dim);}
   .pop-badge.badge-1{background:var(--badge-1-bg);color:var(--badge-1-fg);}
   .pop-badge.badge-2{background:var(--badge-2-bg);color:var(--badge-2-fg);}
   .pop-badge.badge-3{background:var(--badge-3-bg);color:var(--badge-3-fg);}
+  .iw-score{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;letter-spacing:0.5px;}
+  .iw-detail{margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light);display:flex;flex-direction:column;gap:5px;}
+  .iw-detail-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
+  .iw-detail-label{color:var(--text-dim);}
+  .iw-detail-value{color:var(--text);font-family:'DM Mono',monospace;font-weight:500;}
   .pop-detail{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-dim);margin-top:6px;line-height:1.6;}
 
   #loading{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s ease;}
@@ -442,16 +453,23 @@
   .gmap-link-btn .gmap-label{flex:1;}
   .gmap-link-btn .gmap-sub{font-size:10px;color:var(--text-dim);font-weight:400;}
 
-  .city-select-modal{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;}
-  .csm-inner{background:var(--bg-panel);border-radius:12px;width:340px;max-height:70vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl);}
+  /* モーダル共通アニメーション */
+  @keyframes modalFadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes modalPop{0%{opacity:0;transform:scale(0.9);}60%{opacity:1;transform:scale(1.02);}100%{transform:scale(1);}}
+  @keyframes modalScaleIn{from{opacity:0;transform:scale(0.94) translateY(6px);}to{opacity:1;transform:scale(1) translateY(0);}}
+
+  .city-select-modal{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;animation:modalFadeIn 0.18s ease;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+  .csm-inner{background:var(--bg-panel);border-radius:12px;width:340px;max-height:70vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl);animation:modalScaleIn 0.24s cubic-bezier(0.34,1.56,0.64,1);}
   .csm-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
   .csm-header h3{font-size:14px;font-weight:700;color:var(--text-bright);}
-  .csm-close{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;}
+  .csm-close{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:all 0.15s;padding:0;}
+  .csm-close:hover{background:var(--danger-bg-hover);color:var(--danger);transform:rotate(90deg);}
   .csm-search{padding:10px 14px;border-bottom:1px solid var(--border-light);}
   .csm-search input{width:100%;padding:7px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;}
   .csm-list{flex:1;overflow-y:auto;padding:4px 8px;}
-  .csm-city-item{padding:8px 10px;border-radius:6px;cursor:pointer;transition:background 0.12s;}
+  .csm-city-item{padding:8px 10px;border-radius:6px;cursor:pointer;transition:background 0.12s,transform 0.1s;}
   .csm-city-item:hover{background:var(--bg-panel-hover);}
+  .csm-city-item:active{transform:scale(0.98);}
   .csm-city-name{font-size:13px;font-weight:500;color:var(--text-bright);}
   .csm-city-pref{font-size:11px;color:var(--text-dim);}
   .csm-section-label{padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.05em;border-top:1px solid var(--border-light);margin-top:4px;}
@@ -467,17 +485,18 @@
   .route-dot.via{background:#f59e0b;width:8px;height:8px;border:2px solid #d97706;}
   .route-icon-btn{background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-dim);padding:2px 3px;flex-shrink:0;}
   .route-icon-btn:hover{color:var(--accent);}
-  .wp-remove-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;border-radius:4px;flex-shrink:0;}
-  .wp-remove-btn:hover{color:var(--danger);background:var(--danger-bg-hover);}
+  .wp-remove-btn{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;border-radius:4px;flex-shrink:0;transition:transform 0.15s,color 0.15s,background 0.15s;}
+  .wp-remove-btn:hover{color:var(--danger);background:var(--danger-bg-hover);transform:rotate(90deg);}
   #add-waypoint-btn{width:100%;padding:5px;background:var(--bg);border:1px dashed var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-bottom:8px;transition:all 0.15s;}
   #add-waypoint-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
 
   /* 地図クリック選択モーダル */
-  .map-click-modal{position:fixed;z-index:2002;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-xl);padding:0;width:280px;animation:modalPop 0.2s ease;}
-  @keyframes modalPop{from{opacity:0;transform:scale(0.92);}to{opacity:1;transform:scale(1);}}
+  .mcm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:2001;animation:modalFadeIn 0.18s ease;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+  .map-click-modal{position:fixed;z-index:2002;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-xl);padding:0;width:280px;animation:modalPop 0.28s cubic-bezier(0.34,1.56,0.64,1);transform-origin:center top;}
   .mcm-header{padding:12px 16px 8px;font-size:13px;font-weight:700;color:var(--text-bright);border-bottom:1px solid var(--border-light);}
-  .mcm-option{padding:12px 16px;cursor:pointer;transition:background 0.12s;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);}
+  .mcm-option{padding:12px 16px;cursor:pointer;transition:background 0.12s,transform 0.08s;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);}
   .mcm-option:hover{background:var(--bg-panel-hover);}
+  .mcm-option:active{transform:scale(0.98);}
   .mcm-option:last-child{border-radius:0 0 12px 12px;}
   .mcm-option .mcm-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
   .mcm-option .mcm-icon.pin{background:rgba(37,99,235,0.1);color:var(--accent);}
@@ -485,7 +504,6 @@
   .mcm-option .mcm-detail{flex:1;min-width:0;}
   .mcm-option .mcm-title{font-weight:500;color:var(--text-bright);}
   .mcm-option .mcm-sub{font-size:11px;color:var(--text-dim);margin-top:2px;white-space:normal;word-break:break-all;}
-  .mcm-overlay{position:fixed;inset:0;z-index:2001;background:transparent;}
   .map-pick-active #map{cursor:crosshair!important;}
   .map-pick-hint{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:2001;background:var(--bg-panel);border:1px solid var(--accent);border-radius:10px;padding:10px 20px;box-shadow:var(--pick-hint-shadow);font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;animation:hintSlideUp 0.3s ease;}
   @keyframes hintSlideUp{from{opacity:0;transform:translateX(-50%) translateY(16px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
@@ -707,6 +725,48 @@
 
 <div id="loading"><div class="loader"></div><h2>踏破<span>マップ</span></h2><div id="loading-status">データを読み込み中...</div></div>
 
+<!-- SVGアイコンスプライト（Lucide Icons 風） -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true">
+  <defs>
+    <!-- 重なったレイヤー -->
+    <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.84Z"/>
+      <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/>
+      <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>
+    </symbol>
+    <!-- 太陽（ライト固定） -->
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+    </symbol>
+    <!-- 月（ダーク固定） -->
+    <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+    </symbol>
+    <!-- 太陽と月の半々（自動：OS追随） -->
+    <symbol id="i-theme-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 3v18"/>
+      <path d="M12 9a3 3 0 0 0 0 6" fill="currentColor"/>
+    </symbol>
+    <!-- ターゲット十字（現在地に戻る） -->
+    <symbol id="i-target" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2"/>
+    </symbol>
+    <!-- 現在地（塗り青丸+外周） -->
+    <symbol id="i-navigate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="3" fill="currentColor"/>
+    </symbol>
+    <!-- 閉じる × -->
+    <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 6 6 18M6 6l12 12"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div id="header">
   <h1>踏破<span>マップ</span></h1>
   <div class="stat-chips">
@@ -716,8 +776,8 @@
     <div class="stat-chip"><span class="label">制覇率</span><span class="value large" id="stat-complete">-</span></div>
     <div class="stat-chip"><span class="label">期間</span><span class="value" id="stat-range">-</span></div>
   </div>
-  <button id="layer-menu-btn" title="レイヤー・凡例" aria-label="レイヤーメニュー" aria-expanded="false">☰</button>
-  <button id="theme-toggle-btn" title="テーマ切替（自動/ライト/ダーク）" aria-label="テーマ切替">🌓</button>
+  <button id="layer-menu-btn" title="レイヤー・凡例" aria-label="レイヤーメニュー" aria-expanded="false"><svg class="btn-icon" width="18" height="18"><use href="#i-layers"/></svg></button>
+  <button id="theme-toggle-btn" title="テーマ切替（自動/ライト/ダーク）" aria-label="テーマ切替"><svg class="btn-icon" width="18" height="18"><use href="#i-theme-auto"/></svg></button>
 </div>
 
 <!-- レイヤー・凡例メニューパネル（開閉式） -->
@@ -741,7 +801,7 @@
 
 <!-- 現在地追跡FAB（右下のフローティングボタン） -->
 <div id="geo-fab-group">
-  <button id="fab-recenter" type="button" title="現在地に戻る" aria-label="現在地に戻る" hidden>🎯</button>
+  <button id="fab-recenter" type="button" title="現在地に戻る" aria-label="現在地に戻る" hidden><svg class="btn-icon" width="22" height="22"><use href="#i-target"/></svg></button>
   <button id="fab-geolocation" type="button" title="現在地を追跡" aria-label="現在地を追跡" aria-pressed="false">
     <span class="fab-geo-icon" aria-hidden="true">
       <span class="fab-geo-dot"></span>
@@ -1230,9 +1290,10 @@
     const btn=$('theme-toggle-btn');
     if(!btn) return;
     const mode=getThemeMode();
-    // 自動: 🌓, ライト: ☀, ダーク: 🌙
-    const map={auto:'🌓',light:'☀️',dark:'🌙'};
-    btn.textContent=map[mode]||'🌓';
+    // 自動: 半々, ライト: 太陽, ダーク: 月
+    const iconMap={auto:'i-theme-auto',light:'i-sun',dark:'i-moon'};
+    const iconId=iconMap[mode]||'i-theme-auto';
+    btn.innerHTML=`<svg class="btn-icon" width="18" height="18"><use href="#${iconId}"/></svg>`;
     const labels={auto:'テーマ: 自動 (OS追随)',light:'テーマ: ライト',dark:'テーマ: ダーク'};
     btn.title=labels[mode]+'（クリックで切替）';
   }
@@ -1372,11 +1433,23 @@
     const city=visitedData.cities[code];
     const lv=getLevel(city?city.visitDays:0);
     const score=city?Math.min(city.visitDays,3):0;
+    const lvColor=['var(--text-dim)','var(--visit-1-stroke)','var(--visit-2-stroke)','var(--visit-3-stroke)'][lv];
     let h=`<div class="iw-body" style="color:${getComputedStyle(document.documentElement).getPropertyValue('--text')};">`;
-    h+=`<div class="pop-pref">${fp.pref||''}</div><div class="pop-name">${fullName}</div>`;
-    h+=`<span class="pop-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
-    if(city) h+=`<div class="pop-detail">初訪問: ${city.firstVisit}<br>最終: ${city.lastVisit}<br>訪問日数: ${city.visitDays}日<br>制覇スコア: ${score}/3</div>`;
+    h+=`<div class="iw-accent-bar" style="background:${lvColor};"></div>`;
+    h+=`<div class="iw-content-wrap">`;
+    h+=`<div class="pop-pref">${fp.pref||''}</div>`;
+    h+=`<div class="pop-name">${fullName}</div>`;
+    h+=`<div class="iw-meta"><span class="pop-badge badge-${lv}">${getLevelLabel(lv)}</span>`;
+    if(city) h+=`<span class="iw-score" title="制覇スコア">★ ${score}/3</span>`;
     h+=`</div>`;
+    if(city){
+      h+=`<div class="iw-detail">`;
+      h+=`<div class="iw-detail-row"><span class="iw-detail-label">初訪問</span><span class="iw-detail-value">${city.firstVisit}</span></div>`;
+      h+=`<div class="iw-detail-row"><span class="iw-detail-label">最終訪問</span><span class="iw-detail-value">${city.lastVisit}</span></div>`;
+      h+=`<div class="iw-detail-row"><span class="iw-detail-label">訪問日数</span><span class="iw-detail-value">${city.visitDays}日</span></div>`;
+      h+=`</div>`;
+    }
+    h+=`</div></div>`;
     return h;
   }
 

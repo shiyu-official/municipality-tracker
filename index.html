@@ -364,15 +364,19 @@
   /* 右下に居座る Google Maps の "bundled control"（ズーム/パン統合パネル）を確実に非表示 */
   .gm-bundled-control,
   .gm-bundled-control-on-bottom{display:none!important;}
-  /* .gm-style-iw-d には標準paddingを残す（Googleネイティブスポット表示用）*/
-  .gm-style .gm-style-iw-d{overflow:auto!important;padding:14px 14px!important;}
+  /* .iw-body がpadding保持、.gm-style-iw-d は padding 0 にしてnegative marginで上端まで塗れるように */
+  .gm-style .gm-style-iw-d{overflow:auto!important;padding:0!important;}
+  /* Googleネイティブスポット用: .iw-body がない場合にはpaddingを復元する保険 */
+  .gm-style .gm-style-iw-d:not(:has(.iw-body)){padding:14px!important;}
   /* 閉じるボタン(×)のみ非表示。スポット名など他の要素は残す */
   .gm-style .gm-style-iw-chr > button{display:none!important;}
-  /* スポット名の左に一文字分の余白 */
+  /* 閉じるボタン領域自体も潰して枠上端の余白を解消（アプリ独自iw-bodyの場合） */
+  .gm-style .gm-style-iw-c:has(.iw-body) .gm-style-iw-chr{display:none!important;}
+  /* Googleネイティブスポット用: ヘッダーは残してボタン分の左余白だけ詰める */
   .gm-style .gm-style-iw-chr{padding-left:14px!important;}
-  /* アプリ独自のpopup本文。左余白を少し広めに */
-  .iw-body{padding:0;text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:13px;min-width:200px;}
-  .iw-accent-bar{height:4px;margin:0 -14px 12px;border-radius:10px 10px 0 0;}
+  /* アプリ独自のpopup本文 */
+  .iw-body{padding:14px 14px;text-align:left;font-family:'Noto Sans JP',sans-serif;font-size:13px;min-width:200px;position:relative;}
+  .iw-accent-bar{position:absolute;top:0;left:0;right:0;height:4px;border-radius:10px 10px 0 0;}
   .iw-content-wrap{padding:0;}
   .pop-pref{font-size:11px;color:var(--text-dim);text-align:left;letter-spacing:0.5px;}
   .pop-name{font-weight:700;font-size:16px;color:var(--text-bright);margin-top:2px;white-space:nowrap;text-align:left;}

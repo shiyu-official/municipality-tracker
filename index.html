@@ -269,6 +269,13 @@
 
   /* 現在地に戻る: 🎯 アイコン */
   #fab-recenter{font-size:18px;}
+  /* 追従モードON中: 視覚的に強調 */
+  #fab-recenter[aria-pressed="true"]{
+    background:#4285f4;
+    color:#fff;
+    box-shadow:0 0 0 3px rgba(66,133,244,0.28),var(--shadow-lg);
+  }
+  #fab-recenter[aria-pressed="true"]:hover{background:#3367d6;}
 
   @media(max-width:768px){
     #geo-fab-group{right:12px;bottom:20px;gap:6px;}
@@ -3847,20 +3854,27 @@
     let lastPos=null;           // 最新位置 {lat,lng,accuracy}
     let isTracking=false;
     let initialTimeout=null;    // 初回取得タイムアウト監視
+    let followMode=false;       // 追従モード: ONならGPS更新のたびに地図中心も移動
+    let suppressDragEvent=false; // 自動panToによるdrag誤検知を抑制するフラグ
+    const visitedThisSession=new Set(); // このセッション中に到達した市区町村コード（再通知抑止用）
 
     // ステータストースト（画面下部に表示、数秒で消える）
-    let toastEl=null,toastTimer=null;
+    let toastEl=null,toastTimer=null,toastPopTimer=null;
     function showToast(msg,opt={}){
       if(!toastEl){
         toastEl=document.createElement('div');
         toastEl.id='geo-toast';
-        toastEl.style.cssText='position:fixed;left:50%;bottom:88px;transform:translateX(-50%);z-index:2500;background:rgba(0,0,0,0.82);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-family:"Noto Sans JP",sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.3);max-width:calc(100vw - 32px);text-align:center;pointer-events:none;transition:opacity 0.2s;';
+        toastEl.style.cssText='position:fixed;left:50%;bottom:88px;transform:translateX(-50%) scale(1);z-index:2500;background:rgba(0,0,0,0.82);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;font-family:"Noto Sans JP",sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.3);max-width:calc(100vw - 32px);text-align:center;pointer-events:none;transition:opacity 0.2s,transform 0.25s cubic-bezier(0.34,1.56,0.64,1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
         document.body.appendChild(toastEl);
       }
       toastEl.textContent=msg;
       toastEl.style.opacity='1';
       if(opt.err) toastEl.style.background='rgba(185,28,28,0.92)';
       else toastEl.style.background='rgba(0,0,0,0.82)';
+      // ポップ演出（scale 1.08 → 1）
+      toastEl.style.transform='translateX(-50%) scale(1.08)';
+      if(toastPopTimer) clearTimeout(toastPopTimer);
+      toastPopTimer=setTimeout(()=>{toastEl.style.transform='translateX(-50%) scale(1)';},60);
       if(toastTimer) clearTimeout(toastTimer);
       const duration=opt.duration||3000;
       if(duration>0){
@@ -3963,6 +3977,13 @@
       }
       // C-2: 現在地の市区町村ハイライト更新
       updateCurrentCityHighlight(lat,lng);
+      // 追従モード: 地図中心を現在地に追従（パンで滑らかに）
+      if(followMode){
+        suppressDragEvent=true;
+        map.panTo({lat,lng});
+        // panToのアニメは非同期で終わるので、数フレーム後にフラグ解除
+        setTimeout(()=>{suppressDragEvent=false;},100);
+      }
     }
 
     function clearMarkers(){
@@ -4013,16 +4034,35 @@
         });
       }
 
-      // 市区町村が変わった瞬間、踏破フィードバックを出す
+      // C-3: 市区町村が変わった瞬間、踏破フィードバックを出す
       if(newCode&&newCode!==prevCode){
         const fp=featureProps[newCode];
         if(fp){
           const cityName=buildFullName(newCode,fp.gun,fp.city,fp.ward)||newCode;
           const visitDays=visitedData.cities[newCode]?.visitDays||0;
-          if(visitDays===0){
-            showToast(`🎉 ${fp.pref||''}${cityName} に到達（未訪問）`,{duration:3500});
+          // 同セッションで再進入した場合は簡略表示（出す頻度を減らす）
+          const alreadyShownThisSession=visitedThisSession.has(newCode);
+          visitedThisSession.add(newCode);
+
+          // 都道府県境越えの判定
+          const prevFp=prevCode?featureProps[prevCode]:null;
+          const crossedPref=prevFp&&fp.pref&&prevFp.pref&&prevFp.pref!==fp.pref;
+
+          if(crossedPref){
+            // 都道府県境をまたいだ場合は特別に強調
+            showToast(`✨ ${fp.pref} に入りました / ${cityName}`,{duration:3500});
+          } else if(alreadyShownThisSession){
+            // セッション内再進入は簡素に
+            showToast(`↩ ${cityName}`,{duration:1500});
+          } else if(visitDays===0){
+            // 未訪問（最もお祝いしたいケース）
+            showToast(`🎉 ${fp.pref||''}${cityName} に到達（未訪問エリア！）`,{duration:4000});
+          } else if(visitDays===1){
+            showToast(`🔄 ${fp.pref||''}${cityName} に再訪（2回目）`,{duration:2500});
+          } else if(visitDays===2){
+            showToast(`🔄 ${fp.pref||''}${cityName} に再訪（3回目）`,{duration:2500});
           } else {
-            showToast(`📍 ${fp.pref||''}${cityName}（${visitDays}回訪問済み）`,{duration:2500});
+            showToast(`📍 ${fp.pref||''}${cityName}（常連: ${visitDays}回訪問済み）`,{duration:2500});
           }
         }
       }
@@ -4030,9 +4070,22 @@
 
     function recenterToCurrentPos(zoomTo){
       if(!lastPos) return;
+      suppressDragEvent=true;
       map.panTo({lat:lastPos.lat,lng:lastPos.lng});
       if(typeof zoomTo==='number'&&map.getZoom()<zoomTo){
         map.setZoom(zoomTo);
+      }
+      setTimeout(()=>{suppressDragEvent=false;},300);
+      // 追従モードをON
+      setFollowMode(true);
+    }
+
+    // 追従モードの切替 + FABの見た目更新
+    function setFollowMode(on){
+      followMode=on;
+      if(fabRecenter){
+        fabRecenter.setAttribute('aria-pressed',String(on));
+        fabRecenter.title=on?'追従中（地図を動かすと解除）':'現在地に戻る';
       }
     }
 
@@ -4041,6 +4094,7 @@
       fabToggle.setAttribute('aria-pressed',String(on));
       fabToggle.title=on?'現在地の追跡中（クリックで停止）':'現在地を追跡';
       if(fabRecenter) fabRecenter.hidden=!on||!lastPos;
+      if(!on) setFollowMode(false);
     }
 
     // 位置取得の成功コールバック
@@ -4148,6 +4202,19 @@
         recenterToCurrentPos(15);
       });
     }
+
+    // 追従モードの解除トリガー: ユーザーが地図をドラッグ/ズーム操作
+    // `suppressDragEvent` で自動panTo起点のdragは無視
+    map.addListener('dragstart',()=>{
+      if(suppressDragEvent) return;
+      if(followMode) setFollowMode(false);
+    });
+    // マウスホイール/ピンチでのズーム操作も追従解除の合図
+    // ただしrecenter時の自動setZoomは無視したいので、短時間の抑制期間を設ける
+    map.addListener('zoom_changed',()=>{
+      if(suppressDragEvent) return;
+      if(followMode) setFollowMode(false);
+    });
 
     // 初期状態
     setTrackingState(false);

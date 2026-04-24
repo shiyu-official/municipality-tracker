@@ -173,6 +173,39 @@
     100%{transform:scale(2.5);opacity:0;}
   }
 
+  /* ── 現在地ドット（OverlayView経由でDOM配置、A-1 脈動演出） ── */
+  .geo-dot-overlay{
+    position:absolute;
+    pointer-events:none;
+    z-index:9999;
+    /* OverlayView がleft/topを座標に応じて設定する。ドット自体は中心合わせのため transform */
+    width:0;height:0;
+  }
+  .geo-dot-core{
+    position:absolute;
+    left:-9px;top:-9px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:#4285f4;
+    border:3px solid #fff;
+    box-shadow:0 1px 4px rgba(0,0,0,0.35);
+    box-sizing:border-box;
+  }
+  .geo-dot-pulse{
+    position:absolute;
+    left:-9px;top:-9px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:#4285f4;
+    opacity:0.5;
+    animation:geo-dot-pulse-anim 2.2s ease-out infinite;
+  }
+  @keyframes geo-dot-pulse-anim{
+    0%{transform:scale(1);opacity:0.55;}
+    70%{opacity:0;}
+    100%{transform:scale(3.5);opacity:0;}
+  }
+
   /* ── 現在地追跡FAB（右下のフローティングボタン） ── */
   #geo-fab-group{
     position:fixed;
@@ -1119,6 +1152,8 @@
           return{fillColor:rd.color,fillOpacity:0.28,strokeColor:rd.color,strokeWeight:1.4,strokeOpacity:0.55,clickable:true,zIndex:2};
         }
       }
+      // C-2: 現在地の市区町村ハイライト（境界線のみ強調、fillは訪問状態に応じた通常の色）
+      const isCurrentCity=(window._currentCityCode===code);
       const city=visitedData.cities[code];
       const lv=getLevel(city?city.visitDays:0);
 
@@ -1126,20 +1161,36 @@
       const anyFilterOn=Object.values(legendFilter).some(v=>v);
       if(!anyFilterOn){
         const fillOpacity=lv===0?0:0.7;
-        return{fillColor:mc.FILL[lv],fillOpacity:fillOpacity,strokeColor:mc.STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
+        const base={fillColor:mc.FILL[lv],fillOpacity:fillOpacity,strokeColor:mc.STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
+        if(isCurrentCity){
+          base.strokeColor='#4285f4';
+          base.strokeWeight=3;
+          base.strokeOpacity=1;
+          base.fillOpacity=Math.max(base.fillOpacity,0.35);
+          base.zIndex=4;
+        }
+        return base;
       }
 
       // フィルタON時: チェックの入ったレベルだけ色表示
+      let style;
       if(legendFilter[lv]){
         if(lv===0){
-          // 未訪問: ハイライト色、境界線はアクセント色
-          return{fillColor:mc.UNVISITED_HIGHLIGHT,fillOpacity:0.45,strokeColor:mc.STROKE_COLOR,strokeWeight:0.8,strokeOpacity:0.5,clickable:true,zIndex:1};
+          style={fillColor:mc.UNVISITED_HIGHLIGHT,fillOpacity:0.45,strokeColor:mc.STROKE_COLOR,strokeWeight:0.8,strokeOpacity:0.5,clickable:true,zIndex:1};
+        } else {
+          style={fillColor:mc.FILL[lv],fillOpacity:0.7,strokeColor:mc.STROKE_COLOR,strokeWeight:1.0,strokeOpacity:0.6,clickable:true,zIndex:1};
         }
-        return{fillColor:mc.FILL[lv],fillOpacity:0.7,strokeColor:mc.STROKE_COLOR,strokeWeight:1.0,strokeOpacity:0.6,clickable:true,zIndex:1};
       } else {
-        // チェックが入っていないレベル: fillなし、境界線のみ
-        return{fillColor:'transparent',fillOpacity:0,strokeColor:mc.STROKE_COLOR,strokeWeight:0.5,strokeOpacity:0.25,clickable:true,zIndex:1};
+        style={fillColor:'transparent',fillOpacity:0,strokeColor:mc.STROKE_COLOR,strokeWeight:0.5,strokeOpacity:0.25,clickable:true,zIndex:1};
       }
+      if(isCurrentCity){
+        style.strokeColor='#4285f4';
+        style.strokeWeight=3;
+        style.strokeOpacity=1;
+        style.fillOpacity=Math.max(style.fillOpacity,0.35);
+        style.zIndex=4;
+      }
+      return style;
     });
   }
   applyGeoStyles();
@@ -3780,7 +3831,6 @@
     if(!fabToggle) return;
 
     let watchId=null;           // watchPositionのID
-    let dotMarker=null;         // 中心の青いドット
     let accuracyCircle=null;    // 精度を表す薄い円
     let firstFix=true;          // 初回位置取得フラグ（地図中心を合わせる判定）
     let lastPos=null;           // 最新位置 {lat,lng,accuracy}
@@ -3807,33 +3857,82 @@
       }
     }
 
-    // 青ドット用のSVGアイコン（白フチ+青丸、脈動は疑似的にCircleで表現）
-    function makeDotIcon(){
-      return {
-        path: google.maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: '#4285f4',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 3
+    // ── 現在地ドット: OverlayViewでDOM要素を配置（CSSアニメで脈動、補間で滑らか移動） ──
+    // Google Maps の Marker だとCSSアニメが効かないため OverlayView を使う
+    let geoOverlay=null;  // 現在地ドットのOverlayViewインスタンス
+    let currentRenderLatLng=null;  // 現在描画されている座標（補間中の値）
+    let targetLatLng=null;         // 目標座標（最新GPS）
+    let interpAnimId=null;         // requestAnimationFrame ID
+    let interpStartTs=0;           // 補間開始時刻
+    let interpFromLatLng=null;     // 補間元の座標
+    const INTERP_DURATION=900;     // 補間にかける時間(ms)
+
+    function createGeoOverlay(){
+      const overlay=new google.maps.OverlayView();
+      const dotEl=document.createElement('div');
+      dotEl.className='geo-dot-overlay';
+      dotEl.innerHTML='<div class="geo-dot-pulse"></div><div class="geo-dot-core"></div>';
+      overlay.onAdd=function(){
+        this.getPanes().overlayMouseTarget.appendChild(dotEl);
       };
+      overlay.draw=function(){
+        if(!currentRenderLatLng) return;
+        const proj=this.getProjection();
+        if(!proj) return;
+        const px=proj.fromLatLngToDivPixel(new google.maps.LatLng(currentRenderLatLng.lat,currentRenderLatLng.lng));
+        if(!px) return;
+        dotEl.style.left=px.x+'px';
+        dotEl.style.top=px.y+'px';
+      };
+      overlay.onRemove=function(){
+        if(dotEl.parentNode) dotEl.parentNode.removeChild(dotEl);
+      };
+      overlay.setMap(map);
+      overlay._dotEl=dotEl;
+      return overlay;
+    }
+
+    // 補間アニメーション: currentRenderLatLng を targetLatLng に向けて滑らかに移動
+    function startInterpolation(){
+      if(interpAnimId!==null) cancelAnimationFrame(interpAnimId);
+      interpStartTs=performance.now();
+      interpFromLatLng=currentRenderLatLng?{...currentRenderLatLng}:{...targetLatLng};
+      function step(now){
+        const elapsed=now-interpStartTs;
+        const t=Math.min(elapsed/INTERP_DURATION,1);
+        // ease-out cubic
+        const eased=1-Math.pow(1-t,3);
+        currentRenderLatLng={
+          lat:interpFromLatLng.lat+(targetLatLng.lat-interpFromLatLng.lat)*eased,
+          lng:interpFromLatLng.lng+(targetLatLng.lng-interpFromLatLng.lng)*eased
+        };
+        // 再描画
+        if(geoOverlay) geoOverlay.draw();
+        if(t<1){
+          interpAnimId=requestAnimationFrame(step);
+        } else {
+          interpAnimId=null;
+        }
+      }
+      interpAnimId=requestAnimationFrame(step);
     }
 
     function updatePositionMarkers(lat,lng,accuracy){
-      const pos={lat,lng};
-      if(!dotMarker){
-        dotMarker=new google.maps.Marker({
-          position:pos,
-          map:map,
-          icon:makeDotIcon(),
-          zIndex:9999,
-          clickable:false,
-          optimized:false
-        });
+      targetLatLng={lat,lng};
+      // 初回は瞬時に、以降は補間アニメで滑らかに
+      if(!currentRenderLatLng){
+        currentRenderLatLng={lat,lng};
       } else {
-        dotMarker.setPosition(pos);
+        startInterpolation();
+      }
+      if(!geoOverlay){
+        geoOverlay=createGeoOverlay();
+      } else {
+        // 初回描画や地図中心変化に備えて再描画キック
+        geoOverlay.draw();
       }
       // 精度円（GPSの accuracy は半径メートル）
+      const pos={lat,lng};
       if(!accuracyCircle){
         accuracyCircle=new google.maps.Circle({
           map:map,
@@ -3851,11 +3950,70 @@
         accuracyCircle.setCenter(pos);
         accuracyCircle.setRadius(accuracy);
       }
+      // C-2: 現在地の市区町村ハイライト更新
+      updateCurrentCityHighlight(lat,lng);
     }
 
     function clearMarkers(){
-      if(dotMarker){dotMarker.setMap(null);dotMarker=null;}
+      if(interpAnimId!==null){cancelAnimationFrame(interpAnimId);interpAnimId=null;}
+      if(geoOverlay){geoOverlay.setMap(null);geoOverlay=null;}
       if(accuracyCircle){accuracyCircle.setMap(null);accuracyCircle=null;}
+      currentRenderLatLng=null;
+      targetLatLng=null;
+      // C-2: ハイライトも解除
+      updateCurrentCityHighlight(null,null);
+    }
+
+    // ── C-2: 現在地の市区町村ハイライト更新 ──
+    // 現在地の市区町村が変わったときだけ、該当ポリゴンだけ個別にstyle上書き/復元（軽量）
+    function updateCurrentCityHighlight(lat,lng){
+      const prevCode=window._currentCityCode||null;
+      let newCode=null;
+      if(lat!=null&&lng!=null){
+        const feat=findMunicipalityAtPoint({lat,lng});
+        if(feat){
+          newCode=feat.properties?.N03_007||null;
+        }
+      }
+      if(newCode===prevCode) return;
+      window._currentCityCode=newCode;
+
+      // 前の市区町村のスタイル上書きを解除
+      if(prevCode){
+        geoDataLayer.forEach(f=>{
+          if(f.getProperty('N03_007')===prevCode){
+            geoDataLayer.revertStyle(f);
+          }
+        });
+      }
+      // 新しい市区町村を強調
+      if(newCode){
+        geoDataLayer.forEach(f=>{
+          if(f.getProperty('N03_007')===newCode){
+            geoDataLayer.overrideStyle(f,{
+              strokeColor:'#4285f4',
+              strokeWeight:3,
+              strokeOpacity:1,
+              fillOpacity:0.35,
+              zIndex:4
+            });
+          }
+        });
+      }
+
+      // 市区町村が変わった瞬間、踏破フィードバックを出す
+      if(newCode&&newCode!==prevCode){
+        const fp=featureProps[newCode];
+        if(fp){
+          const cityName=buildFullName(newCode,fp.gun,fp.city,fp.ward)||newCode;
+          const visitDays=visitedData.cities[newCode]?.visitDays||0;
+          if(visitDays===0){
+            showToast(`🎉 ${fp.pref||''}${cityName} に到達（未訪問）`,{duration:3500});
+          } else {
+            showToast(`📍 ${fp.pref||''}${cityName}（${visitDays}回訪問済み）`,{duration:2500});
+          }
+        }
+      }
     }
 
     function recenterToCurrentPos(zoomTo){

@@ -72,7 +72,9 @@
     --danger-bg-hover:#fff0f0; --danger:#ef4444;
     --track-stroke:#ef4444;
     --water:#dce6f0;
-    --unvisited-highlight:#FF904B;
+    --unvisited-highlight:#F97316;
+    --current-city-fill:#fde047;
+    --current-city-stroke:#ca8a04;
   }
   /* ── ダークモード変数定義（手動強制 + OS追随の両方に適用） ── */
   /* 1) OSがダーク かつ 手動ライト強制でない場合 */
@@ -104,6 +106,8 @@
       --track-stroke:#f87171;
       --water:#0d1b2a;
       --unvisited-highlight:#d97706;
+      --current-city-fill:#fbbf24;
+      --current-city-stroke:#fde68a;
     }
   }
   /* 2) 手動でダーク強制（OSに関係なく） */
@@ -134,6 +138,8 @@
     --track-stroke:#f87171;
     --water:#0d1b2a;
     --unvisited-highlight:#d97706;
+    --current-city-fill:#fbbf24;
+    --current-city-stroke:#fde68a;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
@@ -878,7 +884,9 @@
         getCssVar('--visit-3-stroke')||'#1d4ed8'
       ],
       STROKE_COLOR:getCssVar('--accent')||'#2563eb',
-      UNVISITED_HIGHLIGHT:getCssVar('--unvisited-highlight')||'#FF904B',
+      UNVISITED_HIGHLIGHT:getCssVar('--unvisited-highlight')||'#F97316',
+      CURRENT_CITY_FILL:getCssVar('--current-city-fill')||'#fde047',
+      CURRENT_CITY_STROKE:getCssVar('--current-city-stroke')||'#ca8a04',
       ROUTE_HL_FILL:getCssVar('--route-hl-fill')||'#fcd34d',
       ROUTE_HL_STROKE:getCssVar('--route-hl-stroke')||'#92400e',
       TRACK_STROKE:getCssVar('--track-stroke')||'#ef4444',
@@ -1163,11 +1171,13 @@
         const fillOpacity=lv===0?0:0.7;
         const base={fillColor:mc.FILL[lv],fillOpacity:fillOpacity,strokeColor:mc.STROKE_COLOR,strokeWeight:lv===0?0.6:1.0,strokeOpacity:lv===0?0.35:0.6,clickable:true,zIndex:1};
         if(isCurrentCity){
-          base.strokeColor='#4285f4';
-          base.strokeWeight=3;
-          base.strokeOpacity=1;
-          base.fillOpacity=Math.max(base.fillOpacity,0.35);
-          base.zIndex=4;
+          // 現在地: 黄色系ハイライト（軌跡より下、訪問色より上）
+          base.fillColor=mc.CURRENT_CITY_FILL;
+          base.fillOpacity=0.55;
+          base.strokeColor=mc.CURRENT_CITY_STROKE;
+          base.strokeWeight=2.5;
+          base.strokeOpacity=0.9;
+          base.zIndex=3;
         }
         return base;
       }
@@ -1176,7 +1186,7 @@
       let style;
       if(legendFilter[lv]){
         if(lv===0){
-          style={fillColor:mc.UNVISITED_HIGHLIGHT,fillOpacity:0.45,strokeColor:mc.STROKE_COLOR,strokeWeight:0.8,strokeOpacity:0.5,clickable:true,zIndex:1};
+          style={fillColor:mc.UNVISITED_HIGHLIGHT,fillOpacity:0.55,strokeColor:mc.STROKE_COLOR,strokeWeight:0.8,strokeOpacity:0.5,clickable:true,zIndex:1};
         } else {
           style={fillColor:mc.FILL[lv],fillOpacity:0.7,strokeColor:mc.STROKE_COLOR,strokeWeight:1.0,strokeOpacity:0.6,clickable:true,zIndex:1};
         }
@@ -1184,11 +1194,12 @@
         style={fillColor:'transparent',fillOpacity:0,strokeColor:mc.STROKE_COLOR,strokeWeight:0.5,strokeOpacity:0.25,clickable:true,zIndex:1};
       }
       if(isCurrentCity){
-        style.strokeColor='#4285f4';
-        style.strokeWeight=3;
-        style.strokeOpacity=1;
-        style.fillOpacity=Math.max(style.fillOpacity,0.35);
-        style.zIndex=4;
+        style.fillColor=mc.CURRENT_CITY_FILL;
+        style.fillOpacity=0.55;
+        style.strokeColor=mc.CURRENT_CITY_STROKE;
+        style.strokeWeight=2.5;
+        style.strokeOpacity=0.9;
+        style.zIndex=3;
       }
       return style;
     });
@@ -1201,7 +1212,7 @@
     mapColors=getMapColors();
     map.setOptions({styles:getCurrentMapStyles()});
     if(tracksDataLayer){
-      tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
+      tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:20});
     }
     applyGeoStyles();
     updateThemeBtnIcon();
@@ -1362,12 +1373,12 @@
     return h;
   }
 
-  // 軌跡レイヤー
+  // 軌跡レイヤー（市区町村ポリゴンの上に描画されるよう zIndex を高めに）
   let tracksDataLayer=null;
   if(tracksData){
     tracksDataLayer=new google.maps.Data({map:map});
     tracksDataLayer.addGeoJson(tracksData);
-    tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:2});
+    tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:20});
   }
 
   // レイヤートグル（ヘッダーのメニューパネル内に配置）
@@ -3991,11 +4002,12 @@
         geoDataLayer.forEach(f=>{
           if(f.getProperty('N03_007')===newCode){
             geoDataLayer.overrideStyle(f,{
-              strokeColor:'#4285f4',
-              strokeWeight:3,
-              strokeOpacity:1,
-              fillOpacity:0.35,
-              zIndex:4
+              fillColor:mapColors.CURRENT_CITY_FILL,
+              fillOpacity:0.55,
+              strokeColor:mapColors.CURRENT_CITY_STROKE,
+              strokeWeight:2.5,
+              strokeOpacity:0.9,
+              zIndex:3
             });
           }
         });

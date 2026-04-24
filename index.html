@@ -1160,11 +1160,11 @@
       if(window._routeHighlightCodes&&window._routeHighlightCodes.has(code)){
         return{fillColor:mc.ROUTE_HL_FILL,fillOpacity:0.45,strokeColor:mc.ROUTE_HL_STROKE,strokeWeight:1.5,strokeOpacity:0.7,clickable:true,zIndex:3};
       }
-      // 保存ルートハイライト（表示中のもの）
+      // 保存ルートハイライト（表示中のもの）— 塗りを薄くしてポリラインを際立たせる
       for(const id of Object.keys(displayedRoutes)){
         const rd=displayedRoutes[id];
         if(rd.passedCodes&&rd.passedCodes.has(code)){
-          return{fillColor:rd.color,fillOpacity:0.28,strokeColor:rd.color,strokeWeight:1.4,strokeOpacity:0.55,clickable:true,zIndex:2};
+          return{fillColor:rd.color,fillOpacity:0.18,strokeColor:rd.color,strokeWeight:1.0,strokeOpacity:0.4,clickable:true,zIndex:2};
         }
       }
       // C-2: 現在地の市区町村ハイライト（境界線のみ強調、fillは訪問状態に応じた通常の色）
@@ -4458,9 +4458,25 @@
     const r=savedRoutes.find(r=>r.id===id);
     if(!r||displayedRoutes[id]) return;
     const path=r.geometry.map(c=>({lat:c[1],lng:c[0]}));
-    const polyline=new google.maps.Polyline({path,strokeColor:r.color,strokeWeight:4,strokeOpacity:0.8,zIndex:8,map});
+    // 2本重ねでくっきり描画: 外側(白いハロー) + 内側(色付き本線)
+    const haloLine=new google.maps.Polyline({
+      path,
+      strokeColor:'#ffffff',
+      strokeWeight:7,
+      strokeOpacity:0.95,
+      zIndex:7,
+      map
+    });
+    const polyline=new google.maps.Polyline({
+      path,
+      strokeColor:r.color,
+      strokeWeight:4.5,
+      strokeOpacity:1,
+      zIndex:8,
+      map
+    });
     const passedCodes=new Set(r.passedCities||[]);
-    displayedRoutes[id]={polyline,passedCodes,color:r.color,markers:[]};
+    displayedRoutes[id]={polyline,haloLine,passedCodes,color:r.color,markers:[]};
     applyGeoStyles();
   }
 
@@ -4468,6 +4484,7 @@
     const d=displayedRoutes[id];
     if(!d) return;
     d.polyline.setMap(null);
+    if(d.haloLine) d.haloLine.setMap(null);
     d.markers.forEach(m=>m.setMap(null));
     delete displayedRoutes[id];
     applyGeoStyles();

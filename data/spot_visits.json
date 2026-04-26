@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated": "2026-04-17T10:15:26.469114",
-    "totalSpots": 51,
-    "visitedSpots": 31,
-    "spotsVersion": 4
+    "generated": "2026-04-27T02:38:36.376030",
+    "totalSpots": 21,
+    "visitedSpots": 13,
+    "spotsVersion": 3
   },
   "categories": [
     {
@@ -18,8 +18,7 @@
           "pref": "群馬県",
           "lat": 36.6229647,
           "lon": 138.5967231,
-          "radiusM": 1500,
-          "group": "草津温泉_群馬県",
+          "radiusM": 800,
           "autoDetected": true,
           "firstVisit": "2024-05-11",
           "lastVisit": "2024-05-11",
@@ -31,12 +30,11 @@
           "pref": "兵庫県",
           "lat": 34.7978083,
           "lon": 135.2476961,
-          "radiusM": 1500,
-          "group": "有馬温泉_兵庫県",
-          "autoDetected": true,
-          "firstVisit": "2024-06-14",
-          "lastVisit": "2024-06-14",
-          "visitDays": 1
+          "radiusM": 600,
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
         },
         {
           "id": "sanmeisen_gero",
@@ -44,61 +42,14 @@
           "pref": "岐阜県",
           "lat": 35.8065452,
           "lon": 137.239409,
-          "radiusM": 1500,
+          "radiusM": 700,
           "autoDetected": true,
           "firstVisit": "2023-09-09",
           "lastVisit": "2024-03-26",
           "visitDays": 3
         }
       ],
-      "completed": 3,
-      "total": 3
-    },
-    {
-      "id": "sanmeisen_makura",
-      "name": "日本三名泉（枕草子説）",
-      "description": "枕草子に記された三つの名湯",
-      "icon": "📜",
-      "spots": [
-        {
-          "id": "makura_arima",
-          "name": "有馬温泉",
-          "pref": "兵庫県",
-          "lat": 34.7978083,
-          "lon": 135.2476961,
-          "radiusM": 1500,
-          "group": "有馬温泉_兵庫県",
-          "autoDetected": true,
-          "firstVisit": "2024-06-14",
-          "lastVisit": "2024-06-14",
-          "visitDays": 1
-        },
-        {
-          "id": "makura_tamatsukuri",
-          "name": "玉造温泉",
-          "pref": "島根県",
-          "lat": 35.4171996,
-          "lon": 133.0103417,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2023-11-04",
-          "lastVisit": "2026-02-07",
-          "visitDays": 6
-        },
-        {
-          "id": "makura_sakakibara",
-          "name": "榊原温泉",
-          "pref": "三重県",
-          "lat": 34.705635,
-          "lon": 136.374033,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2025-02-22",
-          "lastVisit": "2025-02-22",
-          "visitDays": 1
-        }
-      ],
-      "completed": 3,
+      "completed": 2,
       "total": 3
     },
     {
@@ -113,7 +64,7 @@
           "pref": "愛媛県",
           "lat": 33.8520748,
           "lon": 132.7864098,
-          "radiusM": 1500,
+          "radiusM": 500,
           "autoDetected": false,
           "firstVisit": null,
           "lastVisit": null,
@@ -125,12 +76,11 @@
           "pref": "兵庫県",
           "lat": 34.7978083,
           "lon": 135.2476961,
-          "radiusM": 1500,
-          "group": "有馬温泉_兵庫県",
-          "autoDetected": true,
-          "firstVisit": "2024-06-14",
-          "lastVisit": "2024-06-14",
-          "visitDays": 1
+          "radiusM": 600,
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
         },
         {
           "id": "sankotou_shirahama",
@@ -138,14 +88,14 @@
           "pref": "和歌山県",
           "lat": 33.679595,
           "lon": 135.345551,
-          "radiusM": 1500,
+          "radiusM": 800,
           "autoDetected": true,
           "firstVisit": "2023-11-23",
           "lastVisit": "2023-11-23",
           "visitDays": 1
         }
       ],
-      "completed": 2,
+      "completed": 1,
       "total": 3
     },
     {
@@ -160,7 +110,7 @@
           "pref": "群馬県",
           "lat": 36.5785097,
           "lon": 138.7253603,
-          "radiusM": 1500,
+          "radiusM": 400,
           "autoDetected": true,
           "firstVisit": "2025-02-15",
           "lastVisit": "2025-02-16",
@@ -172,7 +122,7 @@
           "pref": "和歌山県",
           "lat": 33.9562765,
           "lon": 135.5621255,
-          "radiusM": 1500,
+          "radiusM": 500,
           "autoDetected": true,
           "firstVisit": "2025-04-25",
           "lastVisit": "2025-04-25",
@@ -184,57 +134,11 @@
           "pref": "島根県",
           "lat": 35.390328,
           "lon": 132.8719826,
-          "radiusM": 1500,
+          "radiusM": 500,
           "autoDetected": true,
           "firstVisit": "2023-11-04",
           "lastVisit": "2026-02-07",
-          "visitDays": 5
-        }
-      ],
-      "completed": 3,
-      "total": 3
-    },
-    {
-      "id": "sandai_bihadanoyu",
-      "name": "日本三大美肌の湯",
-      "description": "美肌効果で知られる三つの温泉",
-      "icon": "✨",
-      "spots": [
-        {
-          "id": "bihada_ureshino",
-          "name": "嬉野温泉",
-          "pref": "佐賀県",
-          "lat": 33.096349,
-          "lon": 129.981557,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2024-12-13",
-          "lastVisit": "2024-12-14",
-          "visitDays": 2
-        },
-        {
-          "id": "bihada_hinokami",
-          "name": "斐乃上温泉",
-          "pref": "島根県",
-          "lat": 35.186603,
-          "lon": 133.1774923,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2025-01-11",
-          "lastVisit": "2025-01-11",
-          "visitDays": 1
-        },
-        {
-          "id": "bihada_kitsuregawa",
-          "name": "喜連川温泉",
-          "pref": "栃木県",
-          "lat": 36.7171655,
-          "lon": 140.0200654,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2024-01-27",
-          "lastVisit": "2024-05-25",
-          "visitDays": 2
+          "visitDays": 4
         }
       ],
       "completed": 3,
@@ -252,8 +156,7 @@
           "pref": "群馬県",
           "lat": 36.6229647,
           "lon": 138.5967231,
-          "radiusM": 1500,
-          "group": "草津温泉_群馬県",
+          "radiusM": 800,
           "autoDetected": true,
           "firstVisit": "2024-05-11",
           "lastVisit": "2024-05-11",
@@ -265,12 +168,11 @@
           "pref": "兵庫県",
           "lat": 34.7978083,
           "lon": 135.2476961,
-          "radiusM": 1500,
-          "group": "有馬温泉_兵庫県",
-          "autoDetected": true,
-          "firstVisit": "2024-06-14",
-          "lastVisit": "2024-06-14",
-          "visitDays": 1
+          "radiusM": 600,
+          "autoDetected": false,
+          "firstVisit": null,
+          "lastVisit": null,
+          "visitDays": 0
         },
         {
           "id": "yakusen_matsunoyama",
@@ -278,145 +180,7 @@
           "pref": "新潟県",
           "lat": 37.0646726,
           "lon": 138.599093,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2025-03-15",
-          "lastVisit": "2025-03-15",
-          "visitDays": 1
-        }
-      ],
-      "completed": 3,
-      "total": 3
-    },
-    {
-      "id": "sandai_miyu",
-      "name": "日本三御湯",
-      "description": "皇室が選んだ日本の御湯",
-      "icon": "👑",
-      "spots": [
-        {
-          "id": "miyu_akiu",
-          "name": "秋保温泉",
-          "pref": "宮城県",
-          "lat": 38.225128,
-          "lon": 140.7270832,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2024-06-02",
-          "lastVisit": "2024-07-15",
-          "visitDays": 3
-        },
-        {
-          "id": "miyu_bessho",
-          "name": "別所温泉",
-          "pref": "長野県",
-          "lat": 36.352971,
-          "lon": 138.161793,
-          "radiusM": 1500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "miyu_nozawa",
-          "name": "野沢温泉",
-          "pref": "長野県",
-          "lat": 36.9228462,
-          "lon": 138.4405097,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2023-10-08",
-          "lastVisit": "2023-10-08",
-          "visitDays": 1
-        }
-      ],
-      "completed": 2,
-      "total": 3
-    },
-    {
-      "id": "sandai_hitou",
-      "name": "日本三大秘湯",
-      "description": "秘境に湧く日本三大秘湯",
-      "icon": "🏔️",
-      "spots": [
-        {
-          "id": "hitou_niseko",
-          "name": "ニセコ薬師温泉",
-          "pref": "北海道",
-          "lat": 42.832983,
-          "lon": 140.5947571,
-          "radiusM": 1500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "hitou_yachi",
-          "name": "谷地温泉",
-          "pref": "青森県",
-          "lat": 40.6329639,
-          "lon": 140.9245396,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2025-08-23",
-          "lastVisit": "2025-08-23",
-          "visitDays": 1
-        },
-        {
-          "id": "hitou_iya",
-          "name": "祖谷温泉",
-          "pref": "徳島県",
-          "lat": 33.9213454,
-          "lon": 133.8173719,
-          "radiusM": 1500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        }
-      ],
-      "completed": 1,
-      "total": 3
-    },
-    {
-      "id": "sandai_ichou",
-      "name": "胃腸病に効く三大温泉",
-      "description": "胃腸病に効能がある三つの温泉",
-      "icon": "🏥",
-      "spots": [
-        {
-          "id": "ichou_shima",
-          "name": "四万温泉",
-          "pref": "群馬県",
-          "lat": 36.6832232,
-          "lon": 138.7769096,
-          "radiusM": 1500,
-          "autoDetected": true,
-          "firstVisit": "2025-01-20",
-          "lastVisit": "2026-02-22",
-          "visitDays": 3
-        },
-        {
-          "id": "ichou_gaga",
-          "name": "峩々温泉",
-          "pref": "宮城県",
-          "lat": 38.1439031,
-          "lon": 140.5001871,
-          "radiusM": 1500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "ichou_yunohira",
-          "name": "湯平温泉",
-          "pref": "大分県",
-          "lat": 33.1939553,
-          "lon": 131.3267668,
-          "radiusM": 1500,
+          "radiusM": 500,
           "autoDetected": false,
           "firstVisit": null,
           "lastVisit": null,
@@ -430,7 +194,7 @@
       "id": "sankei",
       "name": "日本三景",
       "description": "林春斎が選んだ日本を代表する三つの景観",
-      "icon": "🌊",
+      "icon": "🏔️",
       "spots": [
         {
           "id": "sankei_matsushima",
@@ -562,242 +326,6 @@
         }
       ],
       "completed": 2,
-      "total": 3
-    },
-    {
-      "id": "sandai_karst",
-      "name": "日本三大カルスト地形",
-      "description": "日本を代表する三つのカルスト台地",
-      "icon": "🪨",
-      "spots": [
-        {
-          "id": "karst_akiyoshi",
-          "name": "秋吉台",
-          "pref": "山口県",
-          "lat": 34.234894,
-          "lon": 131.3058647,
-          "radiusM": 2000,
-          "group": "秋吉_山口県",
-          "autoDetected": true,
-          "firstVisit": "2023-11-04",
-          "lastVisit": "2026-01-25",
-          "visitDays": 2
-        },
-        {
-          "id": "karst_hiraodai",
-          "name": "平尾台",
-          "pref": "福岡県",
-          "lat": 33.7616586,
-          "lon": 130.9040847,
-          "radiusM": 1500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "karst_shikoku",
-          "name": "四国カルスト",
-          "pref": "愛媛県・高知県",
-          "lat": 33.4733418,
-          "lon": 132.9959171,
-          "radiusM": 2000,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        }
-      ],
-      "completed": 1,
-      "total": 3
-    },
-    {
-      "id": "sandai_shonyudo",
-      "name": "日本三大鍾乳洞",
-      "description": "日本を代表する三つの鍾乳洞",
-      "icon": "🕳️",
-      "spots": [
-        {
-          "id": "shonyu_ryusen",
-          "name": "龍泉洞",
-          "pref": "岩手県",
-          "lat": 39.8601009,
-          "lon": 141.7969943,
-          "radiusM": 500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "shonyu_akiyoshi",
-          "name": "秋芳洞",
-          "pref": "山口県",
-          "lat": 34.2281082,
-          "lon": 131.3035348,
-          "radiusM": 500,
-          "group": "秋吉_山口県",
-          "autoDetected": true,
-          "firstVisit": "2023-11-04",
-          "lastVisit": "2026-01-25",
-          "visitDays": 2
-        },
-        {
-          "id": "shonyu_ryuga",
-          "name": "龍河洞",
-          "pref": "高知県",
-          "lat": 33.6033924,
-          "lon": 133.7451653,
-          "radiusM": 500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        }
-      ],
-      "completed": 1,
-      "total": 3
-    },
-    {
-      "id": "sandai_meibaku",
-      "name": "日本三名瀑",
-      "description": "日本を代表する三つの名瀑",
-      "icon": "💧",
-      "spots": [
-        {
-          "id": "meibaku_nachi",
-          "name": "那智の滝",
-          "pref": "和歌山県",
-          "lat": 33.6753396,
-          "lon": 135.8876081,
-          "radiusM": 500,
-          "group": "那智の滝_和歌山県",
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "meibaku_kegon",
-          "name": "華厳の滝",
-          "pref": "栃木県",
-          "lat": 36.7380893,
-          "lon": 139.501941,
-          "radiusM": 500,
-          "group": "華厳の滝_栃木県",
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "meibaku_fukuroda",
-          "name": "袋田の滝",
-          "pref": "茨城県",
-          "lat": 36.7644657,
-          "lon": 140.4070018,
-          "radiusM": 500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        }
-      ],
-      "completed": 0,
-      "total": 3
-    },
-    {
-      "id": "sandai_shintaki",
-      "name": "日本三大神滝",
-      "description": "神聖な三つの滝",
-      "icon": "⛩️",
-      "spots": [
-        {
-          "id": "shintaki_nachi",
-          "name": "那智の滝",
-          "pref": "和歌山県",
-          "lat": 33.6753396,
-          "lon": 135.8876081,
-          "radiusM": 500,
-          "group": "那智の滝_和歌山県",
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "shintaki_kegon",
-          "name": "華厳の滝",
-          "pref": "栃木県",
-          "lat": 36.7380893,
-          "lon": 139.501941,
-          "radiusM": 500,
-          "group": "華厳の滝_栃木県",
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "shintaki_nunobiki",
-          "name": "布引の滝",
-          "pref": "兵庫県",
-          "lat": 34.7097005,
-          "lon": 135.1938164,
-          "radiusM": 500,
-          "autoDetected": true,
-          "firstVisit": "2023-09-24",
-          "lastVisit": "2026-02-07",
-          "visitDays": 11
-        }
-      ],
-      "completed": 1,
-      "total": 3
-    },
-    {
-      "id": "sandai_keikoku",
-      "name": "日本三大渓",
-      "description": "日本を代表する三つの渓谷",
-      "icon": "🏞️",
-      "spots": [
-        {
-          "id": "keikoku_geibikei",
-          "name": "猊鼻渓",
-          "pref": "岩手県",
-          "lat": 38.9894482,
-          "lon": 141.2554516,
-          "radiusM": 800,
-          "autoDetected": true,
-          "firstVisit": "2024-02-12",
-          "lastVisit": "2025-07-21",
-          "visitDays": 3
-        },
-        {
-          "id": "keikoku_sagakei",
-          "name": "嵯峨渓",
-          "pref": "宮城県",
-          "lat": 38.3262492,
-          "lon": 141.1734908,
-          "radiusM": 800,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        },
-        {
-          "id": "keikoku_yabakei",
-          "name": "耶馬渓",
-          "pref": "大分県",
-          "lat": 33.4998128,
-          "lon": 131.1714769,
-          "radiusM": 1000,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
-        }
-      ],
-      "completed": 1,
       "total": 3
     }
   ]

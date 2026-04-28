@@ -4247,13 +4247,43 @@
 
   // ── スポットマーカー (地図上) ──
   function makeSpotIcon(catIcon,visited,manualChecked){
-    const bgColor=manualChecked?'#C1F0C8':visited?'#EFFBF1':'#e5e7eb';
-    const borderColor=manualChecked?'#4ade80':visited?'#86efac':'#9ca3af';
-    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34">
-      <circle cx="17" cy="17" r="15" fill="${bgColor}" stroke="${borderColor}" stroke-width="2"/>
-      <text x="17" y="23" text-anchor="middle" font-size="16">${catIcon}</text>
+    // 訪問状態に応じた配色
+    // 未訪問: グレー、自動検出: 薄緑、手動済: 濃い緑
+    let bodyFill,bodyStroke,iconColor;
+    if(manualChecked){
+      bodyFill='#22c55e';  // 濃い緑
+      bodyStroke='#15803d';
+      iconColor='#fff';
+    } else if(visited){
+      bodyFill='#86efac';  // 薄緑
+      bodyStroke='#22c55e';
+      iconColor='#14532d';
+    } else {
+      bodyFill='#f3f4f6';  // 薄グレー
+      bodyStroke='#9ca3af';
+      iconColor='#374151';
+    }
+
+    // SVGピン: 上の丸 + 下の三角脚（境目をなめらかに統合）+ ドロップシャドウ
+    // viewBox 0 0 36 48
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
+      <defs>
+        <filter id="pin-shadow" x="-20%" y="-10%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1.6" stdDeviation="1.5" flood-opacity="0.32"/>
+        </filter>
+      </defs>
+      <g filter="url(#pin-shadow)">
+        <!-- 円と三角を1つのpathで統合（境目に線が出ないよう） -->
+        <path d="M 18,3 A 14,14 0 0 1 32,17 C 32,22 28,26 22,28 L 18,44 L 14,28 C 8,26 4,22 4,17 A 14,14 0 0 1 18,3 Z"
+              fill="${bodyFill}" stroke="${bodyStroke}" stroke-width="1.5" stroke-linejoin="round"/>
+      </g>
+      <text x="18" y="22" text-anchor="middle" font-size="15" fill="${iconColor}">${catIcon}</text>
     </svg>`;
-    return{url:'data:image/svg+xml,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(34,34),anchor:new google.maps.Point(17,17)};
+    return{
+      url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),
+      scaledSize:new google.maps.Size(36,48),
+      anchor:new google.maps.Point(18,46)  // 三角の先端をアンカーに
+    };
   }
 
   function addSpotMarkers(){

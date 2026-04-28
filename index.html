@@ -176,6 +176,44 @@
   .lmp-fill{display:inline-block;width:18px;height:12px;background:var(--visit-2-fill);border-radius:3px;flex-shrink:0;}
   .lmp-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 8px;background:var(--accent-light);border:1px solid var(--accent);border-radius:6px;color:var(--accent);font-size:11px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all 0.1s;width:100%;}
   .lmp-btn:hover{background:var(--accent);color:#fff;}
+
+  /* GitHub 連携設定モーダル */
+  .gh-modal{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:2100;display:flex;align-items:center;justify-content:center;animation:modalFadeIn 0.18s ease;backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);}
+  .gh-modal[hidden]{display:none;}
+  .gh-modal-inner{background:var(--bg-panel);border-radius:14px;width:min(420px,calc(100vw - 32px));max-height:calc(100vh - 80px);display:flex;flex-direction:column;box-shadow:var(--shadow-xl);animation:modalScaleIn 0.24s cubic-bezier(0.34,1.56,0.64,1);overflow:hidden;}
+  .gh-modal-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .gh-modal-header h3{font-size:15px;font-weight:700;color:var(--text-bright);}
+  .gh-modal-body{padding:16px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;}
+  .gh-desc{font-size:12px;color:var(--text-dim);line-height:1.6;background:var(--bg);padding:10px 12px;border-radius:8px;border:1px solid var(--border-light);}
+  .gh-desc strong{color:var(--text);font-size:13px;}
+  .gh-note{display:block;margin-top:8px;font-size:11px;color:var(--warn-fg);padding:6px 8px;background:var(--warn-bg);border-radius:6px;}
+  .gh-field{display:flex;flex-direction:column;gap:4px;}
+  .gh-field label{font-size:11px;font-weight:600;color:var(--text-dim);}
+  .gh-field input{padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;font-family:'DM Mono',monospace;outline:none;transition:border-color 0.12s;}
+  .gh-field input:focus{border-color:var(--accent);}
+  .gh-hint{font-size:10px;color:var(--text-dim);line-height:1.5;}
+  .gh-hint a{color:var(--accent);text-decoration:none;}
+  .gh-hint a:hover{text-decoration:underline;}
+  .gh-actions{display:flex;gap:8px;margin-top:4px;}
+  .gh-btn{flex:1;padding:8px 10px;border-radius:6px;font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all 0.12s;border:1px solid;}
+  .gh-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .gh-btn.primary:hover{filter:brightness(1.1);}
+  .gh-btn.secondary{background:var(--bg);color:var(--text);border-color:var(--border);}
+  .gh-btn.secondary:hover{background:var(--bg-panel-hover);border-color:var(--accent);color:var(--accent);}
+  .gh-btn.danger{background:var(--bg);color:var(--danger);border-color:var(--border);margin-top:4px;}
+  .gh-btn.danger:hover{background:var(--danger-bg-hover);border-color:var(--danger);}
+  .gh-btn:disabled{opacity:0.5;cursor:not-allowed;}
+  .gh-status{font-size:11px;padding:6px 10px;border-radius:6px;min-height:0;font-family:'DM Mono',monospace;}
+  .gh-status.ok{background:var(--success-bg);color:var(--success-fg);padding:8px 10px;}
+  .gh-status.err{background:var(--danger-bg-hover);color:var(--danger);padding:8px 10px;}
+  .gh-status.info{background:var(--accent-light);color:var(--accent);padding:8px 10px;}
+
+  /* 「GitHubに保存」ボタン（サイドバーなどに配置する小さいボタン） */
+  .gh-save-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:11px;font-family:'Noto Sans JP',sans-serif;cursor:pointer;transition:all 0.12s;position:relative;}
+  .gh-save-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent);}
+  .gh-save-btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .gh-save-btn.has-changes{border-color:var(--accent);color:var(--accent);background:var(--accent-light);font-weight:500;}
+  .gh-save-btn.has-changes::after{content:'';position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:1.5px solid var(--bg-panel);}
   /* 現在地マーカー（地図上） */
   @keyframes geo-pulse{
     0%{transform:scale(1);opacity:0.6;}
@@ -801,6 +839,57 @@
       <label class="lmp-item"><input type="checkbox" class="legend-filter" data-lv="3" checked><span class="lmp-swatch" style="background:var(--visit-3-fill);"></span><span>3回以上</span></label>
     </div>
   </div>
+  <div class="lmp-section">
+    <div class="lmp-section-title">連携</div>
+    <div class="lmp-items">
+      <button type="button" id="open-gh-settings" class="lmp-btn">⚙ GitHub連携設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub連携設定モーダル -->
+<div id="gh-modal" class="gh-modal" hidden>
+  <div class="gh-modal-inner">
+    <div class="gh-modal-header">
+      <h3>GitHub 連携設定</h3>
+      <button type="button" class="csm-close" id="gh-modal-close" aria-label="閉じる"><svg class="btn-icon" width="16" height="16"><use href="#i-close"/></svg></button>
+    </div>
+    <div class="gh-modal-body">
+      <div class="gh-desc">
+        <strong>💾 サイト上で記録→GitHubに直接反映</strong><br>
+        手動でファイルをPushする代わりに、ブラウザからGitHubリポジトリを直接更新します。
+        <span class="gh-note">⚠ トークンはこのブラウザの localStorage に保存されます。共有端末では使用しないでください。</span>
+      </div>
+
+      <div class="gh-field">
+        <label for="gh-owner">Owner (ユーザー名/Org)</label>
+        <input type="text" id="gh-owner" placeholder="例: yourname" autocomplete="off">
+      </div>
+      <div class="gh-field">
+        <label for="gh-repo">Repository</label>
+        <input type="text" id="gh-repo" placeholder="例: municipality-tracker" autocomplete="off">
+      </div>
+      <div class="gh-field">
+        <label for="gh-branch">Branch</label>
+        <input type="text" id="gh-branch" placeholder="main" autocomplete="off" value="main">
+      </div>
+      <div class="gh-field">
+        <label for="gh-token">Personal Access Token (PAT)</label>
+        <input type="password" id="gh-token" placeholder="ghp_... or github_pat_..." autocomplete="off">
+        <div class="gh-hint">
+          <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained PAT を発行</a>
+          → このリポジトリの <strong>Contents: Read and write</strong> だけ許可
+        </div>
+      </div>
+
+      <div class="gh-actions">
+        <button type="button" id="gh-test-btn" class="gh-btn secondary">接続テスト</button>
+        <button type="button" id="gh-save-btn" class="gh-btn primary">保存</button>
+      </div>
+      <div id="gh-status" class="gh-status"></div>
+      <button type="button" id="gh-clear-btn" class="gh-btn danger">連携を解除（トークン削除）</button>
+    </div>
+  </div>
 </div>
 
 <!-- 現在地追跡FAB（右下のフローティングボタン） -->
@@ -852,11 +941,15 @@
       <button id="sr-show-all">全表示</button>
       <button id="sr-hide-all">全非表示</button>
       <button id="sr-import-btn">読込</button>
+      <button type="button" id="gh-save-routes-btn" class="gh-save-btn" title="GitHubに保存" disabled>💾 GitHubに保存</button>
     </div>
   </div>
   <div id="tab-spots" class="sidebar-tab-panel">
     <div class="spot-header-stats" id="spot-header-stats"></div>
     <div id="spot-sidebar-content" style="flex:1;overflow-y:auto;padding:4px 6px;-webkit-overflow-scrolling:touch;"></div>
+    <div class="sr-actions">
+      <button type="button" id="gh-save-spots-btn" class="gh-save-btn" title="スポット記録をGitHubに保存" disabled>💾 GitHubに保存</button>
+    </div>
   </div>
 </div>
 <button id="sidebar-toggle">◀</button>
@@ -1350,6 +1443,114 @@
       if(e.key==='Escape'&&!panel.hidden) close();
     });
   })();
+
+  // ── GitHub連携設定モーダル制御 ──
+  (function setupGitHubSettingsModal(){
+    const btnOpen=$('open-gh-settings');
+    const modal=$('gh-modal');
+    const btnClose=$('gh-modal-close');
+    const btnSave=$('gh-save-btn');
+    const btnTest=$('gh-test-btn');
+    const btnClear=$('gh-clear-btn');
+    const statusEl=$('gh-status');
+    const inpOwner=$('gh-owner');
+    const inpRepo=$('gh-repo');
+    const inpBranch=$('gh-branch');
+    const inpToken=$('gh-token');
+    if(!btnOpen||!modal) return;
+
+    function setStatus(msg,cls){
+      statusEl.textContent=msg||'';
+      statusEl.className='gh-status'+(cls?' '+cls:'');
+    }
+    function loadToInputs(){
+      const cfg=loadGitHubConfig();
+      if(cfg){
+        inpOwner.value=cfg.owner||'';
+        inpRepo.value=cfg.repo||'';
+        inpBranch.value=cfg.branch||'main';
+        // トークンは保持している旨のプレースホルダに
+        inpToken.value='';
+        inpToken.placeholder=cfg.token?'（設定済み・再入力で上書き）':'ghp_... or github_pat_...';
+      } else {
+        inpOwner.value=''; inpRepo.value=''; inpBranch.value='main'; inpToken.value='';
+      }
+      setStatus('');
+    }
+    function gatherConfig(){
+      const cfg=loadGitHubConfig()||{};
+      const owner=inpOwner.value.trim();
+      const repo=inpRepo.value.trim();
+      const branch=inpBranch.value.trim()||'main';
+      const tokenInput=inpToken.value.trim();
+      return {
+        owner,
+        repo,
+        branch,
+        token:tokenInput||cfg.token||''  // 空なら既存トークン継続
+      };
+    }
+    function openModal(){
+      loadToInputs();
+      modal.hidden=false;
+    }
+    function closeModal(){
+      modal.hidden=true;
+    }
+    btnOpen.addEventListener('click',()=>{
+      openModal();
+      // メニューパネルを閉じる
+      const panel=$('layer-menu-panel');
+      if(panel&&!panel.hidden) panel.hidden=true;
+      const menuBtn=$('layer-menu-btn');
+      if(menuBtn) menuBtn.setAttribute('aria-expanded','false');
+    });
+    btnClose.addEventListener('click',closeModal);
+    modal.addEventListener('click',(e)=>{
+      if(e.target===modal) closeModal();
+    });
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='Escape'&&!modal.hidden) closeModal();
+    });
+    btnSave.addEventListener('click',()=>{
+      const cfg=gatherConfig();
+      if(!cfg.owner||!cfg.repo){
+        setStatus('Owner と Repository を入力してください','err'); return;
+      }
+      if(!cfg.token){
+        setStatus('トークンを入力してください','err'); return;
+      }
+      saveGitHubConfig(cfg);
+      setStatus('✓ 保存しました','ok');
+      updateGhSaveIndicators();
+    });
+    btnTest.addEventListener('click',async()=>{
+      const cfg=gatherConfig();
+      if(!cfg.owner||!cfg.repo||!cfg.token){
+        setStatus('全項目を入力してください','err'); return;
+      }
+      setStatus('接続テスト中...','info');
+      btnTest.disabled=true;
+      try{
+        const data=await githubTestConnection(cfg);
+        setStatus(`✓ 接続OK: ${data.full_name}（書き込み権限あり）`,'ok');
+      }catch(e){
+        setStatus('✗ '+e.message,'err');
+      }finally{
+        btnTest.disabled=false;
+      }
+    });
+    btnClear.addEventListener('click',()=>{
+      if(!confirm('GitHub連携を解除しますか？\n(トークンはこのブラウザから削除されます)')) return;
+      clearGitHubConfig();
+      loadToInputs();
+      setStatus('連携を解除しました','info');
+      updateGhSaveIndicators();
+    });
+  })();
+
+  // 初期の保存ボタン状態更新と GitHub保存ボタンのclickハンドラは
+  // GitHub関連の関数群が定義された後段で行う（TDZ回避のため）
 
   // legendチェックボックスのイベント
   document.querySelectorAll('.legend-filter').forEach(cb=>{
@@ -3604,6 +3805,8 @@
         }
       }
     }
+    // GitHub未保存フラグ
+    markDirty('spotUser');
   }
   // 実効的に「訪問した」扱いか
   function isEffectiveVisited(spot){
@@ -3916,6 +4119,217 @@
 
   // スポットデータ読み込み開始
   loadSpotData();
+
+  // ── GitHub 連携: PAT を使ってリポジトリ内のファイルを直接更新 ──
+  // Personal Access Token を localStorage に保存し、GitHub REST API 経由で data/*.json を更新する
+  // 対象: data/routes.json, data/spot_user.json（手動で記録を追加するファイル）
+  const GH_LS_KEY='tohaMap.githubConfig';
+  const GH_API='https://api.github.com';
+  function loadGitHubConfig(){
+    try{
+      const raw=localStorage.getItem(GH_LS_KEY);
+      if(!raw) return null;
+      return JSON.parse(raw);
+    }catch(e){return null;}
+  }
+  function saveGitHubConfig(cfg){
+    localStorage.setItem(GH_LS_KEY,JSON.stringify(cfg));
+  }
+  function clearGitHubConfig(){
+    localStorage.removeItem(GH_LS_KEY);
+  }
+  function isGitHubConfigured(){
+    const c=loadGitHubConfig();
+    return !!(c&&c.owner&&c.repo&&c.token);
+  }
+
+  // Base64(UTF-8) エンコード（JSON日本語対応）
+  function utf8ToBase64(str){
+    return btoa(unescape(encodeURIComponent(str)));
+  }
+  function base64ToUtf8(str){
+    return decodeURIComponent(escape(atob(str)));
+  }
+
+  // GitHub API: ファイル取得（SHAを得るため）
+  async function githubGetFile(path){
+    const cfg=loadGitHubConfig();
+    if(!cfg) throw new Error('GitHub設定が未構成です');
+    const branch=cfg.branch||'main';
+    const url=`${GH_API}/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(branch)}`;
+    const res=await fetch(url,{
+      headers:{
+        'Authorization':`Bearer ${cfg.token}`,
+        'Accept':'application/vnd.github+json',
+        'X-GitHub-Api-Version':'2022-11-28'
+      }
+    });
+    if(res.status===404) return null; // ファイルが無い（新規作成扱い）
+    if(!res.ok) throw new Error(`GET失敗: ${res.status} ${res.statusText}`);
+    return await res.json();
+  }
+
+  // GitHub API: ファイル更新（PUT）
+  // content: 文字列。差分がなければskipしてスキップ結果を返す
+  async function githubPutFile(path,content,message){
+    const cfg=loadGitHubConfig();
+    if(!cfg) throw new Error('GitHub設定が未構成です');
+    const branch=cfg.branch||'main';
+    // 現行ファイルのSHAを取得（あれば）
+    let currentSha=null;
+    let currentContent=null;
+    const existing=await githubGetFile(path);
+    if(existing){
+      currentSha=existing.sha;
+      try{currentContent=base64ToUtf8(existing.content.replace(/\n/g,''));}catch(e){currentContent=null;}
+    }
+    // 内容が同じなら何もしない
+    if(currentContent!==null&&currentContent===content){
+      return {skipped:true,reason:'no-change'};
+    }
+    const url=`${GH_API}/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(path)}`;
+    const body={
+      message:message||`Update ${path}`,
+      content:utf8ToBase64(content),
+      branch
+    };
+    if(currentSha) body.sha=currentSha;
+    const res=await fetch(url,{
+      method:'PUT',
+      headers:{
+        'Authorization':`Bearer ${cfg.token}`,
+        'Accept':'application/vnd.github+json',
+        'X-GitHub-Api-Version':'2022-11-28',
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(`PUT失敗: ${res.status} ${err.message||res.statusText}`);
+    }
+    return {skipped:false,result:await res.json()};
+  }
+
+  // 接続テスト: リポジトリの情報を取得できるかチェック
+  async function githubTestConnection(cfg){
+    const url=`${GH_API}/repos/${cfg.owner}/${cfg.repo}`;
+    const res=await fetch(url,{
+      headers:{
+        'Authorization':`Bearer ${cfg.token}`,
+        'Accept':'application/vnd.github+json'
+      }
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      throw new Error(`接続失敗: ${res.status} ${err.message||res.statusText}`);
+    }
+    const data=await res.json();
+    // 書き込み権限を確認
+    if(!data.permissions||!data.permissions.push){
+      throw new Error('このトークンには書き込み権限がありません');
+    }
+    return data;
+  }
+
+  // 「未保存の変更あり」状態の管理
+  const ghDirty={routes:false,spotUser:false};
+  function markDirty(kind){
+    ghDirty[kind]=true;
+    updateGhSaveIndicators();
+  }
+  function clearDirty(kind){
+    ghDirty[kind]=false;
+    updateGhSaveIndicators();
+  }
+  function updateGhSaveIndicators(){
+    // 「GitHubに保存」ボタンの表示状態を更新
+    const btnRoutes=$('gh-save-routes-btn');
+    const btnSpots=$('gh-save-spots-btn');
+    if(btnRoutes){
+      btnRoutes.classList.toggle('has-changes',ghDirty.routes);
+      btnRoutes.disabled=!ghDirty.routes||!isGitHubConfigured();
+    }
+    if(btnSpots){
+      btnSpots.classList.toggle('has-changes',ghDirty.spotUser);
+      btnSpots.disabled=!ghDirty.spotUser||!isGitHubConfigured();
+    }
+  }
+
+  // 「GitHubに保存」実行（対象タイプ: 'routes' or 'spotUser'）
+  async function githubSaveData(kind){
+    if(!isGitHubConfigured()){
+      alert('先にGitHub連携設定を行ってください（ヘッダーメニュー → GitHub連携）');
+      return;
+    }
+    try{
+      let path,content,message;
+      if(kind==='routes'){
+        path='data/routes.json';
+        content=JSON.stringify(savedRoutes,null,2);
+        message=`Update routes.json (${savedRoutes.length} routes)`;
+      } else if(kind==='spotUser'){
+        const clean={};
+        for(const[k,v] of Object.entries(spotUserData)){
+          if(v&&v.status) clean[k]={status:v.status};
+        }
+        path='data/spot_user.json';
+        content=JSON.stringify(clean,null,2);
+        message=`Update spot_user.json (${Object.keys(clean).length} spots)`;
+      } else {
+        throw new Error('unknown kind:'+kind);
+      }
+      showGhToast('GitHubに保存中...',{duration:0});
+      const res=await githubPutFile(path,content,message);
+      if(res.skipped){
+        showGhToast('変更なし（スキップ）',{duration:2000});
+      } else {
+        showGhToast('✓ GitHubに保存しました',{duration:2500,ok:true});
+      }
+      clearDirty(kind);
+    }catch(e){
+      console.error('[gh save]',e);
+      showGhToast('保存失敗: '+e.message,{err:true,duration:4000});
+    }
+  }
+
+  // GitHub操作用の軽量トースト（現在地追跡のtoastとは独立）
+  let ghToastEl=null,ghToastTimer=null;
+  function showGhToast(msg,opt={}){
+    if(!ghToastEl){
+      ghToastEl=document.createElement('div');
+      ghToastEl.id='gh-toast';
+      ghToastEl.style.cssText='position:fixed;top:64px;right:12px;z-index:2500;background:rgba(0,0,0,0.82);color:#fff;padding:9px 14px;border-radius:8px;font-size:12px;font-family:"Noto Sans JP",sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.3);max-width:calc(100vw - 32px);pointer-events:none;transition:opacity 0.2s,transform 0.25s cubic-bezier(0.34,1.56,0.64,1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
+      document.body.appendChild(ghToastEl);
+    }
+    ghToastEl.textContent=msg;
+    ghToastEl.style.opacity='1';
+    ghToastEl.style.transform='scale(1.06)';
+    setTimeout(()=>{ghToastEl.style.transform='scale(1)';},60);
+    if(opt.err) ghToastEl.style.background='rgba(185,28,28,0.92)';
+    else if(opt.ok) ghToastEl.style.background='rgba(22,101,52,0.92)';
+    else ghToastEl.style.background='rgba(0,0,0,0.82)';
+    if(ghToastTimer) clearTimeout(ghToastTimer);
+    const d=opt.duration||3000;
+    if(d>0) ghToastTimer=setTimeout(()=>{ghToastEl.style.opacity='0';},d);
+  }
+
+  // 離脱時の未保存警告
+  window.addEventListener('beforeunload',(e)=>{
+    if(isGitHubConfigured()&&(ghDirty.routes||ghDirty.spotUser)){
+      e.preventDefault();
+      e.returnValue='';
+    }
+  });
+
+  // 初期の保存ボタン状態更新
+  updateGhSaveIndicators();
+
+  // GitHub保存ボタンのクリックハンドラ
+  const ghSaveRoutesBtn=$('gh-save-routes-btn');
+  if(ghSaveRoutesBtn) ghSaveRoutesBtn.addEventListener('click',()=>githubSaveData('routes'));
+  const ghSaveSpotsBtn=$('gh-save-spots-btn');
+  if(ghSaveSpotsBtn) ghSaveSpotsBtn.addEventListener('click',()=>githubSaveData('spotUser'));
 
   // ── 現在地リアルタイム追跡 ──
   // watchPositionで継続的に現在地を取得し、地図に青いマーカーで表示
@@ -4425,6 +4839,7 @@
 
     renderSavedRoutesList();
     downloadRoutesJson();
+    markDirty('routes');
     // タブを保存ルートに切り替え
     document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.sidebar-tab-panel').forEach(p=>p.classList.remove('active'));
@@ -4495,6 +4910,7 @@
         savedRoutes=savedRoutes.filter(r=>r.id!==id);
         renderSavedRoutesList();
         downloadRoutesJson();
+        markDirty('routes');
       });
     });
   }
@@ -4521,6 +4937,7 @@
             applyGeoStyles();
           }
           renderSavedRoutesList();
+          markDirty('routes');
         }
         popup.remove();
       });
@@ -4586,7 +5003,7 @@
       try{
         const text=await file.text();
         const data=JSON.parse(text);
-        if(Array.isArray(data)){savedRoutes=data;renderSavedRoutesList();}
+        if(Array.isArray(data)){savedRoutes=data;renderSavedRoutesList();markDirty('routes');}
         else alert('無効なファイル形式です');
       }catch(e){alert('ファイル読み込みに失敗しました');}
     });

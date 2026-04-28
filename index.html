@@ -1549,14 +1549,8 @@
     });
   })();
 
-  // 初期の保存ボタン状態更新
-  updateGhSaveIndicators();
-
-  // GitHub保存ボタンのクリックハンドラ
-  const ghSaveRoutesBtn=$('gh-save-routes-btn');
-  if(ghSaveRoutesBtn) ghSaveRoutesBtn.addEventListener('click',()=>githubSaveData('routes'));
-  const ghSaveSpotsBtn=$('gh-save-spots-btn');
-  if(ghSaveSpotsBtn) ghSaveSpotsBtn.addEventListener('click',()=>githubSaveData('spotUser'));
+  // 初期の保存ボタン状態更新と GitHub保存ボタンのclickハンドラは
+  // GitHub関連の関数群が定義された後段で行う（TDZ回避のため）
 
   // legendチェックボックスのイベント
   document.querySelectorAll('.legend-filter').forEach(cb=>{
@@ -4327,6 +4321,15 @@
       e.returnValue='';
     }
   });
+
+  // 初期の保存ボタン状態更新
+  updateGhSaveIndicators();
+
+  // GitHub保存ボタンのクリックハンドラ
+  const ghSaveRoutesBtn=$('gh-save-routes-btn');
+  if(ghSaveRoutesBtn) ghSaveRoutesBtn.addEventListener('click',()=>githubSaveData('routes'));
+  const ghSaveSpotsBtn=$('gh-save-spots-btn');
+  if(ghSaveSpotsBtn) ghSaveSpotsBtn.addEventListener('click',()=>githubSaveData('spotUser'));
 
   // ── 現在地リアルタイム追跡 ──
   // watchPositionで継続的に現在地を取得し、地図に青いマーカーで表示

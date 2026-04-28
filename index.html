@@ -3752,374 +3752,6 @@
     });
   });
 
-  // ══════════════════════════════════════════════════════
-  // ── スポットコレクション機能 ──
-  // ══════════════════════════════════════════════════════
-  let spotData=null; // spot_visits.json のデータ
-  let spotUserData={}; // spot_user.json のデータ {spotId: {manualChecked:true}}
-  let spotMarkers=[]; // Google Maps マーカー
-  let spotMarkersVisible=true;
-  let spotCurrentView='catList'; // 'catList' | 'spotList'
-  let spotCurrentCatId=null;
-
-  function getSpotUser(spotId){
-    return spotUserData[spotId]||{};
-  }
-  // status: "visited"=利用した, "passed"=通過のみ, undefined=未設定
-  function getManualStatus(spotId){
-    const u=spotUserData[spotId];
-    return u?u.status:undefined;
-  }
-  function setManualStatus(spotId,status){
-    // 対象スポットのgroupを取得
-    let group=null;
-    if(spotData){
-      for(const c of spotData.categories){
-        for(const sp of c.spots){
-          if(sp.id===spotId&&sp.group){group=sp.group;break;}
-        }
-        if(group) break;
-      }
-    }
-    // 同groupの全スポットIDを収集
-    const targets=[spotId];
-    if(group&&spotData){
-      for(const c of spotData.categories){
-        for(const sp of c.spots){
-          if(sp.group===group&&sp.id!==spotId) targets.push(sp.id);
-        }
-      }
-    }
-    // 全対象にstatusをセット
-    for(const sid of targets){
-      if(!spotUserData[sid]) spotUserData[sid]={};
-      if(status) spotUserData[sid].status=status;
-      else delete spotUserData[sid].status;
-      if(Object.keys(spotUserData[sid]).length===0) delete spotUserData[sid];
-    }
-    // spotData側にも反映
-    if(spotData){
-      for(const c of spotData.categories){
-        for(const sp of c.spots){
-          if(targets.includes(sp.id)) sp._manualStatus=status;
-        }
-      }
-    }
-    // GitHub未保存フラグ
-    markDirty('spotUser');
-  }
-  // 実効的に「訪問した」扱いか
-  function isEffectiveVisited(spot){
-    const ms=spot._manualStatus||getManualStatus(spot.id);
-    if(ms==='visited') return true;
-    if(ms==='passed') return false;
-    // 未設定なら自動検出をそのまま使う
-    return !!spot.autoDetected;
-  }
-  // 実効的に「利用した」（手動で明示）か
-  function isManualVisited(spot){
-    const ms=spot._manualStatus||getManualStatus(spot.id);
-    return ms==='visited';
-  }
-
-  // spot_user.json を JSONダウンロードで書き出し
-  function downloadSpotUserJson(){
-    // 空エントリを除外して整形
-    const clean={};
-    for(const[k,v] of Object.entries(spotUserData)){
-      if(v&&v.status) clean[k]={status:v.status};
-    }
-    const json=JSON.stringify(clean,null,2);
-    const blob=new Blob([json],{type:'application/json'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download='spot_user.json';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
-
-  // spot_visits.json + spot_user.json を読み込み
-  async function loadSpotData(){
-    try{
-      const res=await fetch('data/spot_visits.json');
-      if(!res.ok) return;
-      spotData=await res.json();
-    }catch(e){
-      console.log('spot_visits.json not found:',e);
-      return;
-    }
-    // spot_user.json を読み込み（なくてもOK）
-    // 旧形式(manualChecked:true)との互換: statusに変換
-    try{
-      const res2=await fetch('data/spot_user.json');
-      if(res2.ok){
-        spotUserData=await res2.json();
-        for(const[k,v] of Object.entries(spotUserData)){
-          if(v.manualChecked===true&&!v.status){v.status='visited';delete v.manualChecked;}
-        }
-      }
-    }catch(e){}
-    // マージ
-    for(const cat of spotData.categories){
-      for(const s of cat.spots){
-        s._manualStatus=getManualStatus(s.id);
-      }
-    }
-    renderSpotHeaderStats();
-    renderSpotCatList();
-    addSpotMarkers();
-    addSpotLayerToggle();
-  }
-
-  function countSpotStats(){
-    if(!spotData) return {total:0,autoVisited:0,visited:0};
-    let total=0,autoVisited=0,visited=0;
-    for(const cat of spotData.categories){
-      for(const s of cat.spots){
-        total++;
-        if(s.autoDetected) autoVisited++;
-        if(isEffectiveVisited(s)) visited++;
-      }
-    }
-    return {total,autoVisited,visited};
-  }
-
-  function renderSpotHeaderStats(){
-    const stats=countSpotStats();
-    $('spot-header-stats').innerHTML=`
-      <div class="spot-stat-chip"><span>総スポット</span><span class="sv">${stats.total}</span></div>
-      <div class="spot-stat-chip"><span>訪問</span><span class="sv">${stats.visited}</span></div>
-      <div class="spot-stat-chip"><span>自動検出</span><span class="sv">${stats.autoVisited}</span></div>
-    `;
-  }
-
-  function getEffectiveCompleted(cat){
-    let n=0;
-    for(const s of cat.spots){
-      if(isEffectiveVisited(s)) n++;
-    }
-    return n;
-  }
-
-  function renderSpotCatList(){
-    spotCurrentView='catList';spotCurrentCatId=null;
-    const el=$('spot-sidebar-content');
-    if(!spotData||!spotData.categories.length){
-      el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px;">spot_visits.json が見つかりません。<br>パイプラインを実行してスポットデータを生成してください。</div>';
-      return;
-    }
-    el.innerHTML=spotData.categories.map(cat=>{
-      const ec=getEffectiveCompleted(cat);
-      const isComplete=ec>=cat.total;
-      return `<div class="spot-cat-item${isComplete?' spot-cat-complete':''}" data-cat-id="${cat.id}">
-        <div class="spot-cat-icon">${cat.icon||'📍'}</div>
-        <div class="spot-cat-info">
-          <div class="spot-cat-name">${cat.name}</div>
-          <div class="spot-cat-desc">${cat.description||''}</div>
-          <div class="spot-cat-prog">
-            <div class="spot-cat-bar"><div class="spot-cat-bar-fill" style="width:${cat.total>0?ec/cat.total*100:0}%"></div></div>
-            <div class="spot-cat-count">${ec}/${cat.total}</div>
-          </div>
-        </div>
-      </div>`;
-    }).join('');
-    // カテゴリ一覧の下部に保存ボタン
-    el.innerHTML+=`<div style="padding:10px 12px;"><button class="ctrl-btn" id="spot-save-all-btn" style="width:100%;padding:8px;font-size:12px;">📥 利用データを保存</button></div>`;
-    el.querySelectorAll('.spot-cat-item').forEach(item=>{
-      item.addEventListener('click',()=>renderSpotList(item.dataset.catId));
-    });
-    $('spot-save-all-btn').addEventListener('click',downloadSpotUserJson);
-  }
-
-  function renderSpotList(catId){
-    spotCurrentView='spotList';spotCurrentCatId=catId;
-    const cat=spotData.categories.find(c=>c.id===catId);
-    if(!cat) return;
-    const el=$('spot-sidebar-content');
-    let h=`<button class="back-btn" id="spot-back-to-cats">← カテゴリ一覧</button>`;
-    h+=`<div style="padding:4px 12px 8px;"><span style="font-size:15px;font-weight:700;color:var(--text-bright);">${cat.icon||''} ${cat.name}</span>`;
-    h+=`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${cat.description||''}</div></div>`;
-    for(const s of cat.spots){
-      const isAuto=s.autoDetected;
-      const ms=s._manualStatus||getManualStatus(s.id);
-      const effVisited=isEffectiveVisited(s);
-      const isManualV=ms==='visited';
-      const isPassed=ms==='passed';
-      // ステータス表示: 手動優先
-      const statusClass=isManualV?'manual':effVisited?'auto':'';
-      const statusIcon=isManualV?'✔':effVisited?'~':'';
-      const statusTitle=isManualV?'利用した':isPassed?'通過のみ（自動検出あり）':isAuto?'自動検出（近くを通過）':'未訪問';
-      const dateStr=s.firstVisit?`${s.firstVisit} ~ ${s.lastVisit||s.firstVisit}`:'';
-      // 自動検出マーク（手動で上書きしている場合に小さく表示）
-      const autoTag=(isAuto&&ms)?'<span style="font-size:9px;color:var(--text-dim);margin-left:4px;" title="自動検出あり">🛰</span>':'';
-      // 所属カテゴリバッジ（他カテゴリにも属している場合）
-      let otherCats='';
-      if(s.group){
-        const others=[];
-        for(const oc of spotData.categories){
-          if(oc.id===cat.id) continue;
-          for(const os of oc.spots){
-            if(os.group===s.group) others.push(oc);
-          }
-        }
-        if(others.length) otherCats=others.map(oc=>`<span style="font-size:9px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1px 5px;color:var(--text-dim);white-space:nowrap;">${oc.icon||''} ${oc.name}</span>`).join(' ');
-      }
-      h+=`<div class="spot-item" data-spot-id="${s.id}">
-        <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${statusTitle}">${statusIcon}</div>
-        <div class="spot-info">
-          <div class="spot-name">${s.name}${autoTag}</div>
-          <div class="spot-pref">${s.pref}${otherCats?' '+otherCats:''}</div>
-          ${dateStr?`<div class="spot-dates">${dateStr}${s.visitDays?' ('+s.visitDays+'日)':''}</div>`:''}
-          <div class="spot-actions">
-            <button class="spot-act-btn ${isManualV?'checked':''}" data-spot-id="${s.id}" data-action="visited">${isManualV?'✓ 利用した':'利用した'}</button>
-            <button class="spot-act-btn ${isPassed?'checked':''}" data-spot-id="${s.id}" data-action="passed" style="${isPassed?'background:var(--bg);border-color:var(--text-dim);color:var(--text-dim);font-weight:500;':''}">${isPassed?'✓ 通過のみ':'通過のみ'}</button>
-          </div>
-        </div>
-        <button class="spot-locate-btn" data-lat="${s.lat}" data-lon="${s.lon}" title="地図で表示">📍</button>
-      </div>`;
-    }
-    el.innerHTML=h;
-
-    // イベント: 戻るボタン
-    $('spot-back-to-cats').addEventListener('click',()=>{renderSpotCatList();renderSpotHeaderStats();});
-
-    // イベント: 利用した / 通過のみ
-    el.querySelectorAll('[data-action="visited"]').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const sid=btn.dataset.spotId;
-        const cur=getManualStatus(sid);
-        setManualStatus(sid,cur==='visited'?undefined:'visited');
-        renderSpotList(catId);
-        updateSpotMarkers();
-        renderSpotHeaderStats();
-      });
-    });
-    el.querySelectorAll('[data-action="passed"]').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const sid=btn.dataset.spotId;
-        const cur=getManualStatus(sid);
-        setManualStatus(sid,cur==='passed'?undefined:'passed');
-        renderSpotList(catId);
-        updateSpotMarkers();
-        renderSpotHeaderStats();
-      });
-    });
-
-    // イベント: 地図で表示
-    el.querySelectorAll('.spot-locate-btn').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const lat=parseFloat(btn.dataset.lat),lon=parseFloat(btn.dataset.lon);
-        map.setCenter({lat,lng:lon});
-        map.setZoom(15);
-        if(window.innerWidth<=768){
-          sidebar.classList.add('collapsed');
-          updateToggleBtn();
-          setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
-        }
-      });
-    });
-  }
-
-  // ── スポットマーカー (地図上) ──
-  function makeSpotIcon(catIcon,visited,manualChecked){
-    const bgColor=manualChecked?'#C1F0C8':visited?'#EFFBF1':'#e5e7eb';
-    const borderColor=manualChecked?'#4ade80':visited?'#86efac':'#9ca3af';
-    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34">
-      <circle cx="17" cy="17" r="15" fill="${bgColor}" stroke="${borderColor}" stroke-width="2"/>
-      <text x="17" y="23" text-anchor="middle" font-size="16">${catIcon}</text>
-    </svg>`;
-    return{url:'data:image/svg+xml,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(34,34),anchor:new google.maps.Point(17,17)};
-  }
-
-  function addSpotMarkers(){
-    if(!spotData) return;
-    clearSpotMarkers();
-    for(const cat of spotData.categories){
-      const catIcon=cat.icon||'📍';
-      for(const s of cat.spots){
-        const effVisited=isEffectiveVisited(s);
-        const isManualV=isManualVisited(s);
-        const marker=new google.maps.Marker({
-          position:{lat:s.lat,lng:s.lon},
-          map:spotMarkersVisible?map:null,
-          icon:makeSpotIcon(catIcon,effVisited,isManualV),
-          title:s.name,
-          zIndex:5,
-        });
-        const dateStr=s.firstVisit?`<br>初訪問: ${s.firstVisit}`:'';
-        const ms=s._manualStatus||getManualStatus(s.id);
-        const statusLabel=ms==='visited'?'利用した':ms==='passed'?'通過のみ':s.autoDetected?'自動検出':'未訪問';
-        // 所属カテゴリ一覧（複数ある場合は併記）
-        let catLabels=cat.icon+' '+cat.name;
-        if(s.group){
-          const allCats=[{icon:cat.icon,name:cat.name}];
-          for(const oc of spotData.categories){
-            if(oc.id===cat.id) continue;
-            for(const os of oc.spots){if(os.group===s.group) allCats.push({icon:oc.icon,name:oc.name});}
-          }
-          if(allCats.length>1) catLabels=allCats.map(c=>(c.icon||'')+' '+c.name).join(' / ');
-        }
-        const iwContent=`<div class="iw-body">
-          <div style="font-weight:700;font-size:14px;">${s.name}</div>
-          <div style="color:#7a8494;font-size:11px;margin-top:2px;">${catLabels} · ${s.pref}</div>
-          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManualV?'#C1F0C8':effVisited?'#EFFBF1':'#f3f4f6'};color:${isManualV?'#166534':effVisited?'#166534':'#6b7280'};font-weight:500;">${statusLabel}</span>${s.autoDetected&&ms?'<span style="font-size:9px;color:#7a8494;margin-left:4px;" title="自動検出あり">🛰</span>':''}</div>
-          ${dateStr?`<div style="font-size:11px;color:#7a8494;margin-top:4px;font-family:'DM Mono',monospace;">${dateStr}</div>`:''}
-        </div>`;
-        marker.addListener('click',()=>{
-          infoWindow.setContent(iwContent);
-          infoWindow.open(map,marker);
-        });
-        marker._spotId=s.id;
-        spotMarkers.push(marker);
-      }
-    }
-  }
-
-  function clearSpotMarkers(){
-    spotMarkers.forEach(m=>m.setMap(null));
-    spotMarkers=[];
-  }
-
-  function updateSpotMarkers(){
-    if(!spotData) return;
-    for(const marker of spotMarkers){
-      const sid=marker._spotId;
-      let found=null,catIcon='📍';
-      for(const cat of spotData.categories){
-        for(const s of cat.spots){if(s.id===sid){found=s;catIcon=cat.icon||'📍';break;}}
-        if(found) break;
-      }
-      if(found){
-        const effVisited=isEffectiveVisited(found);
-        const isManualV=isManualVisited(found);
-        marker.setIcon(makeSpotIcon(catIcon,effVisited,isManualV));
-      }
-    }
-  }
-
-  // レイヤートグルにスポット表示切替を追加（ヘッダーのメニューパネル内へ）
-  function addSpotLayerToggle(){
-    const chkSpots=document.createElement('input');
-    chkSpots.type='checkbox';chkSpots.id='toggle-spots';chkSpots.checked=true;
-    const lblSpots=document.createElement('label');
-    lblSpots.className='lmp-item';
-    const spotIcon=document.createElement('span');
-    spotIcon.textContent='📍';
-    spotIcon.style.cssText='font-size:14px;width:18px;text-align:center;flex-shrink:0;';
-    const spotText=document.createElement('span');
-    spotText.textContent='スポット';
-    lblSpots.append(chkSpots,spotIcon,spotText);
-    const lmpLayers=$('lmp-layers');
-    if(lmpLayers) lmpLayers.appendChild(lblSpots);
-    chkSpots.addEventListener('change',function(){
-      spotMarkersVisible=this.checked;
-      spotMarkers.forEach(m=>m.setMap(this.checked?map:null));
-    });
-  }
-
-  // スポットデータ読み込み開始
-  loadSpotData();
-
   // ── GitHub 連携: PAT を使ってリポジトリ内のファイルを直接更新 ──
   // Personal Access Token を localStorage に保存し、GitHub REST API 経由で data/*.json を更新する
   // 対象: data/routes.json, data/spot_user.json（手動で記録を追加するファイル）
@@ -4330,6 +3962,372 @@
   if(ghSaveRoutesBtn) ghSaveRoutesBtn.addEventListener('click',()=>githubSaveData('routes'));
   const ghSaveSpotsBtn=$('gh-save-spots-btn');
   if(ghSaveSpotsBtn) ghSaveSpotsBtn.addEventListener('click',()=>githubSaveData('spotUser'));
+
+  // ══════════════════════════════════════════════════════
+  // ── スポットコレクション機能 ──
+  // ══════════════════════════════════════════════════════
+  let spotData=null; // spot_visits.json のデータ
+  let spotUserData={}; // spot_user.json のデータ {spotId: {manualChecked:true}}
+  let spotMarkers=[]; // Google Maps マーカー
+  let spotMarkersVisible=true;
+  let spotCurrentView='catList'; // 'catList' | 'spotList'
+  let spotCurrentCatId=null;
+
+  function getSpotUser(spotId){
+    return spotUserData[spotId]||{};
+  }
+  // status: "visited"=利用した, "passed"=通過のみ, undefined=未設定
+  function getManualStatus(spotId){
+    const u=spotUserData[spotId];
+    return u?u.status:undefined;
+  }
+  function setManualStatus(spotId,status){
+    // 対象スポットのgroupを取得
+    let group=null;
+    if(spotData){
+      for(const c of spotData.categories){
+        for(const sp of c.spots){
+          if(sp.id===spotId&&sp.group){group=sp.group;break;}
+        }
+        if(group) break;
+      }
+    }
+    // 同groupの全スポットIDを収集
+    const targets=[spotId];
+    if(group&&spotData){
+      for(const c of spotData.categories){
+        for(const sp of c.spots){
+          if(sp.group===group&&sp.id!==spotId) targets.push(sp.id);
+        }
+      }
+    }
+    // 全対象にstatusをセット
+    for(const sid of targets){
+      if(!spotUserData[sid]) spotUserData[sid]={};
+      if(status) spotUserData[sid].status=status;
+      else delete spotUserData[sid].status;
+      if(Object.keys(spotUserData[sid]).length===0) delete spotUserData[sid];
+    }
+    // spotData側にも反映
+    if(spotData){
+      for(const c of spotData.categories){
+        for(const sp of c.spots){
+          if(targets.includes(sp.id)) sp._manualStatus=status;
+        }
+      }
+    }
+    // GitHub未保存フラグ
+    markDirty('spotUser');
+  }
+  // 実効的に「訪問した」扱いか
+  function isEffectiveVisited(spot){
+    const ms=spot._manualStatus||getManualStatus(spot.id);
+    if(ms==='visited') return true;
+    if(ms==='passed') return false;
+    // 未設定なら自動検出をそのまま使う
+    return !!spot.autoDetected;
+  }
+  // 実効的に「利用した」（手動で明示）か
+  function isManualVisited(spot){
+    const ms=spot._manualStatus||getManualStatus(spot.id);
+    return ms==='visited';
+  }
+
+  // spot_user.json を JSONダウンロードで書き出し
+  function downloadSpotUserJson(){
+    // 空エントリを除外して整形
+    const clean={};
+    for(const[k,v] of Object.entries(spotUserData)){
+      if(v&&v.status) clean[k]={status:v.status};
+    }
+    const json=JSON.stringify(clean,null,2);
+    const blob=new Blob([json],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='spot_user.json';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // spot_visits.json + spot_user.json を読み込み
+  async function loadSpotData(){
+    try{
+      const res=await fetch('data/spot_visits.json');
+      if(!res.ok) return;
+      spotData=await res.json();
+    }catch(e){
+      console.log('spot_visits.json not found:',e);
+      return;
+    }
+    // spot_user.json を読み込み（なくてもOK）
+    // 旧形式(manualChecked:true)との互換: statusに変換
+    try{
+      const res2=await fetch('data/spot_user.json');
+      if(res2.ok){
+        spotUserData=await res2.json();
+        for(const[k,v] of Object.entries(spotUserData)){
+          if(v.manualChecked===true&&!v.status){v.status='visited';delete v.manualChecked;}
+        }
+      }
+    }catch(e){}
+    // マージ
+    for(const cat of spotData.categories){
+      for(const s of cat.spots){
+        s._manualStatus=getManualStatus(s.id);
+      }
+    }
+    renderSpotHeaderStats();
+    renderSpotCatList();
+    addSpotMarkers();
+    addSpotLayerToggle();
+  }
+
+  function countSpotStats(){
+    if(!spotData) return {total:0,autoVisited:0,visited:0};
+    let total=0,autoVisited=0,visited=0;
+    for(const cat of spotData.categories){
+      for(const s of cat.spots){
+        total++;
+        if(s.autoDetected) autoVisited++;
+        if(isEffectiveVisited(s)) visited++;
+      }
+    }
+    return {total,autoVisited,visited};
+  }
+
+  function renderSpotHeaderStats(){
+    const stats=countSpotStats();
+    $('spot-header-stats').innerHTML=`
+      <div class="spot-stat-chip"><span>総スポット</span><span class="sv">${stats.total}</span></div>
+      <div class="spot-stat-chip"><span>訪問</span><span class="sv">${stats.visited}</span></div>
+      <div class="spot-stat-chip"><span>自動検出</span><span class="sv">${stats.autoVisited}</span></div>
+    `;
+  }
+
+  function getEffectiveCompleted(cat){
+    let n=0;
+    for(const s of cat.spots){
+      if(isEffectiveVisited(s)) n++;
+    }
+    return n;
+  }
+
+  function renderSpotCatList(){
+    spotCurrentView='catList';spotCurrentCatId=null;
+    const el=$('spot-sidebar-content');
+    if(!spotData||!spotData.categories.length){
+      el.innerHTML='<div style="padding:20px;text-align:center;color:var(--text-dim);font-size:12px;">spot_visits.json が見つかりません。<br>パイプラインを実行してスポットデータを生成してください。</div>';
+      return;
+    }
+    el.innerHTML=spotData.categories.map(cat=>{
+      const ec=getEffectiveCompleted(cat);
+      const isComplete=ec>=cat.total;
+      return `<div class="spot-cat-item${isComplete?' spot-cat-complete':''}" data-cat-id="${cat.id}">
+        <div class="spot-cat-icon">${cat.icon||'📍'}</div>
+        <div class="spot-cat-info">
+          <div class="spot-cat-name">${cat.name}</div>
+          <div class="spot-cat-desc">${cat.description||''}</div>
+          <div class="spot-cat-prog">
+            <div class="spot-cat-bar"><div class="spot-cat-bar-fill" style="width:${cat.total>0?ec/cat.total*100:0}%"></div></div>
+            <div class="spot-cat-count">${ec}/${cat.total}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+    el.querySelectorAll('.spot-cat-item').forEach(item=>{
+      item.addEventListener('click',()=>renderSpotList(item.dataset.catId));
+    });
+  }
+
+  function renderSpotList(catId){
+    spotCurrentView='spotList';spotCurrentCatId=catId;
+    const cat=spotData.categories.find(c=>c.id===catId);
+    if(!cat) return;
+    const el=$('spot-sidebar-content');
+    let h=`<button class="back-btn" id="spot-back-to-cats">← カテゴリ一覧</button>`;
+    h+=`<div style="padding:4px 12px 8px;"><span style="font-size:15px;font-weight:700;color:var(--text-bright);">${cat.icon||''} ${cat.name}</span>`;
+    h+=`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${cat.description||''}</div></div>`;
+    for(const s of cat.spots){
+      const isAuto=s.autoDetected;
+      const ms=s._manualStatus||getManualStatus(s.id);
+      const effVisited=isEffectiveVisited(s);
+      const isManualV=ms==='visited';
+      const isPassed=ms==='passed';
+      // ステータス表示: 手動優先
+      const statusClass=isManualV?'manual':effVisited?'auto':'';
+      const statusIcon=isManualV?'✔':effVisited?'~':'';
+      const statusTitle=isManualV?'利用した':isPassed?'通過のみ（自動検出あり）':isAuto?'自動検出（近くを通過）':'未訪問';
+      const dateStr=s.firstVisit?`${s.firstVisit} ~ ${s.lastVisit||s.firstVisit}`:'';
+      // 自動検出マーク（手動で上書きしている場合に小さく表示）
+      const autoTag=(isAuto&&ms)?'<span style="font-size:9px;color:var(--text-dim);margin-left:4px;" title="自動検出あり">🛰</span>':'';
+      // 所属カテゴリバッジ（他カテゴリにも属している場合）
+      let otherCats='';
+      if(s.group){
+        const others=[];
+        for(const oc of spotData.categories){
+          if(oc.id===cat.id) continue;
+          for(const os of oc.spots){
+            if(os.group===s.group) others.push(oc);
+          }
+        }
+        if(others.length) otherCats=others.map(oc=>`<span style="font-size:9px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1px 5px;color:var(--text-dim);white-space:nowrap;">${oc.icon||''} ${oc.name}</span>`).join(' ');
+      }
+      h+=`<div class="spot-item" data-spot-id="${s.id}">
+        <div class="spot-status ${statusClass}" data-spot-id="${s.id}" title="${statusTitle}">${statusIcon}</div>
+        <div class="spot-info">
+          <div class="spot-name">${s.name}${autoTag}</div>
+          <div class="spot-pref">${s.pref}${otherCats?' '+otherCats:''}</div>
+          ${dateStr?`<div class="spot-dates">${dateStr}${s.visitDays?' ('+s.visitDays+'日)':''}</div>`:''}
+          <div class="spot-actions">
+            <button class="spot-act-btn ${isManualV?'checked':''}" data-spot-id="${s.id}" data-action="visited">${isManualV?'✓ 利用した':'利用した'}</button>
+            <button class="spot-act-btn ${isPassed?'checked':''}" data-spot-id="${s.id}" data-action="passed" style="${isPassed?'background:var(--bg);border-color:var(--text-dim);color:var(--text-dim);font-weight:500;':''}">${isPassed?'✓ 通過のみ':'通過のみ'}</button>
+          </div>
+        </div>
+        <button class="spot-locate-btn" data-lat="${s.lat}" data-lon="${s.lon}" title="地図で表示">📍</button>
+      </div>`;
+    }
+    el.innerHTML=h;
+
+    // イベント: 戻るボタン
+    $('spot-back-to-cats').addEventListener('click',()=>{renderSpotCatList();renderSpotHeaderStats();});
+
+    // イベント: 利用した / 通過のみ
+    el.querySelectorAll('[data-action="visited"]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const sid=btn.dataset.spotId;
+        const cur=getManualStatus(sid);
+        setManualStatus(sid,cur==='visited'?undefined:'visited');
+        renderSpotList(catId);
+        updateSpotMarkers();
+        renderSpotHeaderStats();
+      });
+    });
+    el.querySelectorAll('[data-action="passed"]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const sid=btn.dataset.spotId;
+        const cur=getManualStatus(sid);
+        setManualStatus(sid,cur==='passed'?undefined:'passed');
+        renderSpotList(catId);
+        updateSpotMarkers();
+        renderSpotHeaderStats();
+      });
+    });
+
+    // イベント: 地図で表示
+    el.querySelectorAll('.spot-locate-btn').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const lat=parseFloat(btn.dataset.lat),lon=parseFloat(btn.dataset.lon);
+        map.setCenter({lat,lng:lon});
+        map.setZoom(15);
+        if(window.innerWidth<=768){
+          sidebar.classList.add('collapsed');
+          updateToggleBtn();
+          setTimeout(()=>google.maps.event.trigger(map,'resize'),350);
+        }
+      });
+    });
+  }
+
+  // ── スポットマーカー (地図上) ──
+  function makeSpotIcon(catIcon,visited,manualChecked){
+    const bgColor=manualChecked?'#C1F0C8':visited?'#EFFBF1':'#e5e7eb';
+    const borderColor=manualChecked?'#4ade80':visited?'#86efac':'#9ca3af';
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="34" height="34">
+      <circle cx="17" cy="17" r="15" fill="${bgColor}" stroke="${borderColor}" stroke-width="2"/>
+      <text x="17" y="23" text-anchor="middle" font-size="16">${catIcon}</text>
+    </svg>`;
+    return{url:'data:image/svg+xml,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(34,34),anchor:new google.maps.Point(17,17)};
+  }
+
+  function addSpotMarkers(){
+    if(!spotData) return;
+    clearSpotMarkers();
+    for(const cat of spotData.categories){
+      const catIcon=cat.icon||'📍';
+      for(const s of cat.spots){
+        const effVisited=isEffectiveVisited(s);
+        const isManualV=isManualVisited(s);
+        const marker=new google.maps.Marker({
+          position:{lat:s.lat,lng:s.lon},
+          map:spotMarkersVisible?map:null,
+          icon:makeSpotIcon(catIcon,effVisited,isManualV),
+          title:s.name,
+          zIndex:5,
+        });
+        const dateStr=s.firstVisit?`<br>初訪問: ${s.firstVisit}`:'';
+        const ms=s._manualStatus||getManualStatus(s.id);
+        const statusLabel=ms==='visited'?'利用した':ms==='passed'?'通過のみ':s.autoDetected?'自動検出':'未訪問';
+        // 所属カテゴリ一覧（複数ある場合は併記）
+        let catLabels=cat.icon+' '+cat.name;
+        if(s.group){
+          const allCats=[{icon:cat.icon,name:cat.name}];
+          for(const oc of spotData.categories){
+            if(oc.id===cat.id) continue;
+            for(const os of oc.spots){if(os.group===s.group) allCats.push({icon:oc.icon,name:oc.name});}
+          }
+          if(allCats.length>1) catLabels=allCats.map(c=>(c.icon||'')+' '+c.name).join(' / ');
+        }
+        const iwContent=`<div class="iw-body">
+          <div style="font-weight:700;font-size:14px;">${s.name}</div>
+          <div style="color:#7a8494;font-size:11px;margin-top:2px;">${catLabels} · ${s.pref}</div>
+          <div style="margin-top:6px;font-size:11px;"><span style="padding:2px 8px;border-radius:10px;background:${isManualV?'#C1F0C8':effVisited?'#EFFBF1':'#f3f4f6'};color:${isManualV?'#166534':effVisited?'#166534':'#6b7280'};font-weight:500;">${statusLabel}</span>${s.autoDetected&&ms?'<span style="font-size:9px;color:#7a8494;margin-left:4px;" title="自動検出あり">🛰</span>':''}</div>
+          ${dateStr?`<div style="font-size:11px;color:#7a8494;margin-top:4px;font-family:'DM Mono',monospace;">${dateStr}</div>`:''}
+        </div>`;
+        marker.addListener('click',()=>{
+          infoWindow.setContent(iwContent);
+          infoWindow.open(map,marker);
+        });
+        marker._spotId=s.id;
+        spotMarkers.push(marker);
+      }
+    }
+  }
+
+  function clearSpotMarkers(){
+    spotMarkers.forEach(m=>m.setMap(null));
+    spotMarkers=[];
+  }
+
+  function updateSpotMarkers(){
+    if(!spotData) return;
+    for(const marker of spotMarkers){
+      const sid=marker._spotId;
+      let found=null,catIcon='📍';
+      for(const cat of spotData.categories){
+        for(const s of cat.spots){if(s.id===sid){found=s;catIcon=cat.icon||'📍';break;}}
+        if(found) break;
+      }
+      if(found){
+        const effVisited=isEffectiveVisited(found);
+        const isManualV=isManualVisited(found);
+        marker.setIcon(makeSpotIcon(catIcon,effVisited,isManualV));
+      }
+    }
+  }
+
+  // レイヤートグルにスポット表示切替を追加（ヘッダーのメニューパネル内へ）
+  function addSpotLayerToggle(){
+    const chkSpots=document.createElement('input');
+    chkSpots.type='checkbox';chkSpots.id='toggle-spots';chkSpots.checked=true;
+    const lblSpots=document.createElement('label');
+    lblSpots.className='lmp-item';
+    const spotIcon=document.createElement('span');
+    spotIcon.textContent='📍';
+    spotIcon.style.cssText='font-size:14px;width:18px;text-align:center;flex-shrink:0;';
+    const spotText=document.createElement('span');
+    spotText.textContent='スポット';
+    lblSpots.append(chkSpots,spotIcon,spotText);
+    const lmpLayers=$('lmp-layers');
+    if(lmpLayers) lmpLayers.appendChild(lblSpots);
+    chkSpots.addEventListener('change',function(){
+      spotMarkersVisible=this.checked;
+      spotMarkers.forEach(m=>m.setMap(this.checked?map:null));
+    });
+  }
+
+  // スポットデータ読み込み開始
+  loadSpotData();
+
 
   // ── 現在地リアルタイム追跡 ──
   // watchPositionで継続的に現在地を取得し、地図に青いマーカーで表示
@@ -4838,7 +4836,6 @@
     }
 
     renderSavedRoutesList();
-    downloadRoutesJson();
     markDirty('routes');
     // タブを保存ルートに切り替え
     document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.remove('active'));
@@ -4909,7 +4906,6 @@
         hideSavedRoute(id);
         savedRoutes=savedRoutes.filter(r=>r.id!==id);
         renderSavedRoutesList();
-        downloadRoutesJson();
         markDirty('routes');
       });
     });

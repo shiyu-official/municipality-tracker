@@ -567,18 +567,35 @@
 
   /* 保存ルート一覧 */
   .saved-routes-list{flex:1;overflow-y:auto;padding:4px 6px;}
-  .saved-route-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;transition:background 0.15s;cursor:default;}
-  .saved-route-item:hover{background:var(--bg-panel-hover);}
+  .saved-route-item-wrap{border-radius:8px;margin-bottom:2px;transition:background 0.15s;}
+  .saved-route-item-wrap.expanded{background:var(--bg);box-shadow:inset 0 0 0 1px var(--border-light);}
+  .saved-route-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:default;}
+  .saved-route-item-wrap:not(.expanded) .saved-route-item:hover{background:var(--bg-panel-hover);}
   .sr-check{margin:0;accent-color:var(--accent);cursor:pointer;flex-shrink:0;}
   .sr-color{width:14px;height:14px;border-radius:3px;flex-shrink:0;cursor:pointer;border:1px solid rgba(0,0,0,0.15);}
   .sr-info{flex:1;min-width:0;}
+  .sr-info-clickable{cursor:pointer;}
   .sr-name{font-size:12px;font-weight:500;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .sr-meta{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:1px;}
-  .sr-delete{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;flex-shrink:0;}
-  .sr-delete:hover{color:var(--danger);}
-  .sr-edit{background:none;border:none;cursor:pointer;font-size:11px;color:var(--text-dim);padding:2px 4px;flex-shrink:0;}
-  .sr-edit:hover{color:var(--accent);}
+  .sr-toggle{background:none;border:none;cursor:pointer;font-size:14px;color:var(--text-dim);padding:2px 6px;flex-shrink:0;line-height:1;transition:transform 0.15s,color 0.15s;font-family:monospace;}
+  .sr-toggle:hover{color:var(--accent);}
   .sr-empty{padding:20px;text-align:center;color:var(--text-dim);font-size:12px;}
+
+  /* 詳細パネル */
+  .sr-detail{padding:4px 12px 10px 12px;animation:srdSlideIn 0.2s ease;display:flex;flex-direction:column;gap:6px;}
+  @keyframes srdSlideIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+  .srd-row{display:grid;grid-template-columns:64px 1fr;gap:8px;align-items:start;font-size:11px;}
+  .srd-label{color:var(--text-dim);font-weight:600;letter-spacing:0.3px;padding-top:2px;}
+  .srd-value{color:var(--text);min-width:0;word-break:break-word;}
+  .srd-wp{font-size:11px;line-height:1.4;color:var(--text);padding:1px 0;}
+  .srd-empty{color:var(--text-dim);font-style:italic;}
+  .srd-cities{display:flex;flex-wrap:wrap;gap:3px;}
+  .srd-city-pill{display:inline-block;padding:1px 7px;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;font-size:10px;color:var(--text);white-space:nowrap;}
+  .srd-city-more{display:inline-block;padding:1px 7px;background:var(--accent-light);border:1px solid var(--accent);border-radius:10px;font-size:10px;color:var(--accent);font-weight:500;}
+  .srd-actions{display:flex;gap:4px;margin-top:4px;padding-top:8px;border-top:1px dashed var(--border-light);}
+  .srd-btn{flex:1;padding:5px 6px;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--text);transition:all 0.12s;}
+  .srd-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+  .srd-btn.srd-danger:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-bg-hover);}
   .sr-actions{display:flex;gap:4px;padding:8px 10px;border-top:1px solid var(--border-light);}
   .sr-actions button{flex:1;padding:5px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--text-dim);}
   .sr-actions button:hover{border-color:var(--accent);color:var(--accent);}
@@ -4855,6 +4872,8 @@
   }
 
   // 一覧描画
+  let _expandedRouteId=null; // 詳細展開中のルートID
+
   function renderSavedRoutesList(){
     const list=$('saved-routes-list');
     if(!savedRoutes.length){
@@ -4867,21 +4886,66 @@
       const h=Math.floor(dur/60),m=dur%60;
       const durStr=h>0?`${h}h${m}m`:`${m}m`;
       const shown=!!displayedRoutes[r.id];
-      return`<div class="saved-route-item" data-id="${r.id}">
-        <input type="checkbox" class="sr-check" data-id="${r.id}" ${shown?'checked':''}>
-        <div class="sr-color" data-id="${r.id}" style="background:${r.color};" title="色を変更"></div>
-        <div class="sr-info">
-          <div class="sr-name">${r.name}</div>
-          <div class="sr-meta">${dist}km / ${durStr} / ${r.passedCities?r.passedCities.length:0}市区町村</div>
+      const expanded=_expandedRouteId===r.id;
+
+      // 経由地リスト
+      const wpHtml=(r.waypoints||[]).map((w,i)=>{
+        const name=w.name||(w.cityCode?(featureProps[w.cityCode]?buildFullName(w.cityCode,featureProps[w.cityCode].gun,featureProps[w.cityCode].city,featureProps[w.cityCode].ward):'(市区町村)'):`${w.coord[0].toFixed(4)}, ${w.coord[1].toFixed(4)}`);
+        return `<div class="srd-wp">${i+1}. ${name}</div>`;
+      }).join('')||'<div class="srd-empty">なし</div>';
+
+      // 通過市区町村リスト（最初の数件 + 残数）
+      const cityList=(r.passedCities||[]).slice(0,12).map(code=>{
+        const fp=featureProps[code];
+        if(!fp) return null;
+        const name=buildFullName(code,fp.gun,fp.city,fp.ward);
+        return `<span class="srd-city-pill" title="${fp.pref||''}${name}">${name}</span>`;
+      }).filter(Boolean).join('');
+      const moreCount=Math.max(0,(r.passedCities?.length||0)-12);
+      const cityListMore=moreCount>0?`<span class="srd-city-more">+${moreCount}</span>`:'';
+
+      // 走行モード
+      const modeMap={driving:'🚗 自動車',walking:'🚶 徒歩',bicycling:'🚴 自転車',transit:'🚇 公共交通'};
+      const modeLabel=modeMap[r.mode]||r.mode||'-';
+
+      // 出発・目的地名
+      const fromName=r.from?.name||'-';
+      const toName=r.to?.name||'-';
+
+      const detailHtml=expanded?`
+        <div class="sr-detail">
+          <div class="srd-row"><div class="srd-label">出発</div><div class="srd-value">${fromName}</div></div>
+          <div class="srd-row"><div class="srd-label">目的</div><div class="srd-value">${toName}</div></div>
+          <div class="srd-row"><div class="srd-label">経由地</div><div class="srd-value">${wpHtml}</div></div>
+          <div class="srd-row"><div class="srd-label">モード</div><div class="srd-value">${modeLabel}</div></div>
+          <div class="srd-row"><div class="srd-label">距離</div><div class="srd-value">${dist} km</div></div>
+          <div class="srd-row"><div class="srd-label">時間</div><div class="srd-value">${durStr}</div></div>
+          <div class="srd-row"><div class="srd-label">通過 (${r.passedCities?.length||0})</div><div class="srd-value srd-cities">${cityList}${cityListMore}</div></div>
+          <div class="srd-actions">
+            <button class="srd-btn" data-act="locate" data-id="${r.id}" title="地図で表示">🔍 地図</button>
+            <button class="srd-btn" data-act="edit" data-id="${r.id}" title="編集モードに読み込む">✏️ 編集</button>
+            <button class="srd-btn srd-danger" data-act="delete" data-id="${r.id}" title="削除">🗑 削除</button>
+          </div>
+        </div>`:'';
+
+      return`<div class="saved-route-item-wrap ${expanded?'expanded':''}" data-id="${r.id}">
+        <div class="saved-route-item" data-id="${r.id}">
+          <input type="checkbox" class="sr-check" data-id="${r.id}" ${shown?'checked':''}>
+          <div class="sr-color" data-id="${r.id}" style="background:${r.color};" title="色を変更"></div>
+          <div class="sr-info sr-info-clickable" data-id="${r.id}">
+            <div class="sr-name">${r.name}</div>
+            <div class="sr-meta">${dist}km / ${durStr} / ${r.passedCities?r.passedCities.length:0}市区町村</div>
+          </div>
+          <button class="sr-toggle" data-id="${r.id}" title="${expanded?'閉じる':'詳細を開く'}">${expanded?'▾':'▸'}</button>
         </div>
-        <button class="sr-edit" data-id="${r.id}" title="編集">✏️</button>
-        <button class="sr-delete" data-id="${r.id}" title="削除">🗑</button>
+        ${detailHtml}
       </div>`;
     }).join('');
 
     // チェックボックス: 表示/非表示
     list.querySelectorAll('.sr-check').forEach(cb=>{
-      cb.addEventListener('change',()=>{
+      cb.addEventListener('change',(e)=>{
+        e.stopPropagation();
         const id=cb.dataset.id;
         if(cb.checked) showSavedRoute(id);
         else hideSavedRoute(id);
@@ -4894,19 +4958,50 @@
         showColorPicker(el,el.dataset.id);
       });
     });
-    // 編集
-    list.querySelectorAll('.sr-edit').forEach(btn=>{
-      btn.addEventListener('click',()=>loadRouteForEdit(btn.dataset.id));
-    });
-    // ルート削除
-    list.querySelectorAll('.sr-delete').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const id=btn.dataset.id;
-        if(!confirm('このルートを削除しますか？')) return;
-        hideSavedRoute(id);
-        savedRoutes=savedRoutes.filter(r=>r.id!==id);
+    // 行クリック (info部分) で詳細を開閉
+    list.querySelectorAll('.sr-info-clickable').forEach(el=>{
+      el.addEventListener('click',()=>{
+        const id=el.dataset.id;
+        _expandedRouteId=(_expandedRouteId===id)?null:id;
         renderSavedRoutesList();
-        markDirty('routes');
+      });
+    });
+    // 開閉トグルボタン
+    list.querySelectorAll('.sr-toggle').forEach(btn=>{
+      btn.addEventListener('click',ev=>{
+        ev.stopPropagation();
+        const id=btn.dataset.id;
+        _expandedRouteId=(_expandedRouteId===id)?null:id;
+        renderSavedRoutesList();
+      });
+    });
+    // 詳細パネル内のアクションボタン
+    list.querySelectorAll('.srd-btn').forEach(btn=>{
+      btn.addEventListener('click',ev=>{
+        ev.stopPropagation();
+        const id=btn.dataset.id;
+        const act=btn.dataset.act;
+        if(act==='locate'){
+          // 地図表示+ズーム
+          if(!displayedRoutes[id]) showSavedRoute(id);
+          const r=savedRoutes.find(x=>x.id===id);
+          if(r&&r.geometry&&r.geometry.length){
+            const bounds=new google.maps.LatLngBounds();
+            r.geometry.forEach(c=>bounds.extend({lat:c[1],lng:c[0]}));
+            map.fitBounds(bounds);
+          }
+          // チェックボックスもチェック状態に
+          renderSavedRoutesList();
+        } else if(act==='edit'){
+          loadRouteForEdit(id);
+        } else if(act==='delete'){
+          if(!confirm('このルートを削除しますか？')) return;
+          hideSavedRoute(id);
+          savedRoutes=savedRoutes.filter(r=>r.id!==id);
+          if(_expandedRouteId===id) _expandedRouteId=null;
+          renderSavedRoutesList();
+          markDirty('routes');
+        }
       });
     });
   }

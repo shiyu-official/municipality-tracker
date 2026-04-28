@@ -4250,14 +4250,14 @@
     // 訪問状態に応じた配色（しずく型ピン本体の色）
     let bodyFill,bodyStroke;
     if(manualChecked){
-      bodyFill='#dc2626';   // 赤（手動済み = しっかり訪問記録した）
-      bodyStroke='#7f1d1d';
-    } else if(visited){
-      bodyFill='#22c55e';   // 緑（自動検出）
+      bodyFill='#22c55e';   // 濃い緑（手動チェック済み）
       bodyStroke='#15803d';
+    } else if(visited){
+      bodyFill='#86efac';   // 薄緑（自動検出）
+      bodyStroke='#22c55e';
     } else {
-      bodyFill='#9ca3af';   // グレー（未訪問）
-      bodyStroke='#4b5563';
+      bodyFill='#f3f4f6';   // 薄グレー（未訪問）
+      bodyStroke='#9ca3af';
     }
 
     // しずく型SVGピン

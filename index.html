@@ -142,7 +142,11 @@
     --current-city-stroke:#fde68a;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{overscroll-behavior:none;-webkit-overflow-scrolling:auto;}
   body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;}
+  /* 地図はGoogle Mapsが内部でジェスチャ処理するのでtouch-actionは指定しない */
+  /* スクロール領域以外はジェスチャ干渉を抑止 */
+  #header,#sidebar-toggle,#geo-fab-group,#layer-menu-panel,#search-panel,.gh-modal,.city-select-modal{touch-action:manipulation;}
 
   #header{position:fixed;top:0;left:0;right:0;z-index:1000;height:54px;background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:12px;}
   #header h1{font-size:16px;font-weight:700;white-space:nowrap;color:var(--text-bright);flex-shrink:0;}
@@ -214,6 +218,39 @@
   .gh-save-btn:disabled{opacity:0.4;cursor:not-allowed;}
   .gh-save-btn.has-changes{border-color:var(--accent);color:var(--accent);background:var(--accent-light);font-weight:500;}
   .gh-save-btn.has-changes::after{content:'';position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:1.5px solid var(--bg-panel);}
+
+  /* 現在地常設ステータスバー（追跡ON時のみ表示） */
+  #geo-statusbar{
+    position:fixed;
+    top:62px;left:328px;
+    z-index:1002;
+    display:flex;align-items:center;gap:8px;
+    background:var(--bg-panel);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:6px 14px;
+    box-shadow:var(--shadow-md);
+    font-size:12px;color:var(--text);
+    font-family:'Noto Sans JP',sans-serif;
+    pointer-events:none;
+    max-width:calc(100vw - 350px);
+    transition:left 0.3s ease;
+  }
+  #geo-statusbar[hidden]{display:none;}
+  body.sidebar-collapsed #geo-statusbar{left:14px;}
+  .geo-sb-dot{
+    width:9px;height:9px;border-radius:50%;
+    background:#4285f4;border:2px solid #fff;
+    box-shadow:0 0 0 1.5px #4285f4;
+    flex-shrink:0;
+    animation:geo-sb-blink 2.4s ease-in-out infinite;
+  }
+  @keyframes geo-sb-blink{
+    0%,100%{opacity:1;transform:scale(1);}
+    50%{opacity:0.55;transform:scale(0.85);}
+  }
+  .geo-sb-text{font-weight:600;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .geo-sb-meta{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;flex-shrink:0;}
   /* 現在地マーカー（地図上） */
   @keyframes geo-pulse{
     0%{transform:scale(1);opacity:0.6;}
@@ -323,6 +360,12 @@
     #geo-fab-group button{width:44px;height:44px;font-size:18px;}
     #fab-geolocation .fab-geo-icon{width:18px;height:18px;}
     #fab-geolocation .fab-geo-dot{width:12px;height:12px;}
+    #geo-statusbar{
+      top:56px;left:50%;transform:translateX(-50%);
+      max-width:calc(100vw - 24px);
+      padding:5px 12px;font-size:11px;
+    }
+    body.sidebar-collapsed #geo-statusbar{left:50%;}
   }
   .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
   .stat-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;white-space:nowrap;font-family:'DM Mono',monospace;}
@@ -837,6 +880,13 @@
   </div>
   <button id="layer-menu-btn" title="レイヤー・凡例" aria-label="レイヤーメニュー" aria-expanded="false"><svg class="btn-icon" width="18" height="18"><use href="#i-layers"/></svg></button>
   <button id="theme-toggle-btn" title="テーマ切替（自動/ライト/ダーク）" aria-label="テーマ切替"><svg class="btn-icon" width="18" height="18"><use href="#i-theme-auto"/></svg></button>
+</div>
+
+<!-- 現在地ステータスバー（追跡ON時のみ表示） -->
+<div id="geo-statusbar" hidden>
+  <span class="geo-sb-dot"></span>
+  <span class="geo-sb-text" id="geo-sb-text">取得中...</span>
+  <span class="geo-sb-meta" id="geo-sb-meta"></span>
 </div>
 
 <!-- レイヤー・凡例メニューパネル（開閉式） -->
@@ -1607,6 +1657,9 @@
       handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},featureToProps(e.feature),cx,cy);
       return;
     }
+    // 既存のInfoWindowを一旦閉じてから、新しい内容で開き直す
+    // これにより別の市区町村クリック時に古いポップアップが残らず切り替わる
+    infoWindow.close();
     infoWindow.setContent(popupHTMLFromFeature(e.feature));
     infoWindow.setPosition(e.latLng);
     infoWindow.open(map);
@@ -4608,6 +4661,14 @@
           }
         }
       }
+      // 常設ステータスバーも更新
+      if(newCode){
+        const fp=featureProps[newCode];
+        const fullName=fp?(fp.pref||'')+(buildFullName(newCode,fp.gun,fp.city,fp.ward)||newCode):newCode;
+        updateStatusBar(fullName,lastPos?lastPos.accuracy:null);
+      } else {
+        updateStatusBar(null,lastPos?lastPos.accuracy:null);
+      }
     }
 
     function recenterToCurrentPos(zoomTo){
@@ -4637,6 +4698,35 @@
       fabToggle.title=on?'現在地の追跡中（クリックで停止）':'現在地を追跡';
       if(fabRecenter) fabRecenter.hidden=!on||!lastPos;
       if(!on) setFollowMode(false);
+      // 常設ステータスバー
+      const sb=$('geo-statusbar');
+      if(sb){
+        sb.hidden=!on;
+        if(on){
+          // 初期表示（位置未取得）
+          const txt=$('geo-sb-text');
+          const meta=$('geo-sb-meta');
+          if(txt) txt.textContent='位置情報を取得中...';
+          if(meta) meta.textContent='';
+        }
+      }
+    }
+
+    // ステータスバーを更新（市区町村名と精度）
+    function updateStatusBar(cityFullName,accuracy){
+      const txt=$('geo-sb-text');
+      const meta=$('geo-sb-meta');
+      if(!txt||!meta) return;
+      if(cityFullName){
+        txt.textContent='現在地: '+cityFullName;
+      } else {
+        txt.textContent='現在地（市区町村外）';
+      }
+      if(typeof accuracy==='number'&&accuracy>0){
+        meta.textContent='±'+Math.round(accuracy)+'m';
+      } else {
+        meta.textContent='';
+      }
     }
 
     // 位置取得の成功コールバック
@@ -4654,6 +4744,15 @@
       }
       // 位置が取れた時点で recenterボタンを表示
       if(fabRecenter&&isTracking) fabRecenter.hidden=false;
+      // ステータスバーの精度更新（市区町村が変わらなくても精度は変わるので毎回）
+      const cur=window._currentCityCode;
+      if(cur){
+        const fp=featureProps[cur];
+        const fullName=fp?(fp.pref||'')+(buildFullName(cur,fp.gun,fp.city,fp.ward)||cur):cur;
+        updateStatusBar(fullName,accuracy);
+      } else {
+        updateStatusBar(null,accuracy);
+      }
     }
 
     // 位置取得の失敗コールバック
@@ -5143,7 +5242,9 @@
   // Sidebar toggle
   const sidebar=$('sidebar');
   function updateToggleBtn(){
-    $('sidebar-toggle').textContent=sidebar.classList.contains('collapsed')?'▶':'◀';
+    const collapsed=sidebar.classList.contains('collapsed');
+    $('sidebar-toggle').textContent=collapsed?'▶':'◀';
+    document.body.classList.toggle('sidebar-collapsed',collapsed);
   }
   $('sidebar-toggle').addEventListener('click',()=>{
     sidebar.classList.toggle('collapsed');

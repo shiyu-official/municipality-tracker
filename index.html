@@ -1763,16 +1763,45 @@
     tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:20});
   }
 
+  // ── レイヤー表示設定の永続化 ──
+  const LS_KEY_LAYER_VIS='tohaMap.layerVisibility';
+  function loadLayerVisibility(){
+    try{
+      const raw=localStorage.getItem(LS_KEY_LAYER_VIS);
+      if(!raw) return {};
+      return JSON.parse(raw)||{};
+    }catch(e){return {};}
+  }
+  function saveLayerVisibility(patch){
+    const cur=loadLayerVisibility();
+    const next={...cur,...patch};
+    try{localStorage.setItem(LS_KEY_LAYER_VIS,JSON.stringify(next));}catch(e){}
+  }
+  const _layerVis=loadLayerVisibility();
+
   // レイヤートグル（ヘッダーのメニューパネル内に配置）
   const chkTracks = document.createElement('input');
   chkTracks.type = 'checkbox';
   chkTracks.id = 'toggle-tracks';
-  if (tracksData) { chkTracks.checked = true; } else { chkTracks.disabled = true; }
+  if (tracksData) {
+    // 保存設定があれば復元、なければ初期はON
+    chkTracks.checked = (_layerVis.tracks!==undefined) ? _layerVis.tracks : true;
+    // 初期状態を地図に反映
+    if(tracksDataLayer&&!chkTracks.checked) tracksDataLayer.setMap(null);
+  } else { chkTracks.disabled = true; }
 
   const chkPolygons = document.createElement('input');
   chkPolygons.type = 'checkbox';
   chkPolygons.id = 'toggle-polygons';
-  chkPolygons.checked = true;
+  chkPolygons.checked = (_layerVis.polygons!==undefined) ? _layerVis.polygons : true;
+  // 初期状態を地図に反映（OFFなら非表示&凡例も全OFF）
+  if(!chkPolygons.checked){
+    geoDataLayer.setMap(null);
+    document.querySelectorAll('.legend-filter').forEach(cb=>{
+      cb.checked=false;
+      legendFilter[parseInt(cb.dataset.lv)]=false;
+    });
+  }
 
   const lblTracks = document.createElement('label');
   lblTracks.className = 'lmp-item';
@@ -1788,7 +1817,11 @@
     lmpLayers.append(lblPolygons, lblTracks);
   }
 
-  chkTracks.addEventListener('change', function(){ if(!tracksDataLayer)return; tracksDataLayer.setMap(this.checked?map:null); });
+  chkTracks.addEventListener('change', function(){
+    if(!tracksDataLayer) return;
+    tracksDataLayer.setMap(this.checked?map:null);
+    saveLayerVisibility({tracks:this.checked});
+  });
   chkPolygons.addEventListener('change', function(){
     geoDataLayer.setMap(this.checked?map:null);
     if(!this.checked){
@@ -1806,6 +1839,7 @@
       });
       applyGeoStyles();
     }
+    saveLayerVisibility({polygons:this.checked});
   });
 
   // 互換ラッパー
@@ -4443,8 +4477,12 @@
 
   // レイヤートグルにスポット表示切替を追加（ヘッダーのメニューパネル内へ）
   function addSpotLayerToggle(){
+    // 保存済み設定を取得
+    const vis=loadLayerVisibility();
+    const initialChecked=(vis.spots!==undefined) ? vis.spots : true;
+
     const chkSpots=document.createElement('input');
-    chkSpots.type='checkbox';chkSpots.id='toggle-spots';chkSpots.checked=true;
+    chkSpots.type='checkbox';chkSpots.id='toggle-spots';chkSpots.checked=initialChecked;
     const lblSpots=document.createElement('label');
     lblSpots.className='lmp-item';
     const spotIcon=document.createElement('span');
@@ -4455,9 +4493,17 @@
     lblSpots.append(chkSpots,spotIcon,spotText);
     const lmpLayers=$('lmp-layers');
     if(lmpLayers) lmpLayers.appendChild(lblSpots);
+
+    // 初期状態を地図に反映（OFFなら非表示に）
+    if(!initialChecked){
+      spotMarkersVisible=false;
+      spotMarkers.forEach(m=>m.setMap(null));
+    }
+
     chkSpots.addEventListener('change',function(){
       spotMarkersVisible=this.checked;
       spotMarkers.forEach(m=>m.setMap(this.checked?map:null));
+      saveLayerVisibility({spots:this.checked});
     });
   }
 

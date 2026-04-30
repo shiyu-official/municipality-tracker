@@ -220,9 +220,12 @@
   .gh-save-btn.has-changes::after{content:'';position:absolute;top:-2px;right:-2px;width:8px;height:8px;background:var(--danger);border-radius:50%;border:1.5px solid var(--bg-panel);}
 
   /* 現在地常設ステータスバー（追跡ON時のみ表示） */
+  /* 検索欄（top:66px, height:42px）の真下に中央揃えで配置 */
   #geo-statusbar{
     position:fixed;
-    top:62px;left:328px;
+    top:116px;
+    left:50%;
+    transform:translateX(-50%);
     z-index:1002;
     display:flex;align-items:center;gap:8px;
     background:var(--bg-panel);
@@ -233,11 +236,9 @@
     font-size:12px;color:var(--text);
     font-family:'Noto Sans JP',sans-serif;
     pointer-events:none;
-    max-width:calc(100vw - 350px);
-    transition:left 0.3s ease;
+    max-width:calc(100vw - 32px);
   }
   #geo-statusbar[hidden]{display:none;}
-  body.sidebar-collapsed #geo-statusbar{left:14px;}
   .geo-sb-dot{
     width:9px;height:9px;border-radius:50%;
     background:#4285f4;border:2px solid #fff;
@@ -361,11 +362,11 @@
     #fab-geolocation .fab-geo-icon{width:18px;height:18px;}
     #fab-geolocation .fab-geo-dot{width:12px;height:12px;}
     #geo-statusbar{
-      top:56px;left:50%;transform:translateX(-50%);
+      top:112px;
+      left:50%;transform:translateX(-50%);
       max-width:calc(100vw - 24px);
       padding:5px 12px;font-size:11px;
     }
-    body.sidebar-collapsed #geo-statusbar{left:50%;}
   }
   .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
   .stat-chip{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 10px;font-size:11px;white-space:nowrap;font-family:'DM Mono',monospace;}

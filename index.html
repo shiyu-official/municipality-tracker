@@ -1691,15 +1691,12 @@
       e.stop();
       placesService.getDetails({placeId:e.placeId,fields:['name','formatted_address','url']},(place,status)=>{
         if(status===google.maps.places.PlacesServiceStatus.OK&&place){
-          const h=`<div class="iw-body">
-            <div style="font-weight:700;font-size:14px;">${place.name||''}</div>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;">${place.formatted_address||''}</div>
-            ${place.url?`<a href="${place.url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-block;margin-top:4px;">Googleマップで見る</a>`:''}
-          </div>`;
-          infoWindow.setContent(h);
-          infoWindow.setPosition(e.latLng);
-          infoWindow.open(map);
-          _openInfoWindowCode=null; // POIなので市区町村のtoggle対象外
+          openPoiInfoWindow({
+            position:e.latLng,
+            name:place.name,
+            address:place.formatted_address,
+            url:place.url
+          });
         }
       });
       return;
@@ -1707,6 +1704,23 @@
     infoWindow.close();
     _openInfoWindowCode=null;
   });
+
+  // POIスタイル(地図上スポットクリック時のような)InfoWindowを開く共通関数
+  // 検索結果や現在地ボタンなどから呼ぶ。赤ピンは作らず、グローバルInfoWindowを使う
+  function openPoiInfoWindow({position,name,address,url}){
+    const safeName=name?String(name).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])):'';
+    const safeAddr=address?String(address).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])):'';
+    const h=`<div class="iw-body">
+      ${safeName?`<div style="font-weight:700;font-size:14px;">${safeName}</div>`:''}
+      ${safeAddr?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;">${safeAddr}</div>`:''}
+      ${url?`<a href="${url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-block;margin-top:4px;">Googleマップで見る</a>`:''}
+    </div>`;
+    infoWindow.close();
+    infoWindow.setContent(h);
+    infoWindow.setPosition(position);
+    infoWindow.open(map);
+    _openInfoWindowCode=null;
+  }
 
   function featureToProps(feature){
     const code=feature.getProperty('N03_007');
@@ -2174,7 +2188,7 @@
   });
 
   // ── 検索・ルート機能 ──
-  let searchMarker=null,routeLayer=null,routeFromCoord=null,routeToCoord=null,currentRouteMode='driving';
+  let routeLayer=null,routeFromCoord=null,routeToCoord=null,currentRouteMode='driving';
   let _routeHighlightLayer=null;
   let routeWaypoints=[]; // [{coord,name,isCityWaypoint,cityCode}]
   let mapPickMode=false,mapPickTarget=null,mapPickHintEl=null;
@@ -2238,14 +2252,15 @@
     // 座標入力の検出
     const coord=parseCoordString(q);
     if(coord){
-      if(searchMarker) searchMarker.setMap(null);
-      searchMarker=new google.maps.Marker({position:{lat:coord.lat,lng:coord.lng},map:map});
       map.setCenter({lat:coord.lat,lng:coord.lng});map.setZoom(15);
       const rev=await reverseGeocode(coord.lat,coord.lng);
       const name=rev&&rev.display_name?rev.display_name.split(',')[0]:`${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
-      const iw=new google.maps.InfoWindow({content:name});
-      iw.open(map,searchMarker);
-      iw.addListener('closeclick',()=>{if(searchMarker){searchMarker.setMap(null);searchMarker=null;}});
+      const addr=rev&&rev.display_name?rev.display_name:'';
+      openPoiInfoWindow({
+        position:{lat:coord.lat,lng:coord.lng},
+        name:name,
+        address:addr
+      });
       searchResults.style.display='none';
       return;
     }
@@ -2265,12 +2280,14 @@
     searchResults.querySelectorAll('.search-result-item[data-lat]').forEach(el=>{
       el.addEventListener('click',()=>{
         const lat=parseFloat(el.dataset.lat),lon=parseFloat(el.dataset.lon);
-        if(searchMarker) searchMarker.setMap(null);
-        searchMarker=new google.maps.Marker({position:{lat,lng:lon},map:map});
-        const iw=new google.maps.InfoWindow({content:el.querySelector('.sri-name').textContent});
-        iw.open(map,searchMarker);
-        iw.addListener('closeclick',()=>{if(searchMarker){searchMarker.setMap(null);searchMarker=null;}});
+        const name=el.querySelector('.sri-name').textContent;
+        const addr=el.querySelector('.sri-addr')?el.querySelector('.sri-addr').textContent:'';
         map.setCenter({lat,lng:lon});map.setZoom(14);
+        openPoiInfoWindow({
+          position:{lat,lng:lon},
+          name:name,
+          address:addr
+        });
         searchResults.style.display='none';
       });
     });
@@ -2285,11 +2302,11 @@
   }
   $('locate-btn').addEventListener('click',()=>{
     getLocation((lat,lon)=>{
-      if(searchMarker) searchMarker.setMap(null);
-      searchMarker=new google.maps.Marker({position:{lat,lng:lon},map:map});
-      const iw=new google.maps.InfoWindow({content:'現在地'});
-      iw.open(map,searchMarker);
       map.setCenter({lat,lng:lon});map.setZoom(14);
+      openPoiInfoWindow({
+        position:{lat,lng:lon},
+        name:'現在地'
+      });
     });
   });
 

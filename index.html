@@ -1042,10 +1042,11 @@
     </div>
     <div id="search-results"></div>
     <div id="route-panel">
-      <!-- 車/徒歩は常に上部固定表示 -->
+      <!-- 車/徒歩/公共交通は常に上部固定表示 -->
       <div class="route-type-row">
         <button class="route-type-btn active" data-mode="driving">🚗 車</button>
         <button class="route-type-btn" data-mode="walking">🚶 徒歩</button>
+        <button class="route-type-btn" data-mode="transit">🚇 公共交通</button>
       </div>
       <!-- 入力欄〜結果〜保存ボタンまで全体をスクロール対象にする -->
       <div id="route-panel-inner">
@@ -2373,8 +2374,33 @@
       document.querySelectorAll('.route-type-btn').forEach(b=>b.classList.remove('active'));
       btn.classList.add('active');
       currentRouteMode=btn.dataset.mode;
+      updateWaypointUIForMode();
     });
   });
+
+  // 経由地UIの有効/無効を現在のモードに応じて更新
+  // 公共交通モードでは経由地非対応のため、UI を無効化して説明を表示
+  function updateWaypointUIForMode(){
+    const isTransit=(currentRouteMode==='transit');
+    const addBtn=$('add-waypoint-btn');
+    const optBtn=$('route-optimize-btn');
+    if(addBtn){
+      addBtn.disabled=isTransit;
+      addBtn.title=isTransit?'公共交通モードでは経由地を使えません':'経由地を追加';
+      addBtn.style.opacity=isTransit?'0.5':'';
+      addBtn.style.cursor=isTransit?'not-allowed':'';
+    }
+    if(optBtn){
+      optBtn.disabled=isTransit;
+      optBtn.title=isTransit?'公共交通モードでは未訪問最大化は使えません':'';
+      optBtn.style.opacity=isTransit?'0.5':'';
+      optBtn.style.cursor=isTransit?'not-allowed':'';
+    }
+    // 既に追加済みの経由地行も視覚的にdim
+    document.querySelectorAll('.route-wp-row').forEach(el=>{
+      el.style.opacity=isTransit?'0.5':'';
+    });
+  }
 
   // ── フォーカス管理: 入力欄フォーカスで地図クリック対象を切り替え ──
   function setActiveInput(target){
@@ -3031,16 +3057,34 @@
     if(points.length<2) return null;
     const origin={lat:points[0][0],lng:points[0][1]};
     const dest={lat:points[points.length-1][0],lng:points[points.length-1][1]};
-    const waypoints=points.slice(1,points.length-1).map(p=>({location:{lat:p[0],lng:p[1]},stopover:true}));
-    const travelMode=currentRouteMode==='walking'?google.maps.TravelMode.WALKING:google.maps.TravelMode.DRIVING;
+    let waypoints=points.slice(1,points.length-1).map(p=>({location:{lat:p[0],lng:p[1]},stopover:true}));
+    let travelMode;
+    if(currentRouteMode==='walking'){
+      travelMode=google.maps.TravelMode.WALKING;
+    } else if(currentRouteMode==='transit'){
+      travelMode=google.maps.TravelMode.TRANSIT;
+      // 公共交通は経由地非対応 → 経由地があれば警告して無視
+      if(waypoints.length>0){
+        console.warn('[route] TRANSIT mode: waypoints not supported, ignoring');
+        waypoints=[];
+      }
+    } else {
+      travelMode=google.maps.TravelMode.DRIVING;
+    }
     const provideAlts=!opts.noAlternatives&&waypoints.length===0; // 経由地ありだとalternatives不可
 
+    const reqOpts={
+      origin,destination:dest,waypoints,
+      travelMode,provideRouteAlternatives:provideAlts,
+      region:'jp'
+    };
+    if(currentRouteMode==='transit'){
+      // 公共交通: 出発時刻を「今」にする（過去の時刻だと結果が出ないことがある）
+      reqOpts.transitOptions={departureTime:new Date()};
+    }
+
     return new Promise(resolve=>{
-      directionsService.route({
-        origin,destination:dest,waypoints,
-        travelMode,provideRouteAlternatives:provideAlts,
-        region:'jp'
-      },(result,status)=>{
+      directionsService.route(reqOpts,(result,status)=>{
         if(status!==google.maps.DirectionsStatus.OK||!result||!result.routes||!result.routes.length){
           console.error('Directions API error:',status,result);
           resolve(null);
@@ -3693,6 +3737,7 @@
 
     let resultHTML=`距離: <strong>${dist} km</strong><br>所要時間: <strong>${durStr}</strong>`;
     if(currentRouteMode==='walking') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(徒歩)</span>`;
+    else if(currentRouteMode==='transit') resultHTML+=` <span style="font-size:10px;color:var(--text-dim)">(公共交通)</span>`;
     resultHTML+=`<br>通過市区町村: <strong>${passedCities.size}箇所</strong>`;
     if(wpMarkerData.length) resultHTML+=`<br>経由地: <strong>${wpMarkerData.length}箇所</strong>`;
     for(const cr of cityCheckResults){
@@ -3741,7 +3786,7 @@
     // （resolvedPointsにはそもそも通過済みのポイントは含まれていない）
 
     // つまりwaypoints = 実際に必要な経由地のみ（既に絞り込み済み）
-    const gmapMode=currentRouteMode==='walking'?'walking':'driving';
+    const gmapMode=currentRouteMode==='walking'?'walking':currentRouteMode==='transit'?'transit':'driving';
 
     if(waypoints.length<=GMAP_WP_LIMIT){
       // 制限内: 1つのURLで完結
@@ -3774,7 +3819,8 @@
   // 実用上 Apple Maps は多経由地を URL で渡せないため出発→目的のみ渡し、
   // 経由地は waypoints パラメータ(カンマ区切り lat,lng)で試みる
   function buildAppleMapsUrl(origin,dest,waypoints,mode){
-    const dirflg=mode==='walking'?'w':'d';
+    // dirflg: d=driving, w=walking, r=transit (rapid transit)
+    const dirflg=mode==='walking'?'w':mode==='transit'?'r':'d';
     const saddr=`${origin[0]},${origin[1]}`;
     const daddr=`${dest[0]},${dest[1]}`;
     let url=`https://maps.apple.com/?saddr=${saddr}&daddr=${daddr}&dirflg=${dirflg}`;
@@ -3895,6 +3941,7 @@
     $('route-save-btn').textContent='📥 ルートを保存';
     clearActiveInput();
     clearRoutePreview();
+    if(typeof updateWaypointUIForMode==='function') updateWaypointUIForMode();
   });
 
   // ── サイドバータブ切り替え ──
@@ -5009,9 +5056,10 @@
 
     // 走行モードをセット
     currentRouteMode=r.mode||'driving';
-    document.querySelectorAll('.route-mode-btn').forEach(b=>{
+    document.querySelectorAll('.route-mode-btn,.route-type-btn').forEach(b=>{
       b.classList.toggle('active',b.dataset.mode===currentRouteMode);
     });
+    updateWaypointUIForMode();
 
     // 保存ボタン行を一旦隠す（再検索成功で表示+編集モードならoverwriteも表示）
     document.querySelector('.route-save-row').hidden=true;

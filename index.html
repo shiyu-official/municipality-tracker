@@ -1650,6 +1650,9 @@
 
   // Click → InfoWindow or mapPick
   let _lastFeatureClickTime=0;
+  let _openInfoWindowCode=null; // 現在InfoWindowを開いている市区町村コード
+  // InfoWindowが閉じられたら追跡用変数もクリア（×ボタンや他の閉じ操作にも対応）
+  infoWindow.addListener('closeclick',()=>{_openInfoWindowCode=null;});
   geoDataLayer.addListener('click',e=>{
     _lastFeatureClickTime=Date.now();
     if(typeof mapPickMode!=='undefined'&&mapPickMode){
@@ -1658,12 +1661,19 @@
       handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},featureToProps(e.feature),cx,cy);
       return;
     }
-    // 既存のInfoWindowを一旦閉じてから、新しい内容で開き直す
-    // これにより別の市区町村クリック時に古いポップアップが残らず切り替わる
+    const code=e.feature.getProperty('N03_007');
+    // 同じ市区町村の再クリック → InfoWindowを閉じてトグル動作に
+    if(_openInfoWindowCode===code){
+      infoWindow.close();
+      _openInfoWindowCode=null;
+      return;
+    }
+    // 別の市区町村 → 古いものを閉じて新しい内容で開き直す
     infoWindow.close();
     infoWindow.setContent(popupHTMLFromFeature(e.feature));
     infoWindow.setPosition(e.latLng);
     infoWindow.open(map);
+    _openInfoWindowCode=code;
   });
 
   map.addListener('click',e=>{
@@ -1689,11 +1699,13 @@
           infoWindow.setContent(h);
           infoWindow.setPosition(e.latLng);
           infoWindow.open(map);
+          _openInfoWindowCode=null; // POIなので市区町村のtoggle対象外
         }
       });
       return;
     }
     infoWindow.close();
+    _openInfoWindowCode=null;
   });
 
   function featureToProps(feature){

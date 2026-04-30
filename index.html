@@ -644,8 +644,16 @@
   .sr-actions button{flex:1;padding:5px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:10px;cursor:pointer;font-family:'Noto Sans JP',sans-serif;color:var(--text-dim);}
   .sr-actions button:hover{border-color:var(--accent);color:var(--accent);}
   /* ルート保存ボタン */
-  #route-save-btn{width:100%;padding:6px;background:var(--accent-light);border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;display:none;}
+  #route-save-btn{flex:1;padding:6px;background:var(--accent-light);border:1px solid var(--accent);border-radius:7px;color:var(--accent);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;}
   #route-save-btn:hover{background:var(--accent);color:#fff;}
+  /* 上書き保存ボタン（編集モード時のみ表示） */
+  .route-save-row{display:flex;gap:6px;margin-top:6px;}
+  .route-save-row[hidden]{display:none;}
+  #route-overwrite-btn{flex:1;padding:6px;background:#22c55e;border:1px solid #15803d;border-radius:7px;color:#fff;font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;}
+  #route-overwrite-btn:hover{background:#15803d;}
+  #route-overwrite-btn[hidden]{display:none;}
+  /* 編集モードでは「保存」を「複製として保存」風に */
+  body.editing-route #route-save-btn{font-size:11px;padding:6px 4px;}
   /* 未訪問最大化ボタン */
   #route-optimize-btn{width:100%;padding:7px;background:var(--bg);border:1px dashed var(--accent);border-radius:7px;color:var(--accent);font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;cursor:pointer;margin-top:6px;transition:all 0.15s;}
   #route-optimize-btn:hover:not(:disabled){background:var(--accent-light);border-style:solid;}
@@ -1082,7 +1090,10 @@
         <div id="route-optimize-status"></div>
         <div id="route-result"></div>
         <button id="route-clear-btn">ルートをクリア</button>
-        <button id="route-save-btn">📥 ルートを保存</button>
+        <div class="route-save-row">
+          <button id="route-overwrite-btn" hidden>💾 上書き保存</button>
+          <button id="route-save-btn">📥 ルートを保存</button>
+        </div>
       </div>
     </div>
   </div>
@@ -3689,7 +3700,16 @@
     }
     $('route-result').innerHTML=resultHTML;
     $('route-clear-btn').style.display='block';
-    $('route-save-btn').style.display='block';
+    // 保存ボタン行を表示
+    document.querySelector('.route-save-row').hidden=false;
+    // 編集モードのときだけ上書きボタンも表示+ラベル変更
+    if(_editingRouteId){
+      $('route-overwrite-btn').hidden=false;
+      $('route-save-btn').textContent='📥 複製として保存';
+    } else {
+      $('route-overwrite-btn').hidden=true;
+      $('route-save-btn').textContent='📥 ルートを保存';
+    }
     // 保存用にルートデータを保持
     window._lastRouteData={
       mode:currentRouteMode,
@@ -3868,10 +3888,11 @@
     $('route-from').value='';$('route-to').value='';
     $('route-result').style.display='none';
     $('route-clear-btn').style.display='none';
-    $('route-save-btn').style.display='none';
+    document.querySelector('.route-save-row').hidden=true;
+    $('route-overwrite-btn').hidden=true;
     window._lastRouteData=null;
     _editingRouteId=null;
-    $('route-save-btn').textContent='ルートを保存';
+    $('route-save-btn').textContent='📥 ルートを保存';
     clearActiveInput();
     clearRoutePreview();
   });
@@ -4991,9 +5012,9 @@
       b.classList.toggle('active',b.dataset.mode===currentRouteMode);
     });
 
-    // 保存ボタンのラベルを変更して編集モードを明示
-    $('route-save-btn').textContent='ルートを保存（編集中）';
-    $('route-save-btn').style.display='none'; // 再検索後に表示
+    // 保存ボタン行を一旦隠す（再検索成功で表示+編集モードならoverwriteも表示）
+    document.querySelector('.route-save-row').hidden=true;
+    $('route-overwrite-btn').hidden=true;
 
     // ルートタブからルート検索タブへ切り替え
     document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.remove('active'));
@@ -5002,66 +5023,35 @@
     $('tab-route').classList.add('active');
   }
 
-  // ルート保存（ダウンロード）
+  // ルート保存（新規 or 複製）
   $('route-save-btn').addEventListener('click',()=>{
     if(!window._lastRouteData) return;
     const rd=window._lastRouteData;
-
+    let defaultName;
     if(_editingRouteId){
-      // 編集モード：上書きか新規かを選択
-      const choice=confirm('「OK」→元のルートに上書き保存\n「キャンセル」→新しいルートとして保存');
-      if(choice){
-        // 上書き
-        const idx=savedRoutes.findIndex(r=>r.id===_editingRouteId);
-        if(idx>=0){
-          const existing=savedRoutes[idx];
-          savedRoutes[idx]={
-            ...existing,
-            mode:rd.mode,
-            from:rd.from,to:rd.to,
-            waypoints:rd.waypoints,
-            geometry:rd.geometry,
-            distance:rd.distance,duration:rd.duration,
-            passedCities:rd.passedCities
-          };
-          if(displayedRoutes[_editingRouteId]){hideSavedRoute(_editingRouteId);showSavedRoute(_editingRouteId);}
-        }
-      } else {
-        // 新規
-        const name=prompt('ルート名を入力:',savedRoutes.find(r=>r.id===_editingRouteId)?.name+' (コピー)');
-        if(!name) return;
-        savedRoutes.push({
-          id:'route_'+Date.now(),
-          name,
-          color:getNextColor(),
-          createdAt:new Date().toISOString(),
-          mode:rd.mode,
-          from:rd.from,to:rd.to,
-          waypoints:rd.waypoints,
-          geometry:rd.geometry,
-          distance:rd.distance,duration:rd.duration,
-          passedCities:rd.passedCities
-        });
-      }
-      _editingRouteId=null;
-      $('route-save-btn').textContent='ルートを保存';
+      // 編集モード中の「複製として保存」
+      const original=savedRoutes.find(r=>r.id===_editingRouteId);
+      defaultName=(original?.name||'ルート')+' (コピー)';
     } else {
-      // 新規保存
-      const name=prompt('ルート名を入力:','ルート '+(savedRoutes.length+1));
-      if(!name) return;
-      savedRoutes.push({
-        id:'route_'+Date.now(),
-        name,
-        color:getNextColor(),
-        createdAt:new Date().toISOString(),
-        mode:rd.mode,
-        from:rd.from,to:rd.to,
-        waypoints:rd.waypoints,
-        geometry:rd.geometry,
-        distance:rd.distance,duration:rd.duration,
-        passedCities:rd.passedCities
-      });
+      defaultName='ルート '+(savedRoutes.length+1);
     }
+    const name=prompt('ルート名を入力:',defaultName);
+    if(!name) return;
+    savedRoutes.push({
+      id:'route_'+Date.now(),
+      name,
+      color:getNextColor(),
+      createdAt:new Date().toISOString(),
+      mode:rd.mode,
+      from:rd.from,to:rd.to,
+      waypoints:rd.waypoints,
+      geometry:rd.geometry,
+      distance:rd.distance,duration:rd.duration,
+      passedCities:rd.passedCities
+    });
+    _editingRouteId=null;
+    $('route-save-btn').textContent='📥 ルートを保存';
+    $('route-overwrite-btn').hidden=true;
 
     renderSavedRoutesList();
     markDirty('routes');
@@ -5071,6 +5061,39 @@
     document.querySelector('[data-tab="routes"]').classList.add('active');
     $('tab-routes').classList.add('active');
   });
+
+  // ルート上書き保存（編集モード時のみ表示されるボタン）
+  $('route-overwrite-btn').addEventListener('click',()=>{
+    if(!window._lastRouteData||!_editingRouteId) return;
+    const rd=window._lastRouteData;
+    const idx=savedRoutes.findIndex(r=>r.id===_editingRouteId);
+    if(idx<0){alert('元のルートが見つかりません');return;}
+    if(!confirm(`「${savedRoutes[idx].name}」を上書き保存しますか?`)) return;
+    const existing=savedRoutes[idx];
+    savedRoutes[idx]={
+      ...existing,
+      mode:rd.mode,
+      from:rd.from,to:rd.to,
+      waypoints:rd.waypoints,
+      geometry:rd.geometry,
+      distance:rd.distance,duration:rd.duration,
+      passedCities:rd.passedCities
+    };
+    if(displayedRoutes[_editingRouteId]){hideSavedRoute(_editingRouteId);showSavedRoute(_editingRouteId);}
+    _editingRouteId=null;
+    $('route-save-btn').textContent='📥 ルートを保存';
+    $('route-overwrite-btn').hidden=true;
+
+    renderSavedRoutesList();
+    markDirty('routes');
+    // タブを保存ルートに切り替え
+    document.querySelectorAll('.sidebar-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.sidebar-tab-panel').forEach(p=>p.classList.remove('active'));
+    document.querySelector('[data-tab="routes"]').classList.add('active');
+    $('tab-routes').classList.add('active');
+  });
+
+  // ルートエディタからの「ルートをクリア」
 
   function downloadRoutesJson(){
     const json=JSON.stringify(savedRoutes,null,2);

@@ -4986,10 +4986,11 @@
   function loadRouteForEdit(id){
     const r=savedRoutes.find(r=>r.id===id);
     if(!r) return;
-    _editingRouteId=id;
 
-    // ルート検索フォームをクリア
+    // 先にクリア（この中で _editingRouteId=null される）
     $('route-clear-btn').click();
+    // クリア後にIDをセット（順序が重要）
+    _editingRouteId=id;
 
     // 出発・ゴールをセット
     $('route-from').value=r.from.name||'';

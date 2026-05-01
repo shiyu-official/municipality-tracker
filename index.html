@@ -3574,11 +3574,15 @@
     const toIsCity=routeToCity.isCityWaypoint&&routeToCity.cityCode;
 
     // 市区町村経由の指定がない場合は1回のAPI呼び出しで完結
-    const needsCityProcessing=cityWpList.length>0||fromIsCity||toIsCity;
+    // 公共交通モードは経由地・市区町村経由ともに非対応のため強制的にシンプルケース
+    const needsCityProcessing=(cityWpList.length>0||fromIsCity||toIsCity)&&currentRouteMode!=='transit';
 
     if(!needsCityProcessing){
       // ── シンプルケース: 通常経由地のみ、API1回 ──
-      const pts=[routeFromCoord,...normalPoints.map(p=>p.coord),routeToCoord];
+      // 公共交通モードは出発・目的地のみ（waypoints無視）
+      const pts=currentRouteMode==='transit'
+        ?[routeFromCoord,routeToCoord]
+        :[routeFromCoord,...normalPoints.map(p=>p.coord),routeToCoord];
       let route;
       try{route=await fetchRoute(pts,{noAlternatives:pts.length>2});}
       catch(e){$('route-result').textContent='ルート取得に失敗しました';return;}

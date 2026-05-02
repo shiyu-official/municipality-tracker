@@ -1219,11 +1219,17 @@
   $('loading-status').textContent='データを読み込み中...';
   // 更新頻度が低く重いファイルはIndexedDBキャッシュ経由
   // visited_cities.jsonは更新頻度が高いため通常fetch
-  const [topoData,visitedData,tracksData]=await Promise.all([
+  // スマホでは tracks.geojson が重すぎてブラウザがメモリ不足で落ちることがあるため、
+  // 初期ロード対象から外し、レイヤーメニューで「軌跡」をONにした時だけ遅延読み込みする。
+  const IS_MOBILE_VIEWPORT = window.matchMedia('(max-width: 768px)').matches;
+  const [topoData,visitedData,initialTracksData]=await Promise.all([
     cachedFetchJson('data/municipalities.topojson',{label:'市区町村データを読み込み中...'}),
     fetch('data/visited_cities.json').then(r=>r.json()),
-    cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}).catch(()=>null)
+    IS_MOBILE_VIEWPORT
+      ? Promise.resolve(null)
+      : cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}).catch(()=>null)
   ]);
+  let tracksData = initialTracksData;
   $('loading-status').textContent='データを解析中...';
   const objectName=Object.keys(topoData.objects)[0];
   const geoData=topojson.feature(topoData,topoData.objects[objectName]);
@@ -1454,9 +1460,7 @@
     applyThemeAttribute();
     mapColors=getMapColors();
     map.setOptions({styles:getCurrentMapStyles()});
-    if(tracksDataLayer){
-      tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:20});
-    }
+    applyTracksLayerStyle();
     applyGeoStyles();
     updateThemeBtnIcon();
   }
@@ -1767,11 +1771,37 @@
   }
 
   // 軌跡レイヤー（市区町村ポリゴンの上に描画されるよう zIndex を高めに）
+  // スマホでは初期描画しない。必要時のみ ensureTracksLayer() で読み込む。
   let tracksDataLayer=null;
-  if(tracksData){
-    tracksDataLayer=new google.maps.Data({map:map});
-    tracksDataLayer.addGeoJson(tracksData);
+  let tracksLoadPromise=null;
+  function applyTracksLayerStyle(){
+    if(!tracksDataLayer) return;
     tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:20});
+  }
+  async function ensureTracksLayer(){
+    if(tracksDataLayer) return tracksDataLayer;
+    if(tracksLoadPromise) return tracksLoadPromise;
+    tracksLoadPromise=(async()=>{
+      try{
+        if(!tracksData){
+          const st=$('loading-status');
+          if(st) st.textContent='軌跡データを読み込み中...';
+          tracksData=await cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}).catch(()=>null);
+        }
+        if(!tracksData) return null;
+        const layer=new google.maps.Data({map:null});
+        layer.addGeoJson(tracksData);
+        tracksDataLayer=layer;
+        applyTracksLayerStyle();
+        return tracksDataLayer;
+      }catch(e){
+        console.error('[tracks] failed to load tracks.geojson',e);
+        return null;
+      }finally{
+        tracksLoadPromise=null;
+      }
+    })();
+    return tracksLoadPromise;
   }
 
   // ── レイヤー表示設定の永続化 ──
@@ -1794,12 +1824,9 @@
   const chkTracks = document.createElement('input');
   chkTracks.type = 'checkbox';
   chkTracks.id = 'toggle-tracks';
-  if (tracksData) {
-    // 保存設定があれば復元、なければ初期はON
-    chkTracks.checked = (_layerVis.tracks!==undefined) ? _layerVis.tracks : true;
-    // 初期状態を地図に反映
-    if(tracksDataLayer&&!chkTracks.checked) tracksDataLayer.setMap(null);
-  } else { chkTracks.disabled = true; }
+  // PCは従来通り初期ON。スマホは保存設定がONでも初期OFFにしてクラッシュループを避ける。
+  const initialTracksVisible = IS_MOBILE_VIEWPORT ? false : ((_layerVis.tracks!==undefined) ? _layerVis.tracks : true);
+  chkTracks.checked = initialTracksVisible;
 
   const chkPolygons = document.createElement('input');
   chkPolygons.type = 'checkbox';
@@ -1816,7 +1843,7 @@
 
   const lblTracks = document.createElement('label');
   lblTracks.className = 'lmp-item';
-  lblTracks.append(chkTracks, Object.assign(document.createElement('span'),{className:'lmp-line'}), Object.assign(document.createElement('span'),{textContent:'軌跡'}));
+  lblTracks.append(chkTracks, Object.assign(document.createElement('span'),{className:'lmp-line'}), Object.assign(document.createElement('span'),{textContent:IS_MOBILE_VIEWPORT?'軌跡（重い）':'軌跡'}));
 
   const lblPolygons = document.createElement('label');
   lblPolygons.className = 'lmp-item';
@@ -1828,10 +1855,30 @@
     lmpLayers.append(lblPolygons, lblTracks);
   }
 
-  chkTracks.addEventListener('change', function(){
-    if(!tracksDataLayer) return;
-    tracksDataLayer.setMap(this.checked?map:null);
-    saveLayerVisibility({tracks:this.checked});
+  // 初期状態を地図に反映。スマホではここでは読み込まない。
+  if(initialTracksVisible){
+    ensureTracksLayer().then(layer=>{
+      if(layer && chkTracks.checked) layer.setMap(map);
+    });
+  }
+
+  chkTracks.addEventListener('change', async function(){
+    if(this.checked){
+      this.disabled=true;
+      const layer=await ensureTracksLayer();
+      this.disabled=false;
+      if(layer){
+        layer.setMap(map);
+        saveLayerVisibility({tracks:true});
+      }else{
+        this.checked=false;
+        saveLayerVisibility({tracks:false});
+        console.warn('[tracks] tracks.geojson could not be loaded.');
+      }
+    }else{
+      if(tracksDataLayer) tracksDataLayer.setMap(null);
+      saveLayerVisibility({tracks:false});
+    }
   });
   chkPolygons.addEventListener('change', function(){
     geoDataLayer.setMap(this.checked?map:null);

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-04-17T10:15:26.469114",
+    "generated": "2026-05-02T13:07:30.802931",
     "totalSpots": 51,
     "visitedSpots": 31,
     "spotsVersion": 4
@@ -747,8 +747,8 @@
           "radiusM": 500,
           "autoDetected": true,
           "firstVisit": "2023-09-24",
-          "lastVisit": "2026-02-07",
-          "visitDays": 11
+          "lastVisit": "2026-04-28",
+          "visitDays": 12
         }
       ],
       "completed": 1,

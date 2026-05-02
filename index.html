@@ -1217,13 +1217,33 @@
 
   // ── Data ──
   $('loading-status').textContent='データを読み込み中...';
-  // 更新頻度が低く重いファイルはIndexedDBキャッシュ経由
-  // visited_cities.jsonは更新頻度が高いため通常fetch
-  const [topoData,visitedData,tracksData]=await Promise.all([
-    cachedFetchJson('data/municipalities.topojson',{label:'市区町村データを読み込み中...'}),
-    fetch('data/visited_cities.json').then(r=>r.json()),
-    cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}).catch(()=>null)
-  ]);
+
+  // フェッチタイムアウトラッパー（スマホでのループ防止: 15秒でreject）
+  function fetchWithTimeout(promise, ms=15000, label=''){
+    return Promise.race([
+      promise,
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout: '+label)), ms))
+    ]);
+  }
+
+  let topoData, visitedData, tracksData;
+  try {
+    [topoData, visitedData, tracksData] = await Promise.all([
+      fetchWithTimeout(cachedFetchJson('data/municipalities.topojson',{label:'市区町村データを読み込み中...'}), 15000, 'topojson'),
+      fetchWithTimeout(fetch('data/visited_cities.json').then(r=>{ if(!r.ok) throw new Error('visited_cities fetch failed: '+r.status); return r.json(); }), 15000, 'visited_cities'),
+      fetchWithTimeout(cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}), 15000, 'tracks').catch(()=>null)
+    ]);
+  } catch(e) {
+    $('loading-status').textContent='データ読み込みエラー: '+e.message;
+    console.error('[tohaMap] data fetch error:', e);
+    // ローディング画面を閉じてエラーを表示して止まる
+    const loadEl=$('loading');
+    if(loadEl){
+      loadEl.querySelector('.loader').style.display='none';
+      loadEl.querySelector('#loading-status').style.color='#ef4444';
+    }
+    return; // これ以上進まない（ループしない）
+  }
   $('loading-status').textContent='データを解析中...';
   const objectName=Object.keys(topoData.objects)[0];
   const geoData=topojson.feature(topoData,topoData.objects[objectName]);
@@ -5377,26 +5397,41 @@
 
 <!-- PWA: Service Worker 登録 -->
 <script>
-  // Service Worker 登録（file://からの直接起動では動かないので保護）
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
         .then(reg => {
           console.log('[SW] registered:', reg.scope);
-          // 更新検知: 新しいSWが待機状態になったら静かに有効化
           reg.addEventListener('updatefound', () => {
             const newWorker = reg.installing;
             if (!newWorker) return;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 console.log('[SW] new version available. Will activate on next page load.');
-                // ここで自動リロードすることもできるが、作業中に強制リロードは危険なので
-                // 次回リロード時に新SWが効くようにする
+                // 自動リロードは行わない（ループ防止）
               }
             });
           });
         })
         .catch(err => console.warn('[SW] registration failed:', err));
+
+      // SW起因のリロードループ検知: 直近5秒以内に既にリロードしていたら止める
+      try {
+        const lastReload = parseInt(sessionStorage.getItem('_sw_last_reload') || '0');
+        const now = Date.now();
+        if (now - lastReload < 5000) {
+          console.warn('[SW] reload loop detected, unregistering SW');
+          navigator.serviceWorker.getRegistrations().then(regs => {
+            regs.forEach(r => r.unregister());
+          });
+        }
+        sessionStorage.removeItem('_sw_last_reload');
+      } catch(e) {}
+    });
+
+    // SWによる強制リロードが発生した場合にタイムスタンプを記録
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      try { sessionStorage.setItem('_sw_last_reload', String(Date.now())); } catch(e) {}
     });
   }
 </script>

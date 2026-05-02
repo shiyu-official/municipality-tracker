@@ -2,6 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- ▼ デバッグ用コンソール（確認後に削除） -->
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>踏破マップ — 市区町村コンプリート</title>
 
@@ -32,23 +35,16 @@
       }
     }catch(e){}
   })();
-
-  // __gmapPromise を先に定義してからスクリプトを挿入（順序保証）
-  let __gmapResolve, __gmapReject;
-  const __gmapPromise=new Promise((resolve,reject)=>{__gmapResolve=resolve;__gmapReject=reject;});
-  function __gmapReady(){__gmapResolve();}
-
-  // 20秒でタイムアウト（スマホで地図APIが読み込まれなかった場合のループ防止）
-  setTimeout(()=>{__gmapReject&&__gmapReject(new Error('Google Maps API timeout'));}, 20000);
-
   // Google Maps APIをダイナミックに読み込み
   (function(){
     const s=document.createElement('script');
     s.src='https://maps.googleapis.com/maps/api/js?key=AIzaSyBhYD65c-yfH1faQ_37y9NIe4Ft3Y5ad18&libraries=places,geometry&language=ja&callback=__gmapReady';
     s.async=true;s.defer=true;
-    s.onerror=function(){__gmapReject&&__gmapReject(new Error('Google Maps script load failed'));};
     document.head.appendChild(s);
   })();
+  let __gmapResolve;
+  const __gmapPromise=new Promise(r=>{__gmapResolve=r;});
+  function __gmapReady(){__gmapResolve();}
 </script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap');
@@ -1106,98 +1102,14 @@
   </div>
 </div>
 
-<script>
-/* topojson-client 3.x インライン実装（外部CDN依存を排除） */
-var topojson=(function(){
-  function identity(x){return x;}
-  function transform(t){
-    if(!t) return identity;
-    var kx=t.scale[0],ky=t.scale[1],dx=t.translate[0],dy=t.translate[1];
-    return function(pt,i){
-      if(i===0){pt=[0,0];}
-      pt[0]=(pt[0]+kx)*kx+dx; // wrong, use correct below
-      return pt;
-    };
-  }
-  // 正確なdelta-decode + スケール変換
-  function decodeArcs(topology,arcs){
-    var t=topology.transform,out=[];
-    if(!t) return arcs; // no transform, return as-is
-    var kx=t.scale[0],ky=t.scale[1],dx=t.translate[0],dy=t.translate[1];
-    for(var i=0;i<arcs.length;i++){
-      var arc=arcs[i],decoded=[],x=0,y=0;
-      for(var j=0;j<arc.length;j++){
-        x+=arc[j][0]; y+=arc[j][1];
-        decoded.push([x*kx+dx, y*ky+dy]);
-      }
-      out.push(decoded);
-    }
-    return out;
-  }
-  function arcCoords(decodedArcs,i){
-    var a=decodedArcs[i<0?~i:i];
-    if(!a) return [];
-    var r=i<0?a.slice().reverse():a.slice();
-    return r;
-  }
-  function ringCoords(decodedArcs,ring){
-    var coords=[];
-    for(var i=0;i<ring.length;i++){
-      var c=arcCoords(decodedArcs,ring[i]);
-      if(i>0) c=c.slice(1); // drop duplicate junction point
-      coords=coords.concat(c);
-    }
-    // close ring
-    if(coords.length>0&&(coords[0][0]!==coords[coords.length-1][0]||coords[0][1]!==coords[coords.length-1][1])){
-      coords.push(coords[0]);
-    }
-    return coords;
-  }
-  function geomToGeo(decodedArcs,geom){
-    if(!geom) return null;
-    var t=geom.type;
-    if(t==='Point') return {type:'Point',coordinates:geom.coordinates};
-    if(t==='MultiPoint') return {type:'MultiPoint',coordinates:geom.coordinates};
-    if(t==='LineString') return {type:'LineString',coordinates:ringCoords(decodedArcs,geom.arcs)};
-    if(t==='MultiLineString') return {type:'MultiLineString',coordinates:geom.arcs.map(function(r){return ringCoords(decodedArcs,r);})};
-    if(t==='Polygon') return {type:'Polygon',coordinates:geom.arcs.map(function(r){return ringCoords(decodedArcs,r);})};
-    if(t==='MultiPolygon') return {type:'MultiPolygon',coordinates:geom.arcs.map(function(poly){return poly.map(function(r){return ringCoords(decodedArcs,r);});})};
-    if(t==='GeometryCollection') return {type:'GeometryCollection',geometries:geom.geometries.map(function(g){return geomToGeo(decodedArcs,g);})};
-    return null;
-  }
-  return {
-    feature:function(topology,object){
-      var decodedArcs=decodeArcs(topology,topology.arcs||[]);
-      if(object.type==='GeometryCollection'){
-        return {type:'FeatureCollection',features:object.geometries.map(function(geom){
-          return {type:'Feature',id:geom.id,properties:geom.properties||{},geometry:geomToGeo(decodedArcs,geom)};
-        })};
-      }
-      return {type:'Feature',id:object.id,properties:object.properties||{},geometry:geomToGeo(decodedArcs,object)};
-    }
-  };
-})();
-</script>
+<script src="https://unpkg.com/topojson-client@3"></script>
 <script>
 (async function(){
-  // 未捕捉エラーをすべてここで受け取り、ループを防ぐ
-  function showFatalError(msg){
-    console.error('[tohaMap] fatal:', msg);
-    const st=document.getElementById('loading-status');
-    const ldr=document.querySelector('.loader');
-    if(st){ st.textContent='読み込みエラー: '+msg; st.style.color='#ef4444'; }
-    if(ldr) ldr.style.display='none';
-    // ローディング画面はそのまま残す（再読み込みループを防ぐため自動リロードしない）
-  }
-
-  try{
-
   const $=id=>document.getElementById(id);
 
   // Google Maps APIの読み込み完了を待つ
   $('loading-status').textContent='Google Maps APIを初期化中...';
-  try{ await __gmapPromise; }
-  catch(e){ showFatalError('Google Maps APIの読み込み失敗 ('+e.message+')'); return; }
+  await __gmapPromise;
 
   // 地図ポリゴン用の色はCSS変数から動的取得（ダークモード追随のため）
   function getCssVar(name){
@@ -1308,16 +1220,12 @@ var topojson=(function(){
 
   // ── Data ──
   $('loading-status').textContent='データを読み込み中...';
-
-  // タイムアウト付きfetch（15秒）
-  function withTimeout(p, ms, label){
-    return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout: '+label)), ms))]);
-  }
-
+  // 更新頻度が低く重いファイルはIndexedDBキャッシュ経由
+  // visited_cities.jsonは更新頻度が高いため通常fetch
   const [topoData,visitedData,tracksData]=await Promise.all([
-    withTimeout(cachedFetchJson('data/municipalities.topojson',{label:'市区町村データを読み込み中...'}), 15000, 'topojson'),
-    withTimeout(fetch('data/visited_cities.json').then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }), 15000, 'visited_cities'),
-    withTimeout(cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}), 15000, 'tracks').catch(()=>null)
+    cachedFetchJson('data/municipalities.topojson',{label:'市区町村データを読み込み中...'}),
+    fetch('data/visited_cities.json').then(r=>r.json()),
+    cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}).catch(()=>null)
   ]);
   $('loading-status').textContent='データを解析中...';
   const objectName=Object.keys(topoData.objects)[0];
@@ -5467,43 +5375,26 @@ var topojson=(function(){
 
   $('loading').classList.add('hidden');
   setTimeout(()=>$('loading').remove(),500);
-
-  } catch(e) {
-    // async IIFEのトップレベルcatch: 未捕捉例外によるWebKitのページクラッシュ＋再読み込みループを防ぐ
-    showFatalError(e.message||String(e));
-  }
 })();
 </script>
 
 <!-- PWA: Service Worker 登録 -->
 <script>
+  // Service Worker 登録（file://からの直接起動では動かないので保護）
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    // SWによるリロードループ検知（直近3秒以内に再読み込みが起きていたらSWを全解除）
-    try {
-      const lastCtrl = parseInt(sessionStorage.getItem('_sw_ctrl_ts') || '0');
-      if (Date.now() - lastCtrl < 3000) {
-        console.warn('[SW] reload loop detected — unregistering all SWs');
-        navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
-        sessionStorage.removeItem('_sw_ctrl_ts');
-      }
-    } catch(e) {}
-
-    // controllerchange（SW切り替え）が起きた時刻を記録
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      try { sessionStorage.setItem('_sw_ctrl_ts', String(Date.now())); } catch(e) {}
-    });
-
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('service-worker.js')
         .then(reg => {
           console.log('[SW] registered:', reg.scope);
+          // 更新検知: 新しいSWが待機状態になったら静かに有効化
           reg.addEventListener('updatefound', () => {
             const newWorker = reg.installing;
             if (!newWorker) return;
             newWorker.addEventListener('statechange', () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // 自動リロードしない（ループ防止）
-                console.log('[SW] update available — will apply on next manual reload');
+                console.log('[SW] new version available. Will activate on next page load.');
+                // ここで自動リロードすることもできるが、作業中に強制リロードは危険なので
+                // 次回リロード時に新SWが効くようにする
               }
             });
           });

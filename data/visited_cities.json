@@ -1,9 +1,9 @@
 {
   "meta": {
-    "generated": "2026-05-02T13:24:16.495008",
+    "generated": "2026-05-02T13:50:14.778930",
     "totalMunicipalities": 1905,
-    "visitedCount": 1610,
-    "coverageRate": 84.51,
+    "visitedCount": 1613,
+    "coverageRate": 84.67,
     "gpxFileCount": 990,
     "dateRange": [
       "2023-07-29",
@@ -14,8 +14,8 @@
     "01": {
       "name": "北海道",
       "total": 194,
-      "visited": 165,
-      "rate": 85.05
+      "visited": 166,
+      "rate": 85.57
     },
     "02": {
       "name": "青森県",
@@ -200,8 +200,8 @@
     "32": {
       "name": "島根県",
       "total": 19,
-      "visited": 16,
-      "rate": 84.21
+      "visited": 17,
+      "rate": 89.47
     },
     "33": {
       "name": "岡山県",
@@ -230,8 +230,8 @@
     "37": {
       "name": "香川県",
       "total": 17,
-      "visited": 15,
-      "rate": 88.24
+      "visited": 16,
+      "rate": 94.12
     },
     "38": {
       "name": "愛媛県",
@@ -1613,6 +1613,14 @@
       "prefCode": "01",
       "firstVisit": "2026-04-11",
       "lastVisit": "2026-04-11",
+      "visitDays": 1
+    },
+    "01694": {
+      "name": "羅臼町",
+      "pref": "北海道",
+      "prefCode": "01",
+      "firstVisit": "2024-10-04",
+      "lastVisit": "2024-10-04",
       "visitDays": 1
     },
     "02201": {
@@ -11111,6 +11119,14 @@
       "lastVisit": "2025-10-04",
       "visitDays": 1
     },
+    "32526": {
+      "name": "西ノ島町",
+      "pref": "島根県",
+      "prefCode": "32",
+      "firstVisit": "2025-04-18",
+      "lastVisit": "2025-04-18",
+      "visitDays": 1
+    },
     "32528": {
       "name": "隠岐の島町",
       "pref": "島根県",
@@ -11893,6 +11909,14 @@
       "prefCode": "37",
       "firstVisit": "2024-06-14",
       "lastVisit": "2024-06-14",
+      "visitDays": 1
+    },
+    "37364": {
+      "name": "直島町",
+      "pref": "香川県",
+      "prefCode": "37",
+      "firstVisit": "2026-04-29",
+      "lastVisit": "2026-04-29",
       "visitDays": 1
     },
     "37386": {

@@ -1,10 +1,10 @@
 {
   "meta": {
-    "generated": "2026-05-02T13:50:14.778930",
+    "generated": "2026-05-03T02:28:04.145774",
     "totalMunicipalities": 1905,
-    "visitedCount": 1613,
-    "coverageRate": 84.67,
-    "gpxFileCount": 990,
+    "visitedCount": 1614,
+    "coverageRate": 84.72,
+    "gpxFileCount": 986,
     "dateRange": [
       "2023-07-29",
       "2026-05-01"
@@ -200,8 +200,8 @@
     "32": {
       "name": "島根県",
       "total": 19,
-      "visited": 17,
-      "rate": 89.47
+      "visited": 18,
+      "rate": 94.74
     },
     "33": {
       "name": "岡山県",
@@ -1108,8 +1108,8 @@
       "pref": "北海道",
       "prefCode": "01",
       "firstVisit": "2025-05-23",
-      "lastVisit": "2025-05-24",
-      "visitDays": 2
+      "lastVisit": "2025-05-23",
+      "visitDays": 1
     },
     "01511": {
       "name": "猿払村",
@@ -3301,7 +3301,7 @@
       "prefCode": "07",
       "firstVisit": "2023-12-09",
       "lastVisit": "2026-03-19",
-      "visitDays": 15
+      "visitDays": 14
     },
     "07481": {
       "name": "棚倉町",
@@ -4893,7 +4893,7 @@
       "prefCode": "12",
       "firstVisit": "2023-08-20",
       "lastVisit": "2026-03-19",
-      "visitDays": 18
+      "visitDays": 17
     },
     "12103": {
       "name": "千葉市稲毛区",
@@ -5005,7 +5005,7 @@
       "prefCode": "12",
       "firstVisit": "2023-08-20",
       "lastVisit": "2024-09-21",
-      "visitDays": 7
+      "visitDays": 6
     },
     "12213": {
       "name": "東金市",
@@ -5365,7 +5365,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-30",
       "lastVisit": "2026-05-01",
-      "visitDays": 443
+      "visitDays": 435
     },
     "13102": {
       "name": "中央区",
@@ -5373,7 +5373,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-30",
       "lastVisit": "2026-04-29",
-      "visitDays": 190
+      "visitDays": 189
     },
     "13103": {
       "name": "港区",
@@ -5389,7 +5389,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-29",
       "lastVisit": "2026-04-26",
-      "visitDays": 247
+      "visitDays": 246
     },
     "13105": {
       "name": "文京区",
@@ -5397,7 +5397,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-30",
       "lastVisit": "2026-04-22",
-      "visitDays": 519
+      "visitDays": 500
     },
     "13106": {
       "name": "台東区",
@@ -5405,7 +5405,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-30",
       "lastVisit": "2026-05-01",
-      "visitDays": 324
+      "visitDays": 316
     },
     "13107": {
       "name": "墨田区",
@@ -5485,7 +5485,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-29",
       "lastVisit": "2026-04-26",
-      "visitDays": 561
+      "visitDays": 560
     },
     "13117": {
       "name": "北区",
@@ -5501,7 +5501,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-30",
       "lastVisit": "2026-05-01",
-      "visitDays": 549
+      "visitDays": 548
     },
     "13119": {
       "name": "板橋区",
@@ -5509,7 +5509,7 @@
       "prefCode": "13",
       "firstVisit": "2023-07-29",
       "lastVisit": "2026-04-25",
-      "visitDays": 114
+      "visitDays": 111
     },
     "13120": {
       "name": "練馬区",
@@ -8221,7 +8221,7 @@
       "prefCode": "23",
       "firstVisit": "2023-08-11",
       "lastVisit": "2026-02-15",
-      "visitDays": 8
+      "visitDays": 7
     },
     "23103": {
       "name": "名古屋市北区",
@@ -8237,7 +8237,7 @@
       "prefCode": "23",
       "firstVisit": "2023-08-12",
       "lastVisit": "2026-04-29",
-      "visitDays": 28
+      "visitDays": 27
     },
     "23105": {
       "name": "名古屋市中村区",
@@ -8883,9 +8883,9 @@
       "name": "東員町",
       "pref": "三重県",
       "prefCode": "24",
-      "firstVisit": "2025-01-10",
+      "firstVisit": "2025-02-22",
       "lastVisit": "2025-04-24",
-      "visitDays": 4
+      "visitDays": 3
     },
     "24341": {
       "name": "菰野町",
@@ -9485,7 +9485,7 @@
       "prefCode": "27",
       "firstVisit": "2024-01-05",
       "lastVisit": "2026-04-29",
-      "visitDays": 10
+      "visitDays": 9
     },
     "27114": {
       "name": "大阪市東淀川区",
@@ -9500,8 +9500,8 @@
       "pref": "大阪府",
       "prefCode": "27",
       "firstVisit": "2025-04-26",
-      "lastVisit": "2026-01-17",
-      "visitDays": 3
+      "lastVisit": "2025-04-26",
+      "visitDays": 1
     },
     "27116": {
       "name": "大阪市生野区",
@@ -9515,9 +9515,9 @@
       "name": "大阪市旭区",
       "pref": "大阪府",
       "prefCode": "27",
-      "firstVisit": "2025-11-24",
+      "firstVisit": "2026-01-17",
       "lastVisit": "2026-01-17",
-      "visitDays": 2
+      "visitDays": 1
     },
     "27118": {
       "name": "大阪市城東区",
@@ -11123,6 +11123,14 @@
       "name": "西ノ島町",
       "pref": "島根県",
       "prefCode": "32",
+      "firstVisit": null,
+      "lastVisit": null,
+      "visitDays": 1
+    },
+    "32527": {
+      "name": "知夫村",
+      "pref": "島根県",
+      "prefCode": "32",
       "firstVisit": "2025-04-18",
       "lastVisit": "2025-04-18",
       "visitDays": 1
@@ -12364,8 +12372,8 @@
       "pref": "福岡県",
       "prefCode": "40",
       "firstVisit": "2024-01-05",
-      "lastVisit": "2025-12-28",
-      "visitDays": 5
+      "lastVisit": "2025-12-27",
+      "visitDays": 4
     },
     "40229": {
       "name": "みやま市",

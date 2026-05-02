@@ -1778,25 +1778,56 @@
     if(!tracksDataLayer) return;
     tracksDataLayer.setStyle({strokeColor:mapColors.TRACK_STROKE,strokeWeight:1.8,strokeOpacity:0.55,clickable:false,zIndex:20});
   }
+  async function fetchTracksJsonForLayer(){
+    // IndexedDB/HEAD 周りで失敗する端末があるため、通常 fetch も必ずフォールバックする。
+    // tracks_mobile.geojson が置いてあればスマホではそれを優先し、無ければ tracks.geojson を使う。
+    const urls = IS_MOBILE_VIEWPORT
+      ? ['data/tracks_mobile.geojson', 'data/tracks.geojson']
+      : ['data/tracks.geojson'];
+    let lastErr = null;
+    for(const url of urls){
+      try{
+        const st=$('loading-status');
+        if(st) st.textContent = url.includes('mobile') ? '軽量軌跡データを読み込み中...' : '軌跡データを読み込み中...';
+        // まず既存のキャッシュ機構を試す
+        try{
+          const data = await cachedFetchJson(url,{label:st?st.textContent:'軌跡データを読み込み中...'});
+          if(data) return data;
+        }catch(e){
+          lastErr = e;
+        }
+        // 失敗した場合は、HEAD/IndexedDBを使わず直接取得する
+        const res = await fetch(url,{cache:'no-cache'});
+        if(!res.ok) throw new Error('fetch failed: '+url+' '+res.status);
+        const data = await res.json();
+        if(data) return data;
+      }catch(e){
+        lastErr = e;
+        console.warn('[tracks] failed candidate:', url, e);
+      }
+    }
+    throw lastErr || new Error('tracks json could not be loaded');
+  }
+
   async function ensureTracksLayer(){
     if(tracksDataLayer) return tracksDataLayer;
     if(tracksLoadPromise) return tracksLoadPromise;
     tracksLoadPromise=(async()=>{
       try{
         if(!tracksData){
-          const st=$('loading-status');
-          if(st) st.textContent='軌跡データを読み込み中...';
-          tracksData=await cachedFetchJson('data/tracks.geojson',{label:'軌跡データを読み込み中...'}).catch(()=>null);
+          tracksData = await fetchTracksJsonForLayer();
         }
-        if(!tracksData) return null;
+        if(!tracksData || !Array.isArray(tracksData.features)){
+          throw new Error('tracks data is not a GeoJSON FeatureCollection');
+        }
         const layer=new google.maps.Data({map:null});
         layer.addGeoJson(tracksData);
         tracksDataLayer=layer;
         applyTracksLayerStyle();
         return tracksDataLayer;
       }catch(e){
-        console.error('[tracks] failed to load tracks.geojson',e);
-        return null;
+        console.error('[tracks] failed to load tracks layer',e);
+        throw e;
       }finally{
         tracksLoadPromise=null;
       }
@@ -1865,15 +1896,21 @@
   chkTracks.addEventListener('change', async function(){
     if(this.checked){
       this.disabled=true;
-      const layer=await ensureTracksLayer();
-      this.disabled=false;
-      if(layer){
+      const oldLabel = lblTracks.lastChild ? lblTracks.lastChild.textContent : '';
+      if(lblTracks.lastChild) lblTracks.lastChild.textContent = '軌跡を読み込み中...';
+      try{
+        const layer=await ensureTracksLayer();
         layer.setMap(map);
+        this.checked=true;
         saveLayerVisibility({tracks:true});
-      }else{
+      }catch(e){
+        // 失敗時だけOFFへ戻す。理由が見えるように画面とconsoleへ出す。
         this.checked=false;
         saveLayerVisibility({tracks:false});
-        console.warn('[tracks] tracks.geojson could not be loaded.');
+        alert('軌跡データを読み込めませんでした。data/tracks.geojson の配置、ファイルサイズ、またはスマホのメモリ制限を確認してください。');
+      }finally{
+        this.disabled=false;
+        if(lblTracks.lastChild) lblTracks.lastChild.textContent = oldLabel || (IS_MOBILE_VIEWPORT?'軌跡（重い）':'軌跡');
       }
     }else{
       if(tracksDataLayer) tracksDataLayer.setMap(null);

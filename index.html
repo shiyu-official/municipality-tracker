@@ -4058,15 +4058,19 @@
     const branch=cfg.branch||'main';
     // 現行ファイルのSHAを取得（あれば）
     let currentSha=null;
-    let currentContent=null;
     const existing=await githubGetFile(path);
     if(existing){
       currentSha=existing.sha;
-      try{currentContent=base64ToUtf8(existing.content.replace(/\n/g,''));}catch(e){currentContent=null;}
     }
-    // 内容が同じなら何もしない
-    if(currentContent!==null&&currentContent===content){
-      return {skipped:true,reason:'no-change'};
+    // 内容が同じなら何もしない（SHA比較で確認）
+    // ※ GitHubのcontent文字列比較は改行・BOM差異で誤判定しやすいため、
+    //   新旧のBase64エンコード結果を比較する
+    if(existing){
+      const newBase64=utf8ToBase64(content);
+      const oldBase64=existing.content.replace(/\n/g,'');
+      if(newBase64===oldBase64){
+        return {skipped:true,reason:'no-change'};
+      }
     }
     const url=`${GH_API}/repos/${cfg.owner}/${cfg.repo}/contents/${encodeURIComponent(path)}`;
     const body={

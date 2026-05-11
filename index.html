@@ -227,20 +227,22 @@
     left:50%;
     transform:translateX(-50%);
     z-index:1002;
-    display:flex;align-items:center;gap:8px;
+    display:flex;align-items:center;gap:10px;
     background:var(--bg-panel);
     border:1px solid var(--border);
-    border-radius:20px;
-    padding:6px 14px;
+    border-radius:10px;
+    padding:0 16px;
+    height:36px;
     box-shadow:var(--shadow-md);
-    font-size:12px;color:var(--text);
+    font-size:13px;color:var(--text);
     font-family:'Noto Sans JP',sans-serif;
     pointer-events:none;
+    width:420px;
     max-width:calc(100vw - 32px);
   }
   #geo-statusbar[hidden]{display:none;}
   .geo-sb-dot{
-    width:9px;height:9px;border-radius:50%;
+    width:11px;height:11px;border-radius:50%;
     background:#4285f4;border:2px solid #fff;
     box-shadow:0 0 0 1.5px #4285f4;
     flex-shrink:0;
@@ -250,8 +252,8 @@
     0%,100%{opacity:1;transform:scale(1);}
     50%{opacity:0.55;transform:scale(0.85);}
   }
-  .geo-sb-text{font-weight:600;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .geo-sb-meta{font-size:11px;color:var(--text-dim);font-family:'DM Mono',monospace;flex-shrink:0;}
+  .geo-sb-text{font-size:13px;font-weight:600;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .geo-sb-meta{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;flex-shrink:0;}
   /* 現在地マーカー（地図上） */
   @keyframes geo-pulse{
     0%{transform:scale(1);opacity:0.6;}
@@ -364,8 +366,11 @@
     #geo-statusbar{
       top:112px;
       left:50%;transform:translateX(-50%);
+      width:auto;
       max-width:calc(100vw - 24px);
-      padding:5px 12px;font-size:11px;
+      height:34px;
+      padding:0 14px;
+      font-size:12px;
     }
   }
   .stat-chips{display:flex;gap:8px;align-items:center;overflow-x:auto;flex:1;}
@@ -600,6 +605,12 @@
   .wp-drag-handle:active{cursor:grabbing;}
   .route-wp-row.dragging{opacity:0.4;background:var(--accent-light);}
   .route-wp-row.drag-over{border-top:2px solid var(--accent);}
+
+  /* 保存ルート ドラッグ並べ替え */
+  .sr-drag-handle{font-size:14px;color:var(--text-dim);cursor:grab;padding:2px 3px;flex-shrink:0;user-select:none;line-height:1;}
+  .sr-drag-handle:active{cursor:grabbing;}
+  .saved-route-item-wrap.sr-dragging{opacity:0.4;}
+  .saved-route-item-wrap.sr-drag-over{border-top:2px solid var(--accent);}
 
   /* サイドバータブ */
   .sidebar-tabs{display:flex;border-bottom:1px solid var(--border-light);margin-bottom:0;}
@@ -1035,6 +1046,18 @@
     <div id="sidebar-content"></div>
   </div>
   <div id="tab-routes" class="sidebar-tab-panel">
+    <div style="padding:6px 8px 0;display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <select id="sr-sort-select" style="flex:1;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;cursor:pointer;">
+        <option value="manual">手動（ドラッグで並べ替え）</option>
+        <option value="name-asc">名前 A→Z</option>
+        <option value="name-desc">名前 Z→A</option>
+        <option value="dist-desc">距離 長→短</option>
+        <option value="dist-asc">距離 短→長</option>
+        <option value="created-desc">作成日時 新→古</option>
+        <option value="created-asc">作成日時 古→新</option>
+        <option value="cities-desc">通過市区町村 多→少</option>
+      </select>
+    </div>
     <div class="saved-routes-list" id="saved-routes-list"></div>
     <div class="sr-actions">
       <button id="sr-show-all">全表示</button>
@@ -5363,8 +5386,12 @@
           </div>
         </div>`:'';
 
-      return`<div class="saved-route-item-wrap ${expanded?'expanded':''}" data-id="${r.id}">
+      const isManual=(!window._srSortMode||window._srSortMode==='manual');
+      const dragHandle=isManual?`<span class="sr-drag-handle" title="ドラッグで並べ替え">⠿</span>`:'';
+
+      return`<div class="saved-route-item-wrap ${expanded?'expanded':''}" data-id="${r.id}" draggable="${isManual}">
         <div class="saved-route-item" data-id="${r.id}">
+          ${dragHandle}
           <input type="checkbox" class="sr-check" data-id="${r.id}" ${shown?'checked':''}>
           <div class="sr-color" data-id="${r.id}" style="background:${r.color};" title="色を変更"></div>
           <div class="sr-info sr-info-clickable" data-id="${r.id}">
@@ -5440,6 +5467,71 @@
           markDirty('routes');
         }
       });
+    });
+
+    // ドラッグ&ドロップ並べ替え（手動モードのみ）
+    if(!window._srSortMode||window._srSortMode==='manual'){
+      let dragSrcId=null;
+      list.querySelectorAll('.saved-route-item-wrap[draggable="true"]').forEach(el=>{
+        el.addEventListener('dragstart',e=>{
+          dragSrcId=el.dataset.id;
+          el.classList.add('sr-dragging');
+          e.dataTransfer.effectAllowed='move';
+        });
+        el.addEventListener('dragend',()=>{
+          el.classList.remove('sr-dragging');
+          list.querySelectorAll('.sr-drag-over').forEach(x=>x.classList.remove('sr-drag-over'));
+        });
+        el.addEventListener('dragover',e=>{
+          e.preventDefault();
+          e.dataTransfer.dropEffect='move';
+          list.querySelectorAll('.sr-drag-over').forEach(x=>x.classList.remove('sr-drag-over'));
+          if(el.dataset.id!==dragSrcId) el.classList.add('sr-drag-over');
+        });
+        el.addEventListener('dragleave',()=>el.classList.remove('sr-drag-over'));
+        el.addEventListener('drop',e=>{
+          e.preventDefault();
+          el.classList.remove('sr-drag-over');
+          if(!dragSrcId||dragSrcId===el.dataset.id) return;
+          const fromIdx=savedRoutes.findIndex(r=>r.id===dragSrcId);
+          const toIdx=savedRoutes.findIndex(r=>r.id===el.dataset.id);
+          if(fromIdx<0||toIdx<0) return;
+          const [moved]=savedRoutes.splice(fromIdx,1);
+          savedRoutes.splice(toIdx,0,moved);
+          dragSrcId=null;
+          renderSavedRoutesList();
+          markDirty('routes');
+        });
+      });
+    }
+  }
+
+  // ── 保存ルートのソート ──
+  window._srSortMode='manual';
+  (function(){
+    const sel=document.getElementById('sr-sort-select');
+    if(!sel) return;
+    sel.addEventListener('change',()=>{
+      window._srSortMode=sel.value;
+      applySrSort();
+      renderSavedRoutesList();
+    });
+  })();
+
+  function applySrSort(){
+    const mode=window._srSortMode||'manual';
+    if(mode==='manual') return;
+    savedRoutes.sort((a,b)=>{
+      switch(mode){
+        case 'name-asc': return (a.name||'').localeCompare(b.name||'','ja');
+        case 'name-desc': return (b.name||'').localeCompare(a.name||'','ja');
+        case 'dist-desc': return (b.distance||0)-(a.distance||0);
+        case 'dist-asc': return (a.distance||0)-(b.distance||0);
+        case 'created-desc': return (b.createdAt||'').localeCompare(a.createdAt||'');
+        case 'created-asc': return (a.createdAt||'').localeCompare(b.createdAt||'');
+        case 'cities-desc': return (b.passedCities?.length||0)-(a.passedCities?.length||0);
+        default: return 0;
+      }
     });
   }
 

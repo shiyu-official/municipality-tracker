@@ -234,7 +234,7 @@
     padding:0 16px;
     height:36px;
     box-shadow:var(--shadow-md);
-    font-size:13px;color:var(--text);
+    font-size:14px;color:var(--text);
     font-family:'Noto Sans JP',sans-serif;
     pointer-events:none;
     width:420px;
@@ -252,8 +252,8 @@
     0%,100%{opacity:1;transform:scale(1);}
     50%{opacity:0.55;transform:scale(0.85);}
   }
-  .geo-sb-text{font-size:13px;font-weight:600;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .geo-sb-meta{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;flex-shrink:0;}
+  .geo-sb-text{font-size:14px;font-weight:600;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .geo-sb-meta{font-size:13px;color:var(--text-dim);font-family:'DM Mono',monospace;flex-shrink:0;}
   /* 現在地マーカー（地図上） */
   @keyframes geo-pulse{
     0%{transform:scale(1);opacity:0.6;}
@@ -1721,6 +1721,7 @@
   infoWindow.addListener('closeclick',()=>{_openInfoWindowCode=null;});
   geoDataLayer.addListener('click',e=>{
     _lastFeatureClickTime=Date.now();
+    // ルートモード中: 地図ピック処理（POIクリックも含む）
     if(typeof mapPickMode!=='undefined'&&mapPickMode){
       const cx=e.domEvent?e.domEvent.clientX:null;
       const cy=e.domEvent?e.domEvent.clientY:null;
@@ -1743,18 +1744,11 @@
   });
 
   map.addListener('click',e=>{
-    // ポリゴンクリックのイベント伝播でinfoWindowが即閉じしないよう無視
-    if(Date.now()-_lastFeatureClickTime<100) return;
-    if(typeof mapPickMode!=='undefined'&&mapPickMode){
-      const feat=findMunicipalityAtLatLng(e.latLng);
-      const cx=e.domEvent?e.domEvent.clientX:null;
-      const cy=e.domEvent?e.domEvent.clientY:null;
-      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},feat,cx,cy);
-      return;
-    }
-    // GoogleネイティブPOIクリック: デフォルトInfoWindowを阻止して自前で表示
+    // placeId(駅・POIなど)クリック: ポリゴンの100msガードをスキップして必ず処理
     if(e.placeId){
       e.stop();
+      // ルートモード中はPOI InfoWindowを開かない（地図ピックに影響しないよう無視）
+      if(mapPickMode) return;
       placesService.getDetails({placeId:e.placeId,fields:['name','formatted_address','url']},(place,status)=>{
         if(status===google.maps.places.PlacesServiceStatus.OK&&place){
           openPoiInfoWindow({
@@ -1765,6 +1759,15 @@
           });
         }
       });
+      return;
+    }
+    // ポリゴンクリックのイベント伝播でinfoWindowが即閉じしないよう無視
+    if(Date.now()-_lastFeatureClickTime<100) return;
+    if(typeof mapPickMode!=='undefined'&&mapPickMode){
+      const feat=findMunicipalityAtLatLng(e.latLng);
+      const cx=e.domEvent?e.domEvent.clientX:null;
+      const cy=e.domEvent?e.domEvent.clientY:null;
+      handleMapPick({lat:e.latLng.lat(),lng:e.latLng.lng()},feat,cx,cy);
       return;
     }
     infoWindow.close();
@@ -2539,6 +2542,9 @@
     document.querySelectorAll('.route-input').forEach(el=>el.classList.remove('picking'));
     $('map').closest('#map-container').classList.remove('map-pick-active');
     if(mapPickHintEl){mapPickHintEl.remove();mapPickHintEl=null;}
+    // ルートモード解除時に残留しているInfoWindowを閉じる
+    infoWindow.close();
+    _openInfoWindowCode=null;
   }
 
   function showPickHint(target){

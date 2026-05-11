@@ -478,6 +478,17 @@
   .iw-detail-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
   .iw-detail-label{color:var(--text-dim);}
   .iw-detail-value{color:var(--text);font-family:'DM Mono',monospace;font-weight:500;}
+  /* InfoWindow ルートボタン行 */
+  .iw-route-row{margin-top:10px;padding-top:8px;border-top:1px solid var(--border-light);display:flex;gap:6px;}
+  .iw-route-btn{flex:1;padding:5px 6px;background:var(--accent-light);border:1px solid var(--accent);border-radius:6px;font-size:11px;font-weight:500;color:var(--accent);cursor:pointer;font-family:'Noto Sans JP',sans-serif;text-align:center;transition:all 0.12s;white-space:nowrap;}
+  .iw-route-btn:hover{background:var(--accent);color:#fff;}
+  /* 右クリック／長押しコンテキストメニュー */
+  .map-ctx-menu{position:fixed;z-index:3000;background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-xl);padding:4px 0;min-width:180px;animation:modalPop 0.18s cubic-bezier(0.34,1.56,0.64,1);}
+  .map-ctx-item{padding:9px 16px;font-size:13px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:10px;transition:background 0.1s;}
+  .map-ctx-item:hover{background:var(--bg-panel-hover);}
+  .map-ctx-item .ctx-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+  .map-ctx-sep{height:1px;background:var(--border-light);margin:3px 0;}
+  .map-ctx-label{padding:5px 16px 2px;font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;}
   .pop-detail{font-size:11px;font-family:'DM Mono',monospace;color:var(--text-dim);margin-top:6px;line-height:1.6;}
 
   #loading{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s ease;}
@@ -1741,6 +1752,21 @@
     infoWindow.setPosition(e.latLng);
     infoWindow.open(map);
     _openInfoWindowCode=code;
+    // ルートボタンのイベント登録
+    const _latlng={lat:e.latLng.lat(),lng:e.latLng.lng()};
+    const _fp=featureProps[code]||{};
+    const _name=buildFullName(code,_fp.gun,_fp.city,_fp.ward)||'';
+    google.maps.event.addListenerOnce(infoWindow,'domready',()=>{
+      if(infoWindow._pendingRouteInfo){
+        const {routeBtnId}=infoWindow._pendingRouteInfo;
+        document.querySelectorAll(`[data-rid="${routeBtnId}"]`).forEach(btn=>{
+          btn.addEventListener('click',()=>{
+            const target=btn.dataset.action==='route-from'?'from':'to';
+            startRouteFromInfoWindow([_latlng.lat,_latlng.lng],_name,target);
+          });
+        });
+      }
+    });
   });
 
   map.addListener('click',e=>{
@@ -1794,16 +1820,31 @@
   function openPoiInfoWindow({position,name,address,url}){
     const safeName=name?String(name).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])):'';
     const safeAddr=address?String(address).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])):'';
+    const routeBtnId='iw-route-'+Date.now();
     const h=`<div class="iw-body">
       ${safeName?`<div style="font-weight:700;font-size:14px;">${safeName}</div>`:''}
       ${safeAddr?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;">${safeAddr}</div>`:''}
       ${url?`<a href="${url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-block;margin-top:4px;">Googleマップで見る</a>`:''}
+      <div class="iw-route-row">
+        <button class="iw-route-btn" data-action="route-from" data-rid="${routeBtnId}">📍 出発地に設定</button>
+        <button class="iw-route-btn" data-action="route-to" data-rid="${routeBtnId}">🏁 目的地に設定</button>
+      </div>
     </div>`;
     infoWindow.close();
     infoWindow.setContent(h);
     infoWindow.setPosition(position);
     infoWindow.open(map);
     _openInfoWindowCode=null;
+    // ボタンはDOMに追加された後でイベント登録（domready使用）
+    const coord=[position.lat(),position.lng()];
+    google.maps.event.addListenerOnce(infoWindow,'domready',()=>{
+      document.querySelectorAll(`[data-rid="${routeBtnId}"]`).forEach(btn=>{
+        btn.addEventListener('click',()=>{
+          const target=btn.dataset.action==='route-from'?'from':'to';
+          startRouteFromInfoWindow(coord,safeName||`${coord[0].toFixed(4)},${coord[1].toFixed(4)}`,target);
+        });
+      });
+    });
   }
 
   function featureToProps(feature){
@@ -1835,7 +1876,14 @@
       h+=`<div class="iw-detail-row"><span class="iw-detail-label">訪問日数</span><span class="iw-detail-value">${city.visitDays}日</span></div>`;
       h+=`</div>`;
     }
+    const routeBtnId='iw-route-'+Date.now();
+    h+=`<div class="iw-route-row">
+      <button class="iw-route-btn" data-action="route-from" data-rid="${routeBtnId}">📍 出発地に設定</button>
+      <button class="iw-route-btn" data-action="route-to" data-rid="${routeBtnId}">🏁 目的地に設定</button>
+    </div>`;
     h+=`</div></div>`;
+    // ボタン用のコードを一時保存（domreadyで拾う）
+    infoWindow._pendingRouteInfo={routeBtnId,code,lat:null,lng:null};
     return h;
   }
 
@@ -2566,6 +2614,60 @@
     _openInfoWindowCode=null;
   }
 
+  // InfoWindow / コンテキストメニューからルート検索を起動する共通関数
+  function startRouteFromInfoWindow(coord,name,target){
+    infoWindow.close();
+    _openInfoWindowCode=null;
+    // ルートパネルを開く
+    const rp=$('route-panel');
+    if(rp.style.display!=='flex'){
+      rp.style.display='flex';
+      $('route-toggle-btn').classList.add('active');
+      document.body.classList.add('route-panel-open');
+    }
+    // 出発地または目的地に設定
+    if(target==='from'){
+      $('route-from').value=name;
+      routeFromCoord=coord;
+      routeFromCity={isCityWaypoint:false,cityCode:null,name};
+    } else {
+      $('route-to').value=name;
+      routeToCoord=coord;
+      routeToCity={isCityWaypoint:false,cityCode:null,name};
+    }
+    // もう一方が空なら現在地を自動設定、両方揃ったらそのまま検索
+    const otherEmpty=target==='from'?(!routeToCoord):(!routeFromCoord);
+    if(otherEmpty){
+      // 現在地を取得して反対側に設定
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const lat=pos.coords.latitude,lng=pos.coords.longitude;
+          const otherTarget=target==='from'?'to':'from';
+          if(otherTarget==='from'){
+            $('route-from').value='現在地';
+            routeFromCoord=[lat,lng];
+            routeFromCity={isCityWaypoint:false,cityCode:null,name:'現在地'};
+          } else {
+            $('route-to').value='現在地';
+            routeToCoord=[lat,lng];
+            routeToCity={isCityWaypoint:false,cityCode:null,name:'現在地'};
+          }
+          updateRoutePreview();
+          $('route-go-btn').click();
+        },()=>{
+          // 現在地取得失敗時は入力を促す
+          const otherTarget=target==='from'?'to':'from';
+          setActiveInput(otherTarget);
+        },{enableHighAccuracy:true,timeout:8000,maximumAge:30000});
+      } else {
+        setActiveInput(target==='from'?'to':'from');
+      }
+    } else {
+      updateRoutePreview();
+      $('route-go-btn').click();
+    }
+  }
+
   function showPickHint(target){
     if(mapPickHintEl) mapPickHintEl.remove();
     if(!target) return;
@@ -2580,6 +2682,108 @@
   // 出発・目的のfocus
   $('route-from').addEventListener('focus',()=>setActiveInput('from'));
   $('route-to').addEventListener('focus',()=>setActiveInput('to'));
+
+  // ── 右クリック・長押し → コンテキストメニュー ──
+  function showMapContextMenu(latlng,clientX,clientY){
+    closeMapContextMenu();
+    const menu=document.createElement('div');
+    menu.className='map-ctx-menu';
+    menu.id='map-ctx-menu';
+    const lat=typeof latlng.lat==='function'?latlng.lat():latlng.lat;
+    const lng=typeof latlng.lng==='function'?latlng.lng():latlng.lng;
+    const coordStr=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+    menu.innerHTML=`
+      <div class="map-ctx-label">この地点を…</div>
+      <div class="map-ctx-item" data-action="ctx-from"><span class="ctx-icon">📍</span>出発地に設定</div>
+      <div class="map-ctx-item" data-action="ctx-to"><span class="ctx-icon">🏁</span>目的地に設定</div>
+      <div class="map-ctx-item" data-action="ctx-via"><span class="ctx-icon">🔵</span>経由地に追加</div>
+      <div class="map-ctx-sep"></div>
+      <div class="map-ctx-item" style="font-size:11px;color:var(--text-dim);cursor:default;pointer-events:none;padding:6px 16px;">${coordStr}</div>`;
+    // 位置調整
+    const menuW=188,menuH=160;
+    let left=clientX+4,top=clientY+4;
+    if(left+menuW>window.innerWidth) left=clientX-menuW-4;
+    if(top+menuH>window.innerHeight) top=clientY-menuH-4;
+    if(top<58) top=58;
+    menu.style.left=left+'px';menu.style.top=top+'px';
+    document.body.appendChild(menu);
+    // 選択
+    menu.querySelector('[data-action="ctx-from"]').addEventListener('click',()=>{
+      closeMapContextMenu();
+      startRouteFromInfoWindow([lat,lng],coordStr,'from');
+    });
+    menu.querySelector('[data-action="ctx-to"]').addEventListener('click',()=>{
+      closeMapContextMenu();
+      startRouteFromInfoWindow([lat,lng],coordStr,'to');
+    });
+    menu.querySelector('[data-action="ctx-via"]').addEventListener('click',()=>{
+      closeMapContextMenu();
+      // 経由地に追加
+      const rp=$('route-panel');
+      if(rp.style.display!=='flex'){
+        rp.style.display='flex';
+        $('route-toggle-btn').classList.add('active');
+        document.body.classList.add('route-panel-open');
+      }
+      routeWaypoints.push({coord:[lat,lng],name:coordStr,isCityWaypoint:false,cityCode:null});
+      renderWaypoints();
+      updateRoutePreview();
+    });
+    // 外クリックで閉じる
+    setTimeout(()=>{
+      document.addEventListener('click',closeMapContextMenu,{once:true});
+      document.addEventListener('contextmenu',closeMapContextMenu,{once:true});
+    },10);
+  }
+  function closeMapContextMenu(){
+    const m=document.getElementById('map-ctx-menu');
+    if(m) m.remove();
+  }
+
+  // 右クリック（PC）
+  map.addListener('rightclick',e=>{
+    const cx=e.domEvent?e.domEvent.clientX:window.innerWidth/2;
+    const cy=e.domEvent?e.domEvent.clientY:window.innerHeight/2;
+    showMapContextMenu(e.latLng,cx,cy);
+  });
+
+  // 長押し（スマホ）: touchstart→500ms後にtouchendが来ていなければ発動
+  (()=>{
+    let _lpTimer=null,_lpMoved=false,_lpTouch=null,_lpLatLng=null;
+    const mapDiv=$('map');
+    mapDiv.addEventListener('touchstart',e=>{
+      if(e.touches.length!==1) return;
+      _lpMoved=false;
+      _lpTouch=e.touches[0];
+      // タッチ座標をLatLngに変換（mapのcontainerからの相対座標を使用）
+      const rect=mapDiv.getBoundingClientRect();
+      const px=_lpTouch.clientX-rect.left;
+      const py=_lpTouch.clientY-rect.top;
+      const proj=map.getProjection();
+      const bounds=map.getBounds();
+      if(proj&&bounds){
+        const ne=bounds.getNorthEast();const sw=bounds.getSouthWest();
+        const w=rect.width,h=rect.height;
+        const lng=sw.lng()+(ne.lng()-sw.lng())*(px/w);
+        const lat=ne.lat()-(ne.lat()-sw.lat())*(py/h);
+        _lpLatLng={lat,lng};
+      }
+      _lpTimer=setTimeout(()=>{
+        if(_lpMoved||!_lpLatLng) return;
+        showMapContextMenu(_lpLatLng,_lpTouch.clientX,_lpTouch.clientY);
+      },600);
+    },{passive:true});
+    mapDiv.addEventListener('touchmove',e=>{
+      if(Math.abs(e.touches[0].clientX-(_lpTouch?.clientX||0))>10||Math.abs(e.touches[0].clientY-(_lpTouch?.clientY||0))>10){
+        _lpMoved=true;
+        clearTimeout(_lpTimer);
+      }
+    },{passive:true});
+    mapDiv.addEventListener('touchend',()=>{clearTimeout(_lpTimer);},{passive:true});
+    // map clickイベントで最新のlatLngを更新（長押し座標の推定用）
+    map.addListener('click',e=>{_lpLatLng=e.latLng;});
+    map.addListener('mousemove',e=>{_lpLatLng=e.latLng;});
+  })();
 
   // ルート入力のオートコンプリート
   function setupRouteSuggest(inputId,suggestId,coordSetter){

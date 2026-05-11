@@ -680,6 +680,29 @@
   /* #route-inputs-scroll: パネル全体スクロール方式に変更したため独立スクロール無効 */
   #route-inputs-scroll{max-height:none;overflow-y:visible;}
 
+  /* 反転ボタン */
+  #route-reverse-btn{
+    display:block;
+    margin:2px auto;
+    background:none;
+    border:1px solid var(--border);
+    border-radius:50%;
+    width:26px;height:26px;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--text-dim);
+    line-height:1;
+    transition:all 0.15s;
+    flex-shrink:0;
+  }
+  #route-reverse-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+
+  /* 保存ルート名インライン編集 */
+  .sr-name-edit-wrap{display:flex;align-items:center;gap:4px;min-width:0;}
+  .sr-name-input{flex:1;min-width:0;padding:2px 6px;background:var(--bg);border:1px solid var(--accent);border-radius:4px;font-size:12px;font-weight:500;font-family:'Noto Sans JP',sans-serif;color:var(--text-bright);outline:none;}
+  .sr-name-save-btn{flex-shrink:0;padding:2px 7px;background:var(--accent);border:none;border-radius:4px;font-size:11px;color:#fff;cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+  .sr-name-cancel-btn{flex-shrink:0;padding:2px 7px;background:var(--bg);border:1px solid var(--border);border-radius:4px;font-size:11px;color:var(--text-dim);cursor:pointer;font-family:'Noto Sans JP',sans-serif;}
+
   /* 全クリアボタン */
   #route-reset-btn{
     padding:8px 14px;
@@ -1058,6 +1081,11 @@
             </div>
             <button class="route-icon-btn" id="from-city-btn" title="都市から選択">🗺</button>
             <button class="route-icon-btn" id="from-locate-btn" title="現在地">📍</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin:-2px 0;">
+            <div style="flex:1;height:1px;background:var(--border-light);"></div>
+            <button id="route-reverse-btn" title="出発・目的地を入れ替え">⇅</button>
+            <div style="flex:1;height:1px;background:var(--border-light);"></div>
           </div>
           <div class="route-waypoints" id="route-waypoints"></div>
           <button id="add-waypoint-btn">＋ 経由地を追加</button>
@@ -3955,6 +3983,33 @@
     $('route-result').appendChild(container);
   }
 
+  // ── 出発・目的地 反転ボタン ──
+  $('route-reverse-btn').addEventListener('click',()=>{
+    // 入力値・座標・都市情報をすべて入れ替え
+    const fromVal=$('route-from').value;
+    const toVal=$('route-to').value;
+    const fromCoord=routeFromCoord;
+    const toCoord=routeToCoord;
+    const fromCity={...routeFromCity};
+    const toCity={...routeToCity};
+
+    $('route-from').value=toVal;
+    $('route-to').value=fromVal;
+    routeFromCoord=toCoord;
+    routeToCoord=fromCoord;
+    routeFromCity={...toCity};
+    routeToCity={...fromCity};
+
+    // 経由地も逆順にする
+    routeWaypoints=routeWaypoints.reverse();
+    renderWaypoints();
+
+    // ルートのプレビューが表示中なら再検索
+    if(routeFromCoord&&routeToCoord){
+      $('route-go-btn').click();
+    }
+  });
+
   // ── 入力全クリアボタン（ルート描画はそのまま、入力欄のみリセット） ──
   $('route-reset-btn').addEventListener('click',()=>{
     routeFromCoord=null;routeToCoord=null;
@@ -5205,6 +5260,51 @@
     URL.revokeObjectURL(url);
   }
 
+  // ── 保存ルート名のインライン編集 ──
+  function startRenameRoute(id, anchorBtn){
+    const r=savedRoutes.find(r=>r.id===id);
+    if(!r) return;
+
+    // 既に別の編集中があれば閉じる
+    document.querySelectorAll('.sr-name-edit-wrap').forEach(w=>w.remove());
+    document.querySelectorAll('.sr-name[data-id]').forEach(el=>{el.style.display='';});
+
+    // ルート名表示要素を取得
+    const wrap=anchorBtn.closest('.saved-route-item-wrap');
+    const nameEl=wrap?.querySelector('.sr-name');
+    if(!nameEl) return;
+    nameEl.style.display='none';
+
+    // インライン入力欄を挿入
+    const editWrap=document.createElement('div');
+    editWrap.className='sr-name-edit-wrap';
+    editWrap.innerHTML=`
+      <input class="sr-name-input" type="text" value="${r.name.replace(/"/g,'&quot;')}" maxlength="80">
+      <button class="sr-name-save-btn">保存</button>
+      <button class="sr-name-cancel-btn">×</button>
+    `;
+    nameEl.parentNode.insertBefore(editWrap,nameEl);
+    const input=editWrap.querySelector('.sr-name-input');
+    input.focus();input.select();
+
+    const doSave=()=>{
+      const newName=input.value.trim();
+      if(newName&&newName!==r.name){
+        r.name=newName;
+        markDirty('routes');
+      }
+      renderSavedRoutesList();
+    };
+    const doCancel=()=>{renderSavedRoutesList();};
+
+    editWrap.querySelector('.sr-name-save-btn').addEventListener('click',doSave);
+    editWrap.querySelector('.sr-name-cancel-btn').addEventListener('click',doCancel);
+    input.addEventListener('keydown',e=>{
+      if(e.key==='Enter'){e.preventDefault();doSave();}
+      if(e.key==='Escape'){e.preventDefault();doCancel();}
+    });
+  }
+
   // 一覧描画
   let _expandedRouteId=null; // 詳細展開中のルートID
 
@@ -5257,7 +5357,8 @@
           <div class="srd-row"><div class="srd-label">通過 (${r.passedCities?.length||0})</div><div class="srd-value srd-cities">${cityList}${cityListMore}</div></div>
           <div class="srd-actions">
             <button class="srd-btn" data-act="locate" data-id="${r.id}" title="地図で表示">🔍 地図</button>
-            <button class="srd-btn" data-act="edit" data-id="${r.id}" title="編集モードに読み込む">✏️ 編集</button>
+            <button class="srd-btn" data-act="rename" data-id="${r.id}" title="名前を変更">✏️ 名前</button>
+            <button class="srd-btn" data-act="edit" data-id="${r.id}" title="編集モードに読み込む">🔄 編集</button>
             <button class="srd-btn srd-danger" data-act="delete" data-id="${r.id}" title="削除">🗑 削除</button>
           </div>
         </div>`:'';
@@ -5267,7 +5368,7 @@
           <input type="checkbox" class="sr-check" data-id="${r.id}" ${shown?'checked':''}>
           <div class="sr-color" data-id="${r.id}" style="background:${r.color};" title="色を変更"></div>
           <div class="sr-info sr-info-clickable" data-id="${r.id}">
-            <div class="sr-name">${r.name}</div>
+            <div class="sr-name" data-id="${r.id}">${r.name}</div>
             <div class="sr-meta">${dist}km / ${durStr} / ${r.passedCities?r.passedCities.length:0}市区町村</div>
           </div>
           <button class="sr-toggle" data-id="${r.id}" title="${expanded?'閉じる':'詳細を開く'}">${expanded?'▾':'▸'}</button>
@@ -5326,6 +5427,8 @@
           }
           // チェックボックスもチェック状態に
           renderSavedRoutesList();
+        } else if(act==='rename'){
+          startRenameRoute(id,btn);
         } else if(act==='edit'){
           loadRouteForEdit(id);
         } else if(act==='delete'){

@@ -1826,8 +1826,7 @@
       ${safeAddr?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;line-height:1.5;">${safeAddr}</div>`:''}
       ${url?`<a href="${url}" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;display:inline-block;margin-top:4px;">Googleマップで見る</a>`:''}
       <div class="iw-route-row">
-        <button class="iw-route-btn" data-action="route-from" data-rid="${routeBtnId}">📍 出発地に設定</button>
-        <button class="iw-route-btn" data-action="route-to" data-rid="${routeBtnId}">🏁 目的地に設定</button>
+        <button class="iw-route-btn" data-action="route-to" data-rid="${routeBtnId}">🏁 目的地に設定（現在地からのルートを検索）</button>
       </div>
     </div>`;
     infoWindow.close();
@@ -1878,8 +1877,7 @@
     }
     const routeBtnId='iw-route-'+Date.now();
     h+=`<div class="iw-route-row">
-      <button class="iw-route-btn" data-action="route-from" data-rid="${routeBtnId}">📍 出発地に設定</button>
-      <button class="iw-route-btn" data-action="route-to" data-rid="${routeBtnId}">🏁 目的地に設定</button>
+      <button class="iw-route-btn" data-action="route-to" data-rid="${routeBtnId}">🏁 目的地に設定（現在地からのルートを検索）</button>
     </div>`;
     h+=`</div></div>`;
     // ボタン用のコードを一時保存（domreadyで拾う）
@@ -2694,9 +2692,7 @@
     const coordStr=`${lat.toFixed(5)}, ${lng.toFixed(5)}`;
     menu.innerHTML=`
       <div class="map-ctx-label">この地点を…</div>
-      <div class="map-ctx-item" data-action="ctx-from"><span class="ctx-icon">📍</span>出発地に設定</div>
-      <div class="map-ctx-item" data-action="ctx-to"><span class="ctx-icon">🏁</span>目的地に設定</div>
-      <div class="map-ctx-item" data-action="ctx-via"><span class="ctx-icon">🔵</span>経由地に追加</div>
+      <div class="map-ctx-item" data-action="ctx-to"><span class="ctx-icon">🏁</span>目的地に設定（現在地から検索）</div>
       <div class="map-ctx-sep"></div>
       <div class="map-ctx-item" style="font-size:11px;color:var(--text-dim);cursor:default;pointer-events:none;padding:6px 16px;">${coordStr}</div>`;
     // 位置調整
@@ -2708,26 +2704,9 @@
     menu.style.left=left+'px';menu.style.top=top+'px';
     document.body.appendChild(menu);
     // 選択
-    menu.querySelector('[data-action="ctx-from"]').addEventListener('click',()=>{
-      closeMapContextMenu();
-      startRouteFromInfoWindow([lat,lng],coordStr,'from');
-    });
     menu.querySelector('[data-action="ctx-to"]').addEventListener('click',()=>{
       closeMapContextMenu();
       startRouteFromInfoWindow([lat,lng],coordStr,'to');
-    });
-    menu.querySelector('[data-action="ctx-via"]').addEventListener('click',()=>{
-      closeMapContextMenu();
-      // 経由地に追加
-      const rp=$('route-panel');
-      if(rp.style.display!=='flex'){
-        rp.style.display='flex';
-        $('route-toggle-btn').classList.add('active');
-        document.body.classList.add('route-panel-open');
-      }
-      routeWaypoints.push({coord:[lat,lng],name:coordStr,isCityWaypoint:false,cityCode:null});
-      renderWaypoints();
-      updateRoutePreview();
     });
     // 外クリックで閉じる
     setTimeout(()=>{

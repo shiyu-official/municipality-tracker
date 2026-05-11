@@ -618,11 +618,7 @@
   .route-wp-row.dragging{opacity:0.4;background:var(--accent-light);}
   .route-wp-row.drag-over{border-top:2px solid var(--accent);}
 
-  /* 保存ルート ドラッグ並べ替え */
-  .sr-drag-handle{font-size:14px;color:var(--text-dim);cursor:grab;padding:2px 3px;flex-shrink:0;user-select:none;line-height:1;}
-  .sr-drag-handle:active{cursor:grabbing;}
-  .saved-route-item-wrap.sr-dragging{opacity:0.4;}
-  .saved-route-item-wrap.sr-drag-over{border-top:2px solid var(--accent);}
+
 
   /* サイドバータブ */
   .sidebar-tabs{display:flex;border-bottom:1px solid var(--border-light);margin-bottom:0;}
@@ -1060,7 +1056,6 @@
   <div id="tab-routes" class="sidebar-tab-panel">
     <div style="padding:6px 8px 0;display:flex;align-items:center;gap:6px;flex-shrink:0;">
       <select id="sr-sort-select" style="flex:1;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:11px;font-family:'Noto Sans JP',sans-serif;color:var(--text);outline:none;cursor:pointer;">
-        <option value="manual">手動（ドラッグで並べ替え）</option>
         <option value="name-asc">名前 A→Z</option>
         <option value="name-desc">名前 Z→A</option>
         <option value="dist-desc">距離 長→短</option>
@@ -5662,12 +5657,8 @@
           </div>
         </div>`:'';
 
-      const isManual=(!window._srSortMode||window._srSortMode==='manual');
-      const dragHandle=isManual?`<span class="sr-drag-handle" title="ドラッグで並べ替え">⠿</span>`:'';
-
-      return`<div class="saved-route-item-wrap ${expanded?'expanded':''}" data-id="${r.id}" draggable="${isManual}">
+      return`<div class="saved-route-item-wrap ${expanded?'expanded':''}" data-id="${r.id}">
         <div class="saved-route-item" data-id="${r.id}">
-          ${dragHandle}
           <input type="checkbox" class="sr-check" data-id="${r.id}" ${shown?'checked':''}>
           <div class="sr-color" data-id="${r.id}" style="background:${r.color};" title="色を変更"></div>
           <div class="sr-info sr-info-clickable" data-id="${r.id}">
@@ -5745,45 +5736,10 @@
       });
     });
 
-    // ドラッグ&ドロップ並べ替え（手動モードのみ）
-    if(!window._srSortMode||window._srSortMode==='manual'){
-      let dragSrcId=null;
-      list.querySelectorAll('.saved-route-item-wrap[draggable="true"]').forEach(el=>{
-        el.addEventListener('dragstart',e=>{
-          dragSrcId=el.dataset.id;
-          el.classList.add('sr-dragging');
-          e.dataTransfer.effectAllowed='move';
-        });
-        el.addEventListener('dragend',()=>{
-          el.classList.remove('sr-dragging');
-          list.querySelectorAll('.sr-drag-over').forEach(x=>x.classList.remove('sr-drag-over'));
-        });
-        el.addEventListener('dragover',e=>{
-          e.preventDefault();
-          e.dataTransfer.dropEffect='move';
-          list.querySelectorAll('.sr-drag-over').forEach(x=>x.classList.remove('sr-drag-over'));
-          if(el.dataset.id!==dragSrcId) el.classList.add('sr-drag-over');
-        });
-        el.addEventListener('dragleave',()=>el.classList.remove('sr-drag-over'));
-        el.addEventListener('drop',e=>{
-          e.preventDefault();
-          el.classList.remove('sr-drag-over');
-          if(!dragSrcId||dragSrcId===el.dataset.id) return;
-          const fromIdx=savedRoutes.findIndex(r=>r.id===dragSrcId);
-          const toIdx=savedRoutes.findIndex(r=>r.id===el.dataset.id);
-          if(fromIdx<0||toIdx<0) return;
-          const [moved]=savedRoutes.splice(fromIdx,1);
-          savedRoutes.splice(toIdx,0,moved);
-          dragSrcId=null;
-          renderSavedRoutesList();
-          markDirty('routes');
-        });
-      });
-    }
   }
 
   // ── 保存ルートのソート ──
-  window._srSortMode='manual';
+  window._srSortMode='name-asc';
   (function(){
     const sel=document.getElementById('sr-sort-select');
     if(!sel) return;
@@ -5796,7 +5752,6 @@
 
   function applySrSort(){
     const mode=window._srSortMode||'manual';
-    if(mode==='manual') return;
     savedRoutes.sort((a,b)=>{
       switch(mode){
         case 'name-asc': return (a.name||'').localeCompare(b.name||'','ja');

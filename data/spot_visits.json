@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated": "2026-05-03T02:28:09.342151",
+    "generated": "2026-05-11T19:37:36.803341",
     "totalSpots": 51,
-    "visitedSpots": 31,
+    "visitedSpots": 32,
     "spotsVersion": 4
   },
   "categories": [
@@ -371,13 +371,13 @@
           "lat": 33.9213454,
           "lon": 133.8173719,
           "radiusM": 1500,
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
+          "autoDetected": true,
+          "firstVisit": "2026-05-10",
+          "lastVisit": "2026-05-10",
+          "visitDays": 1
         }
       ],
-      "completed": 1,
+      "completed": 2,
       "total": 3
     },
     {

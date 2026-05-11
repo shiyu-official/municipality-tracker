@@ -1744,21 +1744,36 @@
   });
 
   map.addListener('click',e=>{
-    // placeId(駅・POIなど)クリック: ポリゴンの100msガードをスキップして必ず処理
+    // placeId(駅・施設など)クリック: ポリゴンの100msガードをスキップして必ず処理
     if(e.placeId){
       e.stop();
-      // ルートモード中はPOI InfoWindowを開かない（地図ピックに影響しないよう無視）
-      if(mapPickMode) return;
-      placesService.getDetails({placeId:e.placeId,fields:['name','formatted_address','url']},(place,status)=>{
-        if(status===google.maps.places.PlacesServiceStatus.OK&&place){
-          openPoiInfoWindow({
-            position:e.latLng,
-            name:place.name,
-            address:place.formatted_address,
-            url:place.url
-          });
-        }
-      });
+      if(mapPickMode){
+        // ルートモード中: POI名を取得してそのままルート地点に設定するモーダルを出す
+        const cx=e.domEvent?e.domEvent.clientX:null;
+        const cy=e.domEvent?e.domEvent.clientY:null;
+        const latlng={lat:e.latLng.lat(),lng:e.latLng.lng()};
+        placesService.getDetails({placeId:e.placeId,fields:['name','formatted_address','geometry']},(place,status)=>{
+          const feat=findMunicipalityAtLatLng(e.latLng);
+          if(status===google.maps.places.PlacesServiceStatus.OK&&place){
+            // handleMapPick を呼び、地点名を上書き
+            handleMapPickWithName(latlng,feat,cx,cy,place.name||(place.formatted_address||''));
+          } else {
+            handleMapPick(latlng,feat,cx,cy);
+          }
+        });
+      } else {
+        // 非ルートモード: InfoWindowを開く
+        placesService.getDetails({placeId:e.placeId,fields:['name','formatted_address','url']},(place,status)=>{
+          if(status===google.maps.places.PlacesServiceStatus.OK&&place){
+            openPoiInfoWindow({
+              position:e.latLng,
+              name:place.name,
+              address:place.formatted_address,
+              url:place.url
+            });
+          }
+        });
+      }
       return;
     }
     // ポリゴンクリックのイベント伝播でinfoWindowが即閉じしないよう無視
@@ -2499,10 +2514,14 @@
     const open=routePanel.style.display==='flex';
     routePanel.style.display=open?'none':'flex';
     $('route-toggle-btn').classList.toggle('active',!open);
-    // スマホ時: ルートパネル開放中はbodyにクラス付与 → レイヤートグルを上に逃がすCSSと連動
     document.body.classList.toggle('route-panel-open',!open);
     searchResults.style.display='none';
-    if(!open) setActiveInput('from');
+    if(open){
+      // パネルを閉じるとき: ルートモード（mapPickMode）を解除
+      clearActiveInput();
+    } else {
+      setActiveInput('from');
+    }
   });
 
   // ルート移動モード
@@ -3138,6 +3157,73 @@
     if(cityOpt){
       cityOpt.addEventListener('click',()=>{
         // 座標はルート検索時に前後ポイントから再計算。仮に重心をセット
+        const centroid=getCityCentroid(code);
+        const tmpCoord=centroid||[latlng.lat,latlng.lng];
+        applyPickResult(tmpCoord,cityName+'（市区町村経由）',target,true,code);
+        closeModal();
+      });
+    }
+  }
+
+  // POI名付きのhandleMapPick（駅など placeId クリック時に使用）
+  function handleMapPickWithName(latlng,feature,clientX,clientY,poiName){
+    if(!activeRouteInput) return;
+    const target=activeRouteInput;
+    document.querySelectorAll('.mcm-overlay,.map-click-modal').forEach(el=>el.remove());
+
+    const code=feature?feature.properties.N03_007:null;
+    const fp=code?featureProps[code]:null;
+    const cityName=fp?buildFullName(code,fp.gun,fp.city,fp.ward):'不明';
+    const prefName=fp?fp.pref:'';
+    const vc=code?visitedData.cities[code]:null;
+    const isVisited=vc&&vc.visitDays>0;
+
+    const overlay=document.createElement('div');
+    overlay.className='mcm-overlay';
+    document.body.appendChild(overlay);
+
+    const modal=document.createElement('div');
+    modal.className='map-click-modal';
+    const targetLabel=target==='from'?'出発地':target==='to'?'目的地':'経由地';
+    let html=`<div class="mcm-header">${targetLabel}に設定</div>
+      <div class="mcm-option" data-action="exact">
+        <div class="mcm-icon pin">📍</div>
+        <div class="mcm-detail">
+          <div class="mcm-title">${poiName||'この地点を使用'}</div>
+          <div class="mcm-sub">${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)}</div>
+        </div>
+      </div>`;
+    if(code){
+      html+=`<div class="mcm-option" data-action="city" data-code="${code}">
+        <div class="mcm-icon city">${isVisited?'✅':'🏙'}</div>
+        <div class="mcm-detail">
+          <div class="mcm-title">${cityName}を経由</div>
+          <div class="mcm-sub">${prefName}・${isVisited?'訪問済み':'未訪問'}</div>
+        </div>
+      </div>`;
+    }
+    modal.innerHTML=html;
+
+    const cx=clientX!=null?clientX:window.innerWidth/2;
+    const cy=clientY!=null?clientY:window.innerHeight/2;
+    const modalW=284,modalH=code?180:130;
+    let left=cx+12,top=cy-20;
+    if(left+modalW>window.innerWidth) left=cx-modalW-12;
+    if(top+modalH>window.innerHeight) top=window.innerHeight-modalH-10;
+    if(top<58) top=58;
+    modal.style.left=left+'px';modal.style.top=top+'px';
+    document.body.appendChild(modal);
+
+    function closeModal(){overlay.remove();modal.remove();}
+    overlay.addEventListener('click',closeModal);
+
+    modal.querySelector('[data-action="exact"]').addEventListener('click',()=>{
+      applyPickResult([latlng.lat,latlng.lng],poiName||`${latlng.lat.toFixed(4)}, ${latlng.lng.toFixed(4)}`,target,false,null);
+      closeModal();
+    });
+    const cityOpt=modal.querySelector('[data-action="city"]');
+    if(cityOpt){
+      cityOpt.addEventListener('click',()=>{
         const centroid=getCityCentroid(code);
         const tmpCoord=centroid||[latlng.lat,latlng.lng];
         applyPickResult(tmpCoord,cityName+'（市区町村経由）',target,true,code);

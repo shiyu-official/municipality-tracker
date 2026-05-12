@@ -5640,6 +5640,34 @@
       const fromName=r.from?.name||'-';
       const toName=r.to?.name||'-';
 
+      // 保存ルートからGoogleマップ/Appleマップリンクを生成
+      let srGmapLinksHtml='';
+      if(expanded&&r.from?.coord&&r.to?.coord){
+        const _origin=r.from.coord;
+        const _dest=r.to.coord;
+        const _wps=(r.waypoints||[]).map(w=>w.coord).filter(Boolean);
+        const _mode=r.mode==='walking'?'walking':'driving';
+        const _device=detectDevice();
+        const _icon=_device==='ios'?'🍎':'🗺';
+        const buildSrLinks=(_o,_d,_w)=>{
+          if(_w.length<=GMAP_WP_LIMIT){
+            const {url,device}=buildMapUrl(_o,_d,_w,_mode);
+            return[{url,label:getMapLinkLabel(device,null),sub:null}];
+          }
+          return splitForGmap(_o,_d,_w).map((seg,i,arr)=>{
+            const {url,device}=buildMapUrl(seg.origin,seg.dest,seg.waypoints,_mode);
+            return{url,label:getMapLinkLabel(device,arr.length>1?`区間${i+1}/${arr.length}`:null),sub:`${seg.originName} → ${seg.destName}`};
+          });
+        };
+        srGmapLinksHtml=buildSrLinks(_origin,_dest,_wps).map(lk=>
+          `<a class="gmap-link-btn" href="${lk.url}" target="_blank" rel="noopener">
+            <span class="gmap-icon">${_icon}</span>
+            <span class="gmap-label">${lk.label}${lk.sub?`<br><span class="gmap-sub">${lk.sub}</span>`:''}</span>
+            <span style="font-size:13px;">↗</span>
+          </a>`
+        ).join('');
+      }
+
       const detailHtml=expanded?`
         <div class="sr-detail">
           <div class="srd-row"><div class="srd-label">出発</div><div class="srd-value">${fromName}</div></div>
@@ -5649,6 +5677,7 @@
           <div class="srd-row"><div class="srd-label">距離</div><div class="srd-value">${dist} km</div></div>
           <div class="srd-row"><div class="srd-label">時間</div><div class="srd-value">${durStr}</div></div>
           <div class="srd-row"><div class="srd-label">通過 (${r.passedCities?.length||0})</div><div class="srd-value srd-cities">${cityList}${cityListMore}</div></div>
+          ${srGmapLinksHtml?`<div class="gmap-links" style="margin-top:8px;">${srGmapLinksHtml}</div>`:''}
           <div class="srd-actions">
             <button class="srd-btn" data-act="locate" data-id="${r.id}" title="地図で表示">🔍 地図</button>
             <button class="srd-btn" data-act="rename" data-id="${r.id}" title="名前を変更">✏️ 名前</button>

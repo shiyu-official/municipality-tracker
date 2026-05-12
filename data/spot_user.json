@@ -91,5 +91,8 @@
   },
   "keikoku_geibikei": {
     "status": "visited"
+  },
+  "hitou_iya": {
+    "status": "visited"
   }
 }

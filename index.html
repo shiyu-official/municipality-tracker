@@ -500,7 +500,43 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   #loading-status{font-size:12px;color:var(--text-dim);font-family:'DM Mono',monospace;}
 
-  /* （旧 .layer-toggles / .legend はヘッダーのメニューパネルに統合済み） */
+  /* ── 統計タブ ── */
+  .stats-section{margin-bottom:14px;}
+  .stats-section-title{font-size:10px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.6px;padding:0 2px 6px;border-bottom:1px solid var(--border-light);margin-bottom:8px;}
+  .stats-kv-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .stats-kv{background:var(--bg);border:1px solid var(--border-light);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;}
+  .stats-kv-label{font-size:10px;color:var(--text-dim);}
+  .stats-kv-value{font-size:18px;font-weight:700;color:var(--text-bright);font-family:'DM Mono',monospace;line-height:1.1;}
+  .stats-kv-value.small{font-size:13px;}
+  .stats-kv-sub{font-size:10px;color:var(--text-dim);}
+  /* 年別バーチャート */
+  .stats-bar-chart{display:flex;flex-direction:column;gap:5px;}
+  .stats-bar-row{display:grid;grid-template-columns:36px 1fr 36px;gap:6px;align-items:center;}
+  .stats-bar-label{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;text-align:right;}
+  .stats-bar-track{height:14px;background:var(--bg);border-radius:4px;overflow:hidden;position:relative;}
+  .stats-bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width 0.4s ease;}
+  .stats-bar-fill.new{background:var(--accent);}
+  .stats-bar-value{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;text-align:left;}
+  /* カレンダーヒートマップ */
+  .stats-heatmap-wrap{overflow-x:auto;padding-bottom:4px;}
+  .stats-heatmap{display:flex;gap:3px;width:max-content;}
+  .shm-month-col{display:flex;flex-direction:column;gap:2px;}
+  .shm-month-label{font-size:9px;color:var(--text-dim);text-align:center;font-family:'DM Mono',monospace;height:12px;line-height:12px;}
+  .shm-cells{display:flex;gap:2px;}
+  .shm-cell{width:12px;height:12px;border-radius:2px;background:var(--bg);border:1px solid var(--border-light);}
+  .shm-cell[data-v="1"]{background:var(--visit-1-fill);border-color:var(--visit-1-stroke);}
+  .shm-cell[data-v="2"]{background:var(--visit-2-fill);border-color:var(--visit-2-stroke);}
+  .shm-cell[data-v="3"]{background:var(--visit-3-fill);border-color:var(--visit-3-stroke);}
+  /* ランキングリスト */
+  .stats-rank-list{display:flex;flex-direction:column;gap:4px;}
+  .stats-rank-item{display:grid;grid-template-columns:18px 1fr auto;gap:6px;align-items:center;padding:5px 8px;background:var(--bg);border-radius:6px;border:1px solid var(--border-light);}
+  .stats-rank-num{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;text-align:right;}
+  .stats-rank-name{font-size:12px;color:var(--text-bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .stats-rank-pref{font-size:10px;color:var(--text-dim);}
+  .stats-rank-val{font-size:12px;font-weight:600;color:var(--accent);font-family:'DM Mono',monospace;white-space:nowrap;}
+
+  /* ── 統計タブ終わり ── */
+
 
   /* ── 検索・ルートUI ── */
   #search-panel{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:1001;width:420px;max-width:calc(100vw - 32px);}
@@ -1025,6 +1061,7 @@
     <button class="sidebar-tab active" data-tab="pref">都道府県</button>
     <button class="sidebar-tab" data-tab="spots">スポット</button>
     <button class="sidebar-tab" data-tab="routes">保存ルート</button>
+    <button class="sidebar-tab" data-tab="stats">統計</button>
   </div>
   <div id="tab-pref" class="sidebar-tab-panel active">
     <div class="sidebar-header">
@@ -1080,8 +1117,10 @@
       <button type="button" id="gh-save-spots-btn" class="gh-save-btn" title="スポット記録をGitHubに保存" disabled>💾 GitHubに保存</button>
     </div>
   </div>
+  <div id="tab-stats" class="sidebar-tab-panel">
+    <div id="stats-content" style="flex:1;overflow-y:auto;padding:8px 8px 16px;-webkit-overflow-scrolling:touch;"></div>
+  </div>
 </div>
-<button id="sidebar-toggle">◀</button>
 <div id="sidebar-overlay"></div>
 
 <div id="map-container">
@@ -4347,8 +4386,177 @@
       document.querySelectorAll('.sidebar-tab-panel').forEach(p=>p.classList.remove('active'));
       tab.classList.add('active');
       $('tab-'+tab.dataset.tab).classList.add('active');
+      if(tab.dataset.tab==='stats') renderStats();
     });
   });
+
+  // ── 統計タブ ──
+  function renderStats(){
+    const el=$('stats-content');
+    if(!el) return;
+
+    // ── 1. 基本集計 ──
+    const allCities=Object.values(visitedData.cities);
+    const visitedCities=allCities.filter(c=>c.visitDays>0);
+    const totalVisitDays=visitedCities.reduce((s,c)=>s+(c.visitDays||0),0);
+    const multiVisit=visitedCities.filter(c=>c.visitDays>=2).length;
+
+    // 最初・最後の訪問
+    const allFirstDates=visitedCities.map(c=>c.firstVisit).filter(Boolean).sort();
+    const allLastDates=visitedCities.map(c=>c.lastVisit).filter(Boolean).sort();
+    const earliest=allFirstDates[0]||'—';
+    const latest=allLastDates[allLastDates.length-1]||'—';
+
+    // 活動年数
+    const startYear=earliest!=='—'?parseInt(earliest.slice(0,4)):null;
+    const endYear=latest!=='—'?parseInt(latest.slice(0,4)):null;
+    const activeYears=startYear&&endYear?endYear-startYear+1:0;
+
+    // 都道府県踏破数
+    const visitedPrefs=Object.entries(prefs).filter(([pc,p])=>p.visited>0).length;
+
+    // ── 2. 年別集計 ──
+    // firstVisit の年で「新規開拓」を集計
+    const yearNewMap={};   // 年 → 新規開拓数
+    const yearVisitMap={}; // 年 → のべ訪問日数
+    for(const c of visitedCities){
+      if(c.firstVisit){
+        const y=c.firstVisit.slice(0,4);
+        yearNewMap[y]=(yearNewMap[y]||0)+1;
+      }
+      // lastVisit の年もカウント（訪問活動のある年）
+      if(c.lastVisit){
+        const y=c.lastVisit.slice(0,4);
+        yearVisitMap[y]=(yearVisitMap[y]||0)+(c.visitDays||1);
+      }
+    }
+    const allYears=[...new Set([...Object.keys(yearNewMap),...Object.keys(yearVisitMap)])].sort();
+    const maxNew=Math.max(...Object.values(yearNewMap),1);
+
+    // ── 3. 月別集計（ヒートマップ用） ──
+    // firstVisit の YYYY-MM 単位で集計
+    const monthMap={}; // "YYYY-MM" → 新規数
+    for(const c of visitedCities){
+      if(c.firstVisit){
+        const ym=c.firstVisit.slice(0,7);
+        monthMap[ym]=(monthMap[ym]||0)+1;
+      }
+    }
+    const maxMonthVal=Math.max(...Object.values(monthMap),1);
+
+    // ── 4. リピートランキング（visitDays上位10） ──
+    const sortedByVisit=[...visitedCities]
+      .map(c=>{
+        const code=Object.keys(visitedData.cities).find(k=>visitedData.cities[k]===c);
+        const fp=featureProps[code]||{};
+        const name=buildFullName(code,fp.gun,fp.city,fp.ward)||code;
+        const pref=fp.pref||'';
+        return{name,pref,visitDays:c.visitDays,code};
+      })
+      .sort((a,b)=>b.visitDays-a.visitDays)
+      .slice(0,10);
+
+    // ── 5. 都道府県踏破ランキング（率上位10） ──
+    const prefRank=Object.entries(prefs)
+      .filter(([,p])=>p.visited>0)
+      .map(([pc,p])=>({name:p.name,rate:p.rate,visited:p.visited,total:p.total}))
+      .sort((a,b)=>b.rate-a.rate||b.visited-a.visited)
+      .slice(0,10);
+
+    // ── 描画 ──
+    let h='';
+
+    // サマリカード
+    h+=`<div class="stats-section">`;
+    h+=`<div class="stats-section-title">サマリ</div>`;
+    h+=`<div class="stats-kv-grid">`;
+    h+=kvCard('訪問市区町村',meta.visitedCount+'<span style="font-size:11px;font-weight:400;color:var(--text-dim)"> / '+meta.totalMunicipalities+'</span>','');
+    h+=kvCard('都道府県',visitedPrefs+' / 47','踏破実績あり');
+    h+=kvCard('のべ訪問日数',totalVisitDays,'日');
+    h+=kvCard('複数回訪問',multiVisit,'市区町村');
+    h+=kvCard('記録開始',earliest.slice(0,7),'');
+    h+=kvCard('直近訪問',latest.slice(0,7),'');
+    h+=`</div></div>`;
+
+    // 年別新規開拓バー
+    if(allYears.length>0){
+      h+=`<div class="stats-section">`;
+      h+=`<div class="stats-section-title">年別 新規開拓市区町村数</div>`;
+      h+=`<div class="stats-bar-chart">`;
+      for(const y of allYears){
+        const n=yearNewMap[y]||0;
+        const pct=n/maxNew*100;
+        h+=`<div class="stats-bar-row">
+          <div class="stats-bar-label">${y}</div>
+          <div class="stats-bar-track"><div class="stats-bar-fill new" style="width:${pct}%"></div></div>
+          <div class="stats-bar-value">${n}</div>
+        </div>`;
+      }
+      h+=`</div></div>`;
+    }
+
+    // 月別ヒートマップ
+    if(startYear&&endYear){
+      h+=`<div class="stats-section">`;
+      h+=`<div class="stats-section-title">月別 新規開拓ヒートマップ</div>`;
+      h+=`<div class="stats-heatmap-wrap"><div class="stats-heatmap">`;
+      for(let y=startYear;y<=endYear;y++){
+        h+=`<div class="shm-month-col">`;
+        h+=`<div class="shm-month-label">${y}</div>`;
+        h+=`<div class="shm-cells">`;
+        for(let m=1;m<=12;m++){
+          const ym=y+'-'+(m<10?'0':'')+m;
+          const v=monthMap[ym]||0;
+          const lv=v===0?0:v/maxMonthVal<=0.33?1:v/maxMonthVal<=0.66?2:3;
+          const tip=`${ym}: ${v}市区町村`;
+          h+=`<div class="shm-cell" data-v="${lv}" title="${tip}"></div>`;
+        }
+        h+=`</div></div>`;
+      }
+      h+=`</div></div></div>`;
+    }
+
+    // リピートランキング
+    if(sortedByVisit.length>0){
+      h+=`<div class="stats-section">`;
+      h+=`<div class="stats-section-title">よく訪れた市区町村 TOP10</div>`;
+      h+=`<div class="stats-rank-list">`;
+      sortedByVisit.forEach((c,i)=>{
+        h+=`<div class="stats-rank-item">
+          <div class="stats-rank-num">${i+1}</div>
+          <div><div class="stats-rank-name">${c.name}</div><div class="stats-rank-pref">${c.pref}</div></div>
+          <div class="stats-rank-val">${c.visitDays}日</div>
+        </div>`;
+      });
+      h+=`</div></div>`;
+    }
+
+    // 都道府県踏破率ランキング
+    if(prefRank.length>0){
+      h+=`<div class="stats-section">`;
+      h+=`<div class="stats-section-title">都道府県 踏破率ランキング</div>`;
+      h+=`<div class="stats-rank-list">`;
+      prefRank.forEach((p,i)=>{
+        h+=`<div class="stats-rank-item">
+          <div class="stats-rank-num">${i+1}</div>
+          <div><div class="stats-rank-name">${p.name}</div><div class="stats-rank-pref">${p.visited} / ${p.total} 市区町村</div></div>
+          <div class="stats-rank-val">${p.rate}%</div>
+        </div>`;
+      });
+      h+=`</div></div>`;
+    }
+
+    el.innerHTML=h;
+
+    function kvCard(label,value,sub){
+      return`<div class="stats-kv">
+        <div class="stats-kv-label">${label}</div>
+        <div class="stats-kv-value${String(value).length>6?' small':''}">${value}</div>
+        ${sub?`<div class="stats-kv-sub">${sub}</div>`:''}
+      </div>`;
+    }
+  }
+
 
   // ── GitHub 連携: PAT を使ってリポジトリ内のファイルを直接更新 ──
   // Personal Access Token を localStorage に保存し、GitHub REST API 経由で data/*.json を更新する

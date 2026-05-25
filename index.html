@@ -535,6 +535,13 @@
   .stats-rank-pref{font-size:10px;color:var(--text-dim);}
   .stats-rank-val{font-size:12px;font-weight:600;color:var(--accent);font-family:'DM Mono',monospace;white-space:nowrap;}
 
+  .stats-bar-row2{display:grid;grid-template-columns:36px 1fr 40px;gap:6px;align-items:center;}
+  .stats-bars-col{display:flex;flex-direction:column;gap:3px;}
+  .stats-bar-vals{display:flex;flex-direction:column;gap:3px;}
+  .stats-bar-legend{display:flex;gap:12px;margin-bottom:8px;padding:0 2px;}
+  .stats-bar-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-dim);}
+  .stats-bar-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
   /* ── 統計タブ終わり ── */
 
 
@@ -4400,7 +4407,9 @@
     const allCities=Object.values(visitedData.cities);
     const visitedCities=allCities.filter(c=>c.visitDays>0);
     const totalVisitDays=visitedCities.reduce((s,c)=>s+(c.visitDays||0),0);
-    const multiVisit=visitedCities.filter(c=>c.visitDays>=2).length;
+
+    // 制覇スコア（visitDays を3でクランプして合計、maxScoreと同じ計算）
+    const completeScore=visitedCities.reduce((s,c)=>s+Math.min(c.visitDays||0,3),0);
 
     // 最初・最後の訪問
     const allFirstDates=visitedCities.map(c=>c.firstVisit).filter(Boolean).sort();
@@ -4408,35 +4417,72 @@
     const earliest=allFirstDates[0]||'—';
     const latest=allLastDates[allLastDates.length-1]||'—';
 
-    // 活動年数
+    // 開始・終了年
     const startYear=earliest!=='—'?parseInt(earliest.slice(0,4)):null;
     const endYear=latest!=='—'?parseInt(latest.slice(0,4)):null;
-    const activeYears=startYear&&endYear?endYear-startYear+1:0;
 
     // 都道府県踏破数
-    const visitedPrefs=Object.entries(prefs).filter(([pc,p])=>p.visited>0).length;
+    const visitedPrefs=Object.entries(prefs).filter(([,p])=>p.visited>0).length;
 
-    // ── 2. 年別集計 ──
-    // firstVisit の年で「新規開拓」を集計
-    const yearNewMap={};   // 年 → 新規開拓数
-    const yearVisitMap={}; // 年 → のべ訪問日数
-    for(const c of visitedCities){
+    // ── 2. 移動距離（tracksData から Haversine 計算） ──
+    function haversineDist(lat1,lng1,lat2,lng2){
+      const R=6371;
+      const dLat=(lat2-lat1)*Math.PI/180;
+      const dLng=(lng2-lng1)*Math.PI/180;
+      const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+      return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+    }
+    let totalDistKm=0;
+    if(tracksData&&Array.isArray(tracksData.features)){
+      for(const f of tracksData.features){
+        const geom=f&&f.geometry;
+        if(!geom) continue;
+        let lines=[];
+        if(geom.type==='LineString') lines=[geom.coordinates];
+        else if(geom.type==='MultiLineString') lines=geom.coordinates;
+        for(const line of lines){
+          for(let i=1;i<line.length;i++){
+            const [lng1,lat1]=line[i-1];
+            const [lng2,lat2]=line[i];
+            totalDistKm+=haversineDist(lat1,lng1,lat2,lng2);
+          }
+        }
+      }
+    }
+    const distStr=totalDistKm>0
+      ? totalDistKm>=1000
+        ? (totalDistKm/1000).toFixed(1)+'<span style="font-size:11px;font-weight:400;color:var(--text-dim)"> 千km</span>'
+        : Math.round(totalDistKm)+'<span style="font-size:11px;font-weight:400;color:var(--text-dim)"> km</span>'
+      : null;
+
+    // ── 3. 年別集計 ──
+    // yearNewMap:  年 → その年に初めて訪れた市区町村数
+    // yearTotalMap: 年 → その年に訪問記録のある市区町村数（firstVisit or lastVisit が該当年）
+    const yearNewMap={};
+    const yearTotalMap={}; // 年 → Set(code)
+    for(const [code,c] of Object.entries(visitedData.cities)){
+      if(!c.visitDays) continue;
       if(c.firstVisit){
         const y=c.firstVisit.slice(0,4);
         yearNewMap[y]=(yearNewMap[y]||0)+1;
+        if(!yearTotalMap[y]) yearTotalMap[y]=new Set();
+        yearTotalMap[y].add(code);
       }
-      // lastVisit の年もカウント（訪問活動のある年）
-      if(c.lastVisit){
+      // firstVisit と lastVisit が異なる年なら lastVisit 年にも計上
+      if(c.lastVisit&&c.lastVisit.slice(0,4)!==c.firstVisit?.slice(0,4)){
         const y=c.lastVisit.slice(0,4);
-        yearVisitMap[y]=(yearVisitMap[y]||0)+(c.visitDays||1);
+        if(!yearTotalMap[y]) yearTotalMap[y]=new Set();
+        yearTotalMap[y].add(code);
       }
     }
-    const allYears=[...new Set([...Object.keys(yearNewMap),...Object.keys(yearVisitMap)])].sort();
+    const allYears=[...new Set([...Object.keys(yearNewMap),...Object.keys(yearTotalMap)])].sort();
     const maxNew=Math.max(...Object.values(yearNewMap),1);
+    const maxTotal=Math.max(...allYears.map(y=>yearTotalMap[y]?.size||0),1);
+    // 両系列の最大値（バーの基準を共通にする）
+    const barMax=Math.max(maxNew,maxTotal);
 
-    // ── 3. 月別集計（ヒートマップ用） ──
-    // firstVisit の YYYY-MM 単位で集計
-    const monthMap={}; // "YYYY-MM" → 新規数
+    // ── 4. 月別集計（ヒートマップ用） ──
+    const monthMap={};
     for(const c of visitedCities){
       if(c.firstVisit){
         const ym=c.firstVisit.slice(0,7);
@@ -4445,24 +4491,31 @@
     }
     const maxMonthVal=Math.max(...Object.values(monthMap),1);
 
-    // ── 4. リピートランキング（visitDays上位10） ──
-    const sortedByVisit=[...visitedCities]
-      .map(c=>{
-        const code=Object.keys(visitedData.cities).find(k=>visitedData.cities[k]===c);
+    // ── 5. リピートランキング（visitDays上位10） ──
+    const sortedByVisit=Object.entries(visitedData.cities)
+      .filter(([,c])=>c.visitDays>0)
+      .map(([code,c])=>{
         const fp=featureProps[code]||{};
-        const name=buildFullName(code,fp.gun,fp.city,fp.ward)||code;
-        const pref=fp.pref||'';
-        return{name,pref,visitDays:c.visitDays,code};
+        return{name:buildFullName(code,fp.gun,fp.city,fp.ward)||code,pref:fp.pref||'',visitDays:c.visitDays};
       })
       .sort((a,b)=>b.visitDays-a.visitDays)
       .slice(0,10);
 
-    // ── 5. 都道府県踏破ランキング（率上位10） ──
+    // ── 6. 都道府県踏破率ランキング（率上位10） ──
     const prefRank=Object.entries(prefs)
       .filter(([,p])=>p.visited>0)
-      .map(([pc,p])=>({name:p.name,rate:p.rate,visited:p.visited,total:p.total}))
+      .map(([,p])=>({name:p.name,rate:p.rate,visited:p.visited,total:p.total}))
       .sort((a,b)=>b.rate-a.rate||b.visited-a.visited)
       .slice(0,10);
+
+    // ── 描画ヘルパー ──
+    function kvCard(label,value,sub){
+      return`<div class="stats-kv">
+        <div class="stats-kv-label">${label}</div>
+        <div class="stats-kv-value${String(value).replace(/<[^>]*>/g,'').length>6?' small':''}">${value}</div>
+        ${sub?`<div class="stats-kv-sub">${sub}</div>`:''}
+      </div>`;
+    }
 
     // ── 描画 ──
     let h='';
@@ -4472,25 +4525,40 @@
     h+=`<div class="stats-section-title">サマリ</div>`;
     h+=`<div class="stats-kv-grid">`;
     h+=kvCard('訪問市区町村',meta.visitedCount+'<span style="font-size:11px;font-weight:400;color:var(--text-dim)"> / '+meta.totalMunicipalities+'</span>','');
-    h+=kvCard('都道府県',visitedPrefs+' / 47','踏破実績あり');
+    h+=kvCard('市区町村制覇スコア',completeScore+'<span style="font-size:11px;font-weight:400;color:var(--text-dim)"> / '+maxScore+'</span>','');
     h+=kvCard('のべ訪問日数',totalVisitDays,'日');
-    h+=kvCard('複数回訪問',multiVisit,'市区町村');
+    if(distStr){
+      h+=kvCard('軌跡総距離',distStr,'');
+    }
+    h+=kvCard('都道府県',visitedPrefs+' / 47','踏破実績あり');
     h+=kvCard('記録開始',earliest.slice(0,7),'');
     h+=kvCard('直近訪問',latest.slice(0,7),'');
     h+=`</div></div>`;
 
-    // 年別新規開拓バー
+    // 年別バー（新規 + 訪問数の2系列）
     if(allYears.length>0){
       h+=`<div class="stats-section">`;
-      h+=`<div class="stats-section-title">年別 新規開拓市区町村数</div>`;
+      h+=`<div class="stats-section-title">年別 市区町村数</div>`;
+      h+=`<div class="stats-bar-legend">`;
+      h+=`<span class="stats-bar-legend-item"><span class="stats-bar-legend-dot" style="background:var(--accent)"></span>新規開拓</span>`;
+      h+=`<span class="stats-bar-legend-item"><span class="stats-bar-legend-dot" style="background:var(--visit-1-stroke)"></span>のべ訪問</span>`;
+      h+=`</div>`;
       h+=`<div class="stats-bar-chart">`;
       for(const y of allYears){
-        const n=yearNewMap[y]||0;
-        const pct=n/maxNew*100;
-        h+=`<div class="stats-bar-row">
+        const nNew=yearNewMap[y]||0;
+        const nTotal=yearTotalMap[y]?.size||0;
+        const pctNew=nNew/barMax*100;
+        const pctTotal=nTotal/barMax*100;
+        h+=`<div class="stats-bar-row2">
           <div class="stats-bar-label">${y}</div>
-          <div class="stats-bar-track"><div class="stats-bar-fill new" style="width:${pct}%"></div></div>
-          <div class="stats-bar-value">${n}</div>
+          <div class="stats-bars-col">
+            <div class="stats-bar-track"><div class="stats-bar-fill" style="width:${pctNew}%;background:var(--accent)"></div></div>
+            <div class="stats-bar-track"><div class="stats-bar-fill" style="width:${pctTotal}%;background:var(--visit-1-stroke)"></div></div>
+          </div>
+          <div class="stats-bar-vals">
+            <div class="stats-bar-value">${nNew}</div>
+            <div class="stats-bar-value" style="color:var(--visit-1-stroke)">${nTotal}</div>
+          </div>
         </div>`;
       }
       h+=`</div></div>`;
@@ -4509,8 +4577,7 @@
           const ym=y+'-'+(m<10?'0':'')+m;
           const v=monthMap[ym]||0;
           const lv=v===0?0:v/maxMonthVal<=0.33?1:v/maxMonthVal<=0.66?2:3;
-          const tip=`${ym}: ${v}市区町村`;
-          h+=`<div class="shm-cell" data-v="${lv}" title="${tip}"></div>`;
+          h+=`<div class="shm-cell" data-v="${lv}" title="${ym}: ${v}市区町村"></div>`;
         }
         h+=`</div></div>`;
       }
@@ -4548,14 +4615,6 @@
     }
 
     el.innerHTML=h;
-
-    function kvCard(label,value,sub){
-      return`<div class="stats-kv">
-        <div class="stats-kv-label">${label}</div>
-        <div class="stats-kv-value${String(value).length>6?' small':''}">${value}</div>
-        ${sub?`<div class="stats-kv-sub">${sub}</div>`:''}
-      </div>`;
-    }
   }
 
 

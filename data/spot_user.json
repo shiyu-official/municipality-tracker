@@ -39,19 +39,19 @@
     "status": "visited"
   },
   "sanmeisen_arima": {
-    "status": "passed"
+    "status": "visited"
   },
   "sankotou_arima": {
-    "status": "passed"
+    "status": "visited"
   },
   "yakusen_arima": {
-    "status": "passed"
+    "status": "visited"
   },
   "sanmeien_kairaku": {
     "status": "passed"
   },
   "makura_arima": {
-    "status": "passed"
+    "status": "visited"
   },
   "makura_tamatsukuri": {
     "status": "passed"

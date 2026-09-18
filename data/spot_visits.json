@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated": "2026-06-02T06:51:45.738882",
+    "generated": "2026-09-19T01:30:32.441771",
     "totalSpots": 51,
-    "visitedSpots": 32,
+    "visitedSpots": 34,
     "spotsVersion": 4
   },
   "categories": [
@@ -82,8 +82,8 @@
           "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2023-11-04",
-          "lastVisit": "2026-05-31",
-          "visitDays": 7
+          "lastVisit": "2026-08-23",
+          "visitDays": 12
         },
         {
           "id": "makura_sakakibara",
@@ -187,8 +187,8 @@
           "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2023-11-04",
-          "lastVisit": "2026-05-31",
-          "visitDays": 6
+          "lastVisit": "2026-08-23",
+          "visitDays": 11
         }
       ],
       "completed": 3,
@@ -511,8 +511,8 @@
           "radiusM": 600,
           "autoDetected": true,
           "firstVisit": "2023-10-14",
-          "lastVisit": "2024-11-10",
-          "visitDays": 4
+          "lastVisit": "2026-06-28",
+          "visitDays": 6
         }
       ],
       "completed": 1,
@@ -533,8 +533,8 @@
           "radiusM": 600,
           "autoDetected": true,
           "firstVisit": "2024-02-18",
-          "lastVisit": "2024-11-05",
-          "visitDays": 2
+          "lastVisit": "2026-09-05",
+          "visitDays": 3
         },
         {
           "id": "yakei_maya",
@@ -685,10 +685,10 @@
           "lon": 139.501941,
           "radiusM": 500,
           "group": "華厳の滝_栃木県",
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
+          "autoDetected": true,
+          "firstVisit": "2026-09-12",
+          "lastVisit": "2026-09-12",
+          "visitDays": 1
         },
         {
           "id": "meibaku_fukuroda",
@@ -703,7 +703,7 @@
           "visitDays": 0
         }
       ],
-      "completed": 0,
+      "completed": 1,
       "total": 3
     },
     {
@@ -733,10 +733,10 @@
           "lon": 139.501941,
           "radiusM": 500,
           "group": "華厳の滝_栃木県",
-          "autoDetected": false,
-          "firstVisit": null,
-          "lastVisit": null,
-          "visitDays": 0
+          "autoDetected": true,
+          "firstVisit": "2026-09-12",
+          "lastVisit": "2026-09-12",
+          "visitDays": 1
         },
         {
           "id": "shintaki_nunobiki",
@@ -747,11 +747,11 @@
           "radiusM": 500,
           "autoDetected": true,
           "firstVisit": "2023-09-24",
-          "lastVisit": "2026-05-30",
-          "visitDays": 13
+          "lastVisit": "2026-08-21",
+          "visitDays": 16
         }
       ],
-      "completed": 1,
+      "completed": 2,
       "total": 3
     },
     {

@@ -1,0 +1,98 @@
+{
+  "sanmeisen_kusatsu": {
+    "status": "visited"
+  },
+  "sanmeisen_gero": {
+    "status": "visited"
+  },
+  "sankotou_shirahama": {
+    "status": "visited"
+  },
+  "bijin_kawanaka": {
+    "status": "visited"
+  },
+  "bijin_ryujin": {
+    "status": "visited"
+  },
+  "bijin_yunokawa": {
+    "status": "visited"
+  },
+  "yakusen_kusatsu": {
+    "status": "visited"
+  },
+  "yakusen_matsunoyama": {
+    "status": "visited"
+  },
+  "sankei_matsushima": {
+    "status": "visited"
+  },
+  "sankei_amanohashidate": {
+    "status": "visited"
+  },
+  "sankei_miyajima": {
+    "status": "visited"
+  },
+  "yakei_hakodate": {
+    "status": "visited"
+  },
+  "yakei_maya": {
+    "status": "visited"
+  },
+  "sanmeisen_arima": {
+    "status": "visited"
+  },
+  "sankotou_arima": {
+    "status": "visited"
+  },
+  "yakusen_arima": {
+    "status": "visited"
+  },
+  "sanmeien_kairaku": {
+    "status": "passed"
+  },
+  "makura_arima": {
+    "status": "visited"
+  },
+  "makura_tamatsukuri": {
+    "status": "passed"
+  },
+  "makura_sakakibara": {
+    "status": "visited"
+  },
+  "bihada_ureshino": {
+    "status": "visited"
+  },
+  "bihada_hinokami": {
+    "status": "visited"
+  },
+  "bihada_kitsuregawa": {
+    "status": "visited"
+  },
+  "miyu_akiu": {
+    "status": "visited"
+  },
+  "miyu_nozawa": {
+    "status": "visited"
+  },
+  "hitou_yachi": {
+    "status": "visited"
+  },
+  "ichou_shima": {
+    "status": "visited"
+  },
+  "shonyu_akiyoshi": {
+    "status": "visited"
+  },
+  "karst_akiyoshi": {
+    "status": "visited"
+  },
+  "shintaki_nunobiki": {
+    "status": "passed"
+  },
+  "keikoku_geibikei": {
+    "status": "visited"
+  },
+  "hitou_iya": {
+    "status": "visited"
+  }
+}

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated": "2026-09-27T05:33:32.745174",
+    "generated": "2026-09-27T06:10:19.496451",
     "totalSpots": 51,
     "visitedSpots": 35,
     "spotsVersion": 4
@@ -34,7 +34,7 @@
           "radiusM": 1500,
           "group": "有馬温泉_兵庫県",
           "autoDetected": true,
-          "firstVisit": "2024-06-14",
+          "firstVisit": "2024-06-15",
           "lastVisit": "2026-05-30",
           "visitDays": 2
         },
@@ -69,7 +69,7 @@
           "radiusM": 1500,
           "group": "有馬温泉_兵庫県",
           "autoDetected": true,
-          "firstVisit": "2024-06-14",
+          "firstVisit": "2024-06-15",
           "lastVisit": "2026-05-30",
           "visitDays": 2
         },
@@ -128,7 +128,7 @@
           "radiusM": 1500,
           "group": "有馬温泉_兵庫県",
           "autoDetected": true,
-          "firstVisit": "2024-06-14",
+          "firstVisit": "2024-06-15",
           "lastVisit": "2026-05-30",
           "visitDays": 2
         },
@@ -141,8 +141,8 @@
           "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2023-11-23",
-          "lastVisit": "2023-11-23",
-          "visitDays": 1
+          "lastVisit": "2023-11-24",
+          "visitDays": 2
         }
       ],
       "completed": 3,
@@ -175,8 +175,8 @@
           "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2025-04-25",
-          "lastVisit": "2025-04-25",
-          "visitDays": 1
+          "lastVisit": "2025-04-26",
+          "visitDays": 2
         },
         {
           "id": "bijin_yunokawa",
@@ -268,7 +268,7 @@
           "radiusM": 1500,
           "group": "有馬温泉_兵庫県",
           "autoDetected": true,
-          "firstVisit": "2024-06-14",
+          "firstVisit": "2024-06-15",
           "lastVisit": "2026-05-30",
           "visitDays": 2
         },
@@ -361,8 +361,8 @@
           "radiusM": 1500,
           "autoDetected": true,
           "firstVisit": "2025-08-23",
-          "lastVisit": "2025-08-23",
-          "visitDays": 1
+          "lastVisit": "2025-08-24",
+          "visitDays": 2
         },
         {
           "id": "hitou_iya",
@@ -396,7 +396,7 @@
           "autoDetected": true,
           "firstVisit": "2025-01-20",
           "lastVisit": "2026-02-22",
-          "visitDays": 3
+          "visitDays": 4
         },
         {
           "id": "ichou_gaga",
@@ -464,8 +464,8 @@
           "lon": 132.3198285,
           "radiusM": 1500,
           "autoDetected": true,
-          "firstVisit": "2024-12-29",
-          "lastVisit": "2024-12-29",
+          "firstVisit": "2024-12-30",
+          "lastVisit": "2024-12-30",
           "visitDays": 1
         }
       ],
@@ -748,7 +748,7 @@
           "autoDetected": true,
           "firstVisit": "2023-09-24",
           "lastVisit": "2026-09-23",
-          "visitDays": 18
+          "visitDays": 17
         }
       ],
       "completed": 2,
